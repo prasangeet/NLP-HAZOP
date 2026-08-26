@@ -1,0 +1,210 @@
+% ============================================================
+% NLP for Structured HAZOP Reasoning --- Weekly Research Log
+%
+% MAINTENANCE NOTE (read this before editing):
+%   - Each week gets its own file: weeks/weekNN.tex
+%   - A new week is added to the document by (1) creating
+%     weeks/weekNN.tex following the pattern of weeks/week01.tex,
+%     and (2) adding one \input{weeks/weekNN} line below, in order.
+%   - Each week file must start with
+%       \section[<short title>]{<full title>}
+%     The optional short title is what appears in the running
+%     header and the table of contents, so keep it under ~50
+%     characters or it will run into the left-hand header.
+%   - Never delete or renumber a previous week's \input line.
+%   - Shared bibliography lives in references.bib; append new
+%     entries there, do not create per-week bibliographies.
+%   - Shared TikZ node styles, tcolorbox callouts and the
+%     \yes/\prt/\no capability marks are defined in this preamble
+%     so that every week's diagrams look the same. Add new shared
+%     styles here, not inside a week file.
+%   - Recompile with: pdflatex main && bibtex main &&
+%     pdflatex main && pdflatex main   (two pdflatex passes after
+%     bibtex to resolve cross-references and the bibliography).
+% ============================================================
+
+% This is a formal report: each major research stage is a chapter.
+\documentclass[10pt,a4paper]{report}
+
+\usepackage[a4paper,margin=0.8in,headheight=14pt,headsep=10pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{etoolbox}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc}
+\usepackage[font=small,labelfont=bf,skip=8pt]{caption}
+\usepackage[english]{babel}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{hyperref} % load last
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue,
+  pdftitle={NLP for Structured HAZOP Reasoning},
+  pdfauthor={Prasangeet Dongre}
+}
+
+% ------------------------------------------------------------
+% Shared palette
+% ------------------------------------------------------------
+\definecolor{hzblue}{HTML}{1F4E79}
+\definecolor{hzbluebg}{HTML}{DCE6F1}
+\definecolor{hzgray}{HTML}{4B5563}
+\definecolor{hzgraybg}{HTML}{F2F3F5}
+\definecolor{hzgreen}{HTML}{166534}
+\definecolor{hzgreenbg}{HTML}{DFF3E3}
+\definecolor{hzamber}{HTML}{92590B}
+\definecolor{hzamberbg}{HTML}{FBF0D9}
+\definecolor{hzred}{HTML}{8C1D1D}
+\definecolor{hzredbg}{HTML}{FBE4E4}
+
+% ------------------------------------------------------------
+% Sectioning and spacing --- tightened a little, not squeezed
+% ------------------------------------------------------------
+\titleformat{\chapter}{\normalfont\Large\bfseries\color{hzblue}}{Week~\thechapter}{0.8em}{}
+\titleformat{\section}{\normalfont\large\bfseries\color{hzblue}}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\normalfont\small\bfseries\itshape}{\thesubsubsection}{0.8em}{}
+\titlespacing*{\chapter}{0pt}{0pt}{1.5ex}
+\titlespacing*{\section}{0pt}{1.8ex plus .3ex minus .2ex}{0.8ex plus .2ex}
+\titlespacing*{\subsection}{0pt}{1.4ex plus .2ex minus .2ex}{0.5ex plus .1ex}
+\titlespacing*{\subsubsection}{0pt}{1.1ex plus .2ex minus .2ex}{0.4ex plus .1ex}
+\titlespacing*{\paragraph}{0pt}{1ex plus .2ex}{0.6em}
+
+\setlist{topsep=4pt,itemsep=3pt,parsep=0pt,partopsep=0pt,leftmargin=1.8em}
+\setlength{\abovedisplayskip}{4pt}
+\setlength{\belowdisplayskip}{4pt}
+\setlength{\parindent}{1em}
+\setlength{\parskip}{0pt}
+\apptocmd{\thebibliography}{\setlength{\itemsep}{3pt}\setlength{\parsep}{0pt}}{}{}
+
+\setcounter{secnumdepth}{3} % number subsubsections too
+\setcounter{tocdepth}{3}    % ...and list them, but keep \paragraph out of the ToC
+
+% ------------------------------------------------------------
+% Running head. \leftmark is fed by \sectionmark, which in the
+% article class receives the optional (short) argument of \section.
+% ------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{hzgray}NLP for Structured HAZOP Reasoning}
+\fancyhead[R]{\small\color{hzgray}\nouppercase{\leftmark}}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ------------------------------------------------------------
+% Shared diagram styles (used by every week's figures)
+% ------------------------------------------------------------
+\tikzset{
+  % a node in a causal chain that the worksheet does record
+  ev/.style={draw=hzblue,fill=hzbluebg,rounded corners=2pt,align=center,
+             font=\scriptsize,text width=19mm,minimum height=9.5mm,inner sep=2pt},
+  % an intermediate event the flat worksheet drops
+  interev/.style={ev,fill=white,draw=hzgray,densely dashed},
+  % a safeguard
+  sg/.style={draw=hzgreen,fill=hzgreenbg,rounded corners=2pt,align=center,
+             font=\scriptsize,text width=20mm,inner sep=2pt},
+  % an input / artefact box in a pipeline figure
+  art/.style={draw=hzgray,fill=hzgraybg,rounded corners=2pt,align=center,
+              font=\scriptsize,text width=21mm,minimum height=9mm,inner sep=2pt},
+  % a processing step in a pipeline figure
+  proc/.style={draw=hzblue,fill=hzbluebg,rounded corners=2pt,align=center,
+               font=\scriptsize,text width=21mm,minimum height=9mm,inner sep=2pt},
+  % the outcome of a pipeline
+  outc/.style={draw=hzamber,fill=hzamberbg,rounded corners=2pt,align=center,
+               font=\scriptsize,text width=21mm,minimum height=9mm,inner sep=2pt},
+  ar/.style={-{Latex[length=1.8mm,width=1.5mm]},hzblue,semithick},
+  sgar/.style={-{Latex[length=1.6mm,width=1.3mm]},hzgreen,densely dashed,thin},
+  tag/.style={font=\scriptsize\itshape,text=hzgray,align=center,inner sep=1pt},
+  lane/.style={font=\scriptsize\bfseries,text=hzblue,align=right,inner sep=1pt},
+}
+
+% ------------------------------------------------------------
+% Shared callout boxes
+% ------------------------------------------------------------
+% A hard constraint the write-up must respect from now on.
+\newtcolorbox{constraint}[1][]{enhanced,breakable,
+  colback=hzredbg,colframe=hzred,boxrule=0.5pt,
+  fonttitle=\bfseries\small,coltitle=white,colbacktitle=hzred,
+  title={#1},left=6pt,right=6pt,top=4pt,bottom=4pt,
+  before skip=7pt,after skip=7pt}
+% A claim that is still provisional / not yet defensible.
+\newtcolorbox{provisional}[1][]{enhanced,breakable,
+  colback=hzamberbg,colframe=hzamber,boxrule=0.5pt,
+  fonttitle=\bfseries\small,coltitle=white,colbacktitle=hzamber,
+  title={#1},left=6pt,right=6pt,top=4pt,bottom=4pt,
+  before skip=7pt,after skip=7pt}
+% Week-at-a-glance summary.
+\newtcolorbox{glance}[1][]{enhanced,breakable,
+  colback=hzbluebg,colframe=hzblue,boxrule=0.5pt,
+  fonttitle=\bfseries\small,coltitle=white,colbacktitle=hzblue,
+  title={#1},left=6pt,right=6pt,top=4pt,bottom=4pt,
+  before skip=7pt,after skip=7pt}
+
+% Capability-matrix marks
+\newcommand{\yes}{\textcolor{hzgreen}{$\checkmark$}}
+\newcommand{\prt}{\textcolor{hzamber}{$\sim$}}
+\newcommand{\no}{\textcolor{hzred}{$\times$}}
+
+\title{NLP for Structured HAZOP Reasoning\\[0.4em]
+\large Research Report}
+\author{Prasangeet Dongre\\
+\small Roll No.: B23CH1033\\
+\small Department of Chemical Engineering\\
+\small Advisor: Dr. Santhosh Kumar Varanasi}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Hazard and Operability Study (HAZOP) reports encode process-safety knowledge
+in a structured but predominantly tabular form. This report examines whether
+natural-language processing and large language models can support reasoning
+over that knowledge rather than only extracting labels from report text. A
+survey of HAZOP automation literature is combined with a detailed analysis of
+an ontology-based HAZOP reasoner. The review shows that causal, multi-step,
+branching inference is already possible when process and safety knowledge are
+manually encoded. The remaining research question is therefore narrower:
+whether causal knowledge can be reconstructed from unstructured historical
+HAZOP reports and then constrained or validated using structured reasoning.
+This distinction provides a more defensible foundation for future system
+design and evaluation.
+\end{abstract}
+
+\noindent\textbf{Keywords:} HAZOP; process safety; natural-language processing;
+knowledge graphs; ontology reasoning; causal inference; large language models
+
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\listoffigures
+\clearpage
+\pagenumbering{arabic}
+
+% Main paper sections are maintained in separate source files.
+\input{weeks/week01}
+\input{weeks/week02}
+
+% \input{weeks/week03}
+
+% ------------------------------------------------------------
+% Bibliography
+% ------------------------------------------------------------
+\small
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

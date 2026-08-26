@@ -1,0 +1,32 @@
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex
+*.synctex.gz
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+
+# LaTeX build artifacts
+*.dvi
+*.xdv
+
+# Editor / OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak

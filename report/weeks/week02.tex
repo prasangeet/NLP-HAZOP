@@ -1,0 +1,489 @@
+% ============================================================
+% Week 02 section --- NLP for Structured HAZOP Reasoning
+%
+% Full read of Single et al. (2020), completed this week:
+% architecture, ontology, inference engine, causal reasoning
+% representation, the hexane storage-tank case study, results,
+% comparison against the expert HAZOP, limitations, and future
+% work. HAZOPCT (Li & Zhao, 2025) has not been started and
+% carries forward to Week 03.
+% ============================================================
+
+\chapter[Ontology-Based HAZOP Reasoning]{Ontology-Based HAZOP Reasoning: A Detailed Analysis}
+
+\section{Objective}
+The objective was to understand Single et al.\ (2020) in enough depth to state precisely what the system does, what it assumes, and what it does not attempt. The analysis distinguishes throughout between what the paper itself establishes and our interpretation of its relevance to this project.
+
+\section{Paper Studied}
+Single, J. I., Schmidt, J., and Denecke, J.\ (2020). ``Ontology-based computer aid for the automation of HAZOP studies.'' \emph{Journal of Loss Prevention in the Process Industries}, 68, 104321 \cite{single2020ontologyhazop}.
+
+\section{Problem Addressed by Single et al.}
+The paper addresses the automated \emph{generation} of HAZOP worksheets for a given process unit, using a formally represented ontology of HAZOP-relevant knowledge together with a symbolic inference engine. As established in the literature survey, this is a generation problem, not an extraction problem: the system is not given a historical HAZOP report and asked to recover its reasoning; it is given a process-unit model and an ontology of causal/safety knowledge, and asked to produce a HAZOP worksheet from scratch.
+
+\section{System Architecture}
+The system requires, as input, structured knowledge about a process unit and its context: the process unit itself, its equipment, the substance(s) involved and their relevant properties, the process, and the circumstances under which it operates. \textbf{This knowledge is already available to the inference system before reasoning begins} --- the system does not discover it from raw text. Figure~\ref{fig:w2-arch} summarizes the architecture at this level.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=6mm and 8mm]
+  \node[art] (pu) {Process-unit model: equipment, substance, circumstances};
+  \node[art,below=of pu] (ont) {HAZOP ontology: deviation, cause, effect, consequence, safeguard concepts};
+  \node[proc,right=16mm of pu,yshift=-9mm] (inf) {Inference engine (symbolic reasoning)};
+  \node[outc,right=of inf] (out) {Generated HAZOP scenarios};
+  \draw[ar] (pu) -- (inf);
+  \draw[ar] (ont) -- (inf);
+  \draw[ar] (inf) -- (out);
+\end{tikzpicture}
+\caption[System architecture of Single et al.\ (2020)]{The process-unit model and the HAZOP ontology are both supplied as structured input; the inference engine consumes both to produce scenarios. Neither the process-unit model nor the ontology is derived from unstructured report text in this system.}
+\label{fig:w2-arch}
+\end{figure}
+
+\textbf{Our interpretation:} this places the entire knowledge-acquisition burden --- building the process-unit model and populating the ontology --- outside the automated part of the system. What is automated is the reasoning step, not the knowledge-entry step.
+
+\section{HAZOP Ontology}
+The ontology represents the concepts needed for HAZOP reasoning: Deviation, Cause, Effect, Super Cause, Consequence, Safeguard, Process Unit, Equipment, Substance, Process, and Circumstances. Critically, these concepts are not flat fields --- the ontology encodes a causal structure among them, and this structure supports branching and multiple causes, not only single linear chains. Figure~\ref{fig:w2-ontology-chain} shows the general shape of the causal structure the ontology supports.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=5mm and 5mm]
+  \node[ev] (dev) {Deviation};
+  \node[ev,right=of dev] (cause) {Cause};
+  \node[ev,right=of cause] (eff) {Effect};
+  \node[ev,right=of eff] (cons1) {Consequence};
+  \node[ev,right=of cons1] (cons2) {Further consequence(s)};
+  \node[sg,below=8mm of eff] (sgnode) {Safeguard};
+  \draw[ar] (dev) -- (cause);
+  \draw[ar] (cause) -- (eff);
+  \draw[ar] (eff) -- (cons1);
+  \draw[ar] (cons1) -- (cons2);
+  \draw[sgar] (sgnode) -- (eff);
+\end{tikzpicture}
+\caption[General causal structure represented in the ontology]{The ontology's general causal structure. This is a template for the concepts and their ordering; the actual case-study instantiations (Section~\ref{sec:w2-casestudy}) show branching and multiple-cause variants of this same structure.}
+\label{fig:w2-ontology-chain}
+\end{figure}
+
+Because the ontology encodes this structure explicitly rather than as flat worksheet fields, it is closer to a structured causal representation than to a conventional HAZOP table --- sharpening the observation that a flat worksheet is a presentational simplification of an underlying graph.
+
+\section{Inference Engine}
+The system's reasoning is implemented in OWL 2 DL, executed with the HermiT reasoner via Owlready2 in Python. \textbf{FACT:} this is symbolic, ontology-based reasoning, not statistical machine learning and not an LLM. The inference sequence described in the paper proceeds through five steps for a given deviation: identify causes, identify effects, identify super causes, identify consequences, and identify safeguards. The reasoner derives these by evaluating logical consequences of the modeled process information against the ontology's axioms, not by pattern-matching against text.
+
+\section{Causal Reasoning Representation}
+The paper's causal representation goes beyond simple one-to-one Deviation~$\rightarrow$~Cause or Cause~$\rightarrow$~Consequence links in three ways that are worth recording explicitly, since they matter for comparing this system against later knowledge-graph literature.
+
+\paragraph{Multi-step chains.} A single deviation can propagate through several intermediate concepts before reaching a final consequence (Deviation~$\rightarrow$~Cause~$\rightarrow$~Effect~$\rightarrow$~Consequence~$\rightarrow$~further consequence(s)), matching the general structure in Figure~\ref{fig:w2-ontology-chain}.
+
+\paragraph{Branching.} A single effect can lead to more than one distinct consequence path. Figure~\ref{fig:w2-branch} shows this using the loss-of-containment example from the case study (Section~\ref{sec:w2-casestudy}).
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=6mm and 10mm]
+  \node[ev] (loc) {Loss of containment};
+  \node[interev,above right=4mm and 12mm of loc] (ign) {Direct ignition};
+  \node[interev,below right=4mm and 12mm of loc] (atm) {Explosive atmosphere};
+  \node[outc,right=of ign] (fire) {Fire};
+  \node[outc,right=of atm] (expl) {Explosion};
+  \draw[ar] (loc) -- (ign);
+  \draw[ar] (loc) -- (atm);
+  \draw[ar] (ign) -- (fire);
+  \draw[ar] (atm) -- (expl);
+\end{tikzpicture}
+\caption[Branching consequence paths]{A single effect (loss of containment) branching into two distinct consequence paths, as represented in the ontology.}
+\label{fig:w2-branch}
+\end{figure}
+
+\paragraph{Multiple causes.} The ontology also supports several distinct causes converging on a single effect, rather than assuming each effect has exactly one cause.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=5mm and 8mm]
+  \node[ev] (ca) {Cause A};
+  \node[ev,below=of ca] (cb) {Cause B};
+  \node[ev,below=of cb] (cc) {Cause C};
+  \node[ev,right=16mm of cb] (eff) {Effect};
+  \draw[ar] (ca) -- (eff);
+  \draw[ar] (cb) -- (eff);
+  \draw[ar] (cc) -- (eff);
+\end{tikzpicture}
+\caption[Multiple causes converging on one effect]{Multiple, independently modeled causes converging on a single effect.}
+\label{fig:w2-multicause}
+\end{figure}
+
+\textbf{Our interpretation:} this branching/multi-cause capability is a genuine capability of the ontology's structure, not merely of the reasoning algorithm; it means the representation itself, not just the inference procedure, departs from a flat worksheet.
+
+\section{Hexane Storage Tank Case Study}
+\label{sec:w2-casestudy}
+The methodology is demonstrated on a hexane storage tank. The process-unit model includes equipment such as valves, drain lines, a level control system, and a transfer/recirculation pump, together with hexane's safety-relevant properties. The original, human-authored HAZOP for this tank considers eight deviations: high level, low level, high temperature, low temperature, high pressure, low pressure, high concentration of contaminants, and loss of containment. The automated system generated 40 potential scenarios across these eight deviations.
+
+One representative generated causal chain, given in the paper for the high-level deviation, is:
+
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[node distance=5mm and 6mm]
+  \node[ev] (hl) {High level};
+  \node[ev,right=of hl] (ei) {Excessive inflow};
+  \node[ev,right=of ei] (of) {Overfilling};
+  \node[ev,right=of of] (lopc) {Loss of primary containment};
+  \node[outc,right=of lopc] (fe) {Fire / explosion};
+  \foreach \a/\b in {hl/ei,ei/of,of/lopc,lopc/fe} \draw[ar] (\a) -- (\b);
+\end{tikzpicture}
+}%
+\end{center}
+
+The generated worksheet is structured with more fields than a conventional flat HAZOP table: Unit, Substance, Deviation, Super Cause, Cause, Effect, Consequence, and Safeguard, in place of the conventional Deviation / Cause / Consequence / Safeguard columns. Table~\ref{tab:w2-worksheet-fields} contrasts the two.
+
+\begin{table}[htbp]
+\centering
+\caption[Conventional vs.\ generated worksheet fields]{Field structure of a conventional HAZOP worksheet compared with the fields in Single et al.'s generated worksheet. The additional fields (Unit, Substance, Super Cause, Effect) make intermediate causal steps explicit that the conventional table leaves implicit.}
+\label{tab:w2-worksheet-fields}
+\small
+\begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Conventional worksheet} & \textbf{Single et al.\ generated worksheet} \\
+\midrule
+Deviation & Unit \\
+Cause & Substance \\
+Consequence & Deviation \\
+Safeguard & Super Cause \\
+ & Cause \\
+ & Effect \\
+ & Consequence \\
+ & Safeguard \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Automated HAZOP Results}
+Beyond the field structure itself, the case study illustrates two representational points worth recording precisely.
+
+\paragraph{Branching example.} The loss-of-containment scenario shown in Figure~\ref{fig:w2-branch} (direct ignition~$\rightarrow$~fire; explosive atmosphere~$\rightarrow$~explosion) is drawn directly from the case study's generated results, not a constructed illustration.
+
+\paragraph{Guideword overlap.} The paper also discusses scenarios spanning more than one nominal deviation. A freezing-related scenario combines low temperature and water contamination as joint conditions:
+
+\begin{center}
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[node distance=5mm and 6mm]
+  \node[ev] (lt) {Low temperature};
+  \node[ev,below=6mm of lt] (wc) {Water contamination};
+  \node[ev,right=14mm of lt,yshift=-9mm] (fz) {Freezing};
+  \node[ev,right=of fz] (df) {Drain-line fracture};
+  \node[outc,right=of df] (loc2) {Loss of containment};
+  \draw[ar] (lt) -- (fz);
+  \draw[ar] (wc) -- (fz);
+  \draw[ar] (fz) -- (df);
+  \draw[ar] (df) -- (loc2);
+\end{tikzpicture}
+}%
+\end{center}
+
+\textbf{Our interpretation:} this shows a physical scenario does not always correspond cleanly to one deviation; a representation limited to ``one deviation $\rightarrow$ one scenario'' would not capture this case. Whether a future representation needs to support multiple joint conditions leading to one physical event is a design question raised by this example, not one the paper itself sets out to solve.
+
+\section{Comparison with Expert HAZOP}
+The paper compares the automatically generated results against the original expert HAZOP for the same tank. Table~\ref{tab:w2-comparison} reports the counts given in the paper.
+
+\begin{table}[htbp]
+\centering
+\caption[Causes and consequences: original vs.\ automated]{Counts of causes and consequences in the original expert HAZOP versus the automatically generated worksheet, as reported by Single et al.}
+\label{tab:w2-comparison}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+ & \textbf{Original (expert)} & \textbf{Automated} \\
+\midrule
+Causes        & 22 & 33 \\
+Consequences  & 13 & 28 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{constraint}[Constraint on interpreting this comparison]
+A larger count of generated causes and consequences must not be read as
+evidence that the automated system is more correct or more complete than
+the expert HAZOP. The paper itself emphasizes the continued need for
+expert qualitative assessment of the generated results; quantity is not a
+validity metric.
+\end{constraint}
+
+A further observation from the comparison is terminological rather than structural: the automated system and the human-authored HAZOP sometimes describe the same underlying physical situation using different terminology or a different level of abstraction. \textbf{Our interpretation:} this is directly relevant to any future text-extraction approach, since a system reading historical HAZOP report text would need to handle synonyms, varying abstraction levels, implicit causal relationships, and differing expert writing styles --- the problem is not reducible to matching exact phrases, even in a setting (like this one) where the comparison is between two already-structured outputs rather than between structured output and free text.
+
+\section{Key Observations}
+The paper distinguishes conceptually between preventive and mitigative safeguards, and notes that safeguards can attach to different points along a causal chain rather than to the scenario as a whole (consistent with the causal-chain representation illustrated earlier in this paper). However, the authors are explicit that safeguard and recommendation selection depends heavily on company practices, regulations, technical standards, industry context, and risk assessment --- meaning generated safeguards still require human expert evaluation before use. The overall workflow is therefore human-in-the-loop, not autonomous end to end: ontology $\rightarrow$ automated inference $\rightarrow$ generated scenarios $\rightarrow$ human expert evaluation $\rightarrow$ final assessment, with experts still needed for plausibility, likelihood, severity, safeguard adequacy, and recommendations.
+
+\section{Limitations and Dependencies}
+The following limitations and dependencies are identified from the paper; they are not exaggerated beyond what the source supports.
+
+\begin{enumerate}
+  \item Causal knowledge is encoded into the ontology beforehand, not discovered at run time.
+  \item Result completeness depends directly on ontology completeness.
+  \item The demonstrated case is equipment- / process-unit-level, not plant-wide.
+  \item Plant-wide interactions between units are not fully addressed.
+  \item Process-unit and P\&ID information is not automatically extracted in the demonstrated system --- it is modeled manually.
+  \item Human expert validation of generated scenarios remains necessary.
+  \item Risk assessment (likelihood, severity) is not fully automated.
+  \item Safeguard selection remains context-dependent on company/regulatory practice.
+  \item New or unrepresented causal knowledge requires ontology extension by a knowledge engineer.
+  \item The demonstrated system is not a free-text HAZOP report understanding system.
+\end{enumerate}
+
+The central dependency underlying most of the above can be summarized as a knowledge-acquisition bottleneck (Figure~\ref{fig:w2-bottleneck}): the inference step is automated, but the acquisition and encoding of causal knowledge into the ontology is not.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=6mm and 6mm]
+  \node[art] (he) {Human expert};
+  \node[proc,right=of he] (ke) {Knowledge engineering};
+  \node[proc,right=of ke] (ont) {HAZOP ontology};
+  \node[proc,right=of ont] (inf) {Inference engine (automated)};
+  \node[outc,right=of inf] (out) {Generated scenarios};
+  \foreach \a/\b in {he/ke,ke/ont,ont/inf,inf/out} \draw[ar] (\a) -- (\b);
+\end{tikzpicture}
+\caption[Knowledge-acquisition bottleneck]{Only the inference step (fourth box) is automated; the preceding knowledge-engineering step remains a manual, expert-driven dependency.}
+\label{fig:w2-bottleneck}
+\end{figure}
+
+The paper's stated future work includes: integration with broader industrial/process ontologies, integration with ISO~15926, integration with OntoCAPE, incorporating safety and security considerations, a sharper distinction between safeguards and recommendations, extraction of process-unit/equipment information from intelligent P\&IDs, and propagation of deviations/effects through upstream and downstream process nodes. \textbf{Our interpretation:} the ``extraction of process-unit/equipment information from intelligent P\&IDs'' item is the closest the paper comes to acknowledging its own knowledge-acquisition bottleneck as future work, though it is framed around P\&ID data rather than historical report text.
+
+\section{Relevance to Our Research}
+\begin{provisional}[How this paper relates to our provisional direction --- not a finalized gap]
+Single et al.\ demonstrate: structured HAZOP knowledge + a process-unit model
++ symbolic inference $\rightarrow$ multi-step HAZOP causal scenarios, including
+branching and multiple-cause chains. They do \emph{not} demonstrate: raw
+HAZOP report text $\rightarrow$ automatic causal knowledge extraction
+$\rightarrow$ causal graph $\rightarrow$ reasoning. This distinction, first
+raised in the initial research framing, is now grounded in a full read of the
+paper rather than an abstract-level reading. It provides a reference
+architecture for the \emph{reasoning} half of a possible pipeline --- what
+structured causal representation and symbolic reasoning over it can look
+like --- but says nothing about whether the \emph{knowledge-acquisition}
+half (currently manual, per Section~\ref{sec:w2-casestudy} and the
+limitations above) could be replaced by text-based extraction. This
+remains a research question, not a research gap: HAZOPCT and the
+Category~C/D papers have not yet been read at this depth, and
+any one of them could already address this question in ways this paper
+does not.
+\end{provisional}
+
+\section{Relevance of Single et al. to Our Research Direction}
+The detailed analysis above clarifies what Single et al.\ contributes to our
+project and, equally importantly, what remains outside its scope. Our current
+working hypothesis is not simply to extract entities from HAZOP reports. Given
+historical HAZOP reports, we want to investigate whether a system can recover
+the causal reasoning embedded in those reports and represent it in a form that
+a machine can subsequently reason over. The conceptual pipeline is:
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=4mm]
+  \node[art] (r1) {Historical HAZOP reports};
+  \node[proc,right=of r1] (r2) {NLP / LLM};
+  \node[proc,right=of r2] (r3) {Causal information extraction};
+  \node[proc,right=of r3] (r4) {Structured HAZOP knowledge};
+  \node[proc,right=of r4] (r5) {Causal graph / ontology};
+  \node[outc,right=of r5] (r6) {Reasoning / validation};
+  \foreach \a/\b in {r1/r2,r2/r3,r3/r4,r4/r5,r5/r6}
+    \draw[ar] (\a) -- (\b);
+\end{tikzpicture}
+}%
+\caption[Current working pipeline for the project]{Conceptual pipeline
+currently guiding the project. The pipeline is a working hypothesis rather
+than a finalized system architecture or research gap.}
+\label{fig:w2-our-pipeline}
+\end{figure}
+
+This direction distinguishes information extraction from causal reasoning.
+Identifying a deviation, cause, consequence, and safeguard as isolated spans
+does not establish how those concepts are related. For example, a report may
+describe the chain
+\emph{cooling-water failure} $\rightarrow$ \emph{temperature increase}
+$\rightarrow$ \emph{pressure increase} $\rightarrow$ \emph{relief valve
+opens}. A basic NLP system may detect each concept correctly while losing the
+ordering, direction, intermediate events, or safeguard attachment. Our
+research interest is therefore in reconstructing the causal chain itself:
+information extraction is necessary, but information extraction is not causal
+reasoning.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=5mm]
+  \node[art] (ie1) {Report text};
+  \node[proc,right=of ie1] (ie2) {Detected concepts\\
+    deviation, cause, consequence, safeguard};
+  \node[outc,right=of ie2] (ie3) {Causal chain\\
+    ordered events + relations};
+  \draw[ar] (ie1) -- (ie2);
+  \draw[ar] (ie2) -- (ie3);
+  \node[tag,above=3mm of ie2,text width=28mm] {Information extraction alone};
+  \node[tag,below=3mm of ie3,text width=28mm] {Our current research interest};
+\end{tikzpicture}
+}%
+\caption[Information extraction versus causal reasoning]{Detecting HAZOP
+concepts is an intermediate step; the intended research direction also
+requires recovery of the relations and ordering that form a causal chain.}
+\label{fig:w2-extraction-vs-reasoning}
+\end{figure}
+
+\paragraph{Single et al. as a reasoning reference.}
+Single et al.\ provides a useful reference for the structured-reasoning side
+of this project. Its ontology represents concepts including Process Unit,
+Equipment, Substance, Deviation, Cause, Effect, Super Cause, Consequence, and
+Safeguard, and its symbolic inference mechanism operates over relationships
+among those concepts. It consequently helps answer the question: \emph{what
+could a machine-readable representation of HAZOP causal reasoning look like?}
+The ontology and its inferred chains provide a potential reasoning destination
+that an NLP/LLM pipeline may eventually need to recover from historical
+reports. This does not imply that the ontology is already the appropriate
+schema for our data; the literature study must determine which concepts and
+relations are required.
+
+\paragraph{Difference between the two architectures.}
+Conceptually, the architecture studied by Single et al.\ is:
+
+\begin{center}
+\emph{Expert knowledge} $\rightarrow$ \emph{ontology / structured process
+knowledge} $\rightarrow$ \emph{symbolic inference} $\rightarrow$
+\emph{generated HAZOP scenarios}.
+\end{center}
+
+Our current direction instead begins with historical documents:
+
+\begin{center}
+\emph{Historical HAZOP reports} $\rightarrow$ \emph{NLP / LLM} $\rightarrow$
+\emph{causal knowledge extraction} $\rightarrow$ \emph{structured causal
+representation} $\rightarrow$ \emph{reasoning / validation}.
+\end{center}
+
+The important distinction is not that Single et al.\ fails to automate HAZOP
+analysis. It automates symbolic inference and demonstrates multi-step causal
+reasoning. Rather, its architecture primarily assumes that the relevant
+process and causal knowledge has already been formally represented. Our
+interest is in the earlier knowledge-recovery stage and in connecting that
+stage to reliable causal reasoning.
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=5mm and 9mm]
+  \node[tag,anchor=east] at (-1.6,1.0) {Single et al.};
+  \node[art] (s1) at (0,1.0) {Expert knowledge};
+  \node[proc,right=of s1] (s2) {Ontology / structured\\process knowledge};
+  \node[outc,right=of s2] (s3) {Symbolic inference};
+  \draw[ar] (s1) -- (s2) -- (s3);
+
+  \node[tag,anchor=east] at (-1.6,-1.0) {Our direction};
+  \node[art] (o1) at (0,-1.0) {Historical reports};
+  \node[proc,right=of o1] (o2) {NLP / LLM\\causal extraction};
+  \node[proc,right=of o2] (o3) {Structured causal\\representation};
+  \node[outc,right=of o3] (o4) {Reasoning / validation};
+  \draw[ar] (o1) -- (o2) -- (o3) -- (o4);
+\end{tikzpicture}
+}%
+\caption[Comparison of the two conceptual architectures]{Single et al.
+assumes formally represented knowledge before inference, whereas our current
+direction investigates the knowledge-recovery stages preceding reasoning.}
+\label{fig:w2-architecture-comparison}
+\end{figure}
+
+This distinction also separates the present research direction from ordinary
+document understanding or information-extraction work. Document understanding
+asks what information can be found in a document. The HAZOP problem we are
+formulating asks how the relationships and reasoning structure between pieces
+of information can be recovered. The object of interest is therefore not only
+the information present in the report, but the causal organization that makes
+that information useful for safety analysis.
+
+\paragraph{Potential uses of a recovered causal structure.}
+If a structured causal graph could be constructed, it could potentially
+support several future tasks. These are research questions, not capabilities
+provided by the current system:
+
+\begin{itemize}
+  \item \textbf{Chain completeness:} given ``cooling failure $\rightarrow$
+  temperature increases $\rightarrow$ ? $\rightarrow$ relief valve opens,''
+  determine whether a missing intermediate event can be proposed or flagged.
+  \item \textbf{Causal validity:} distinguish a plausible sequence from a
+  questionable one, such as ``cooling failure $\rightarrow$ temperature
+  decreases $\rightarrow$ pressure increases,'' using structured
+  process-safety knowledge.
+  \item \textbf{Semantic equivalence:} map statements such as ``cooling water
+  failure causes reactor overheating'' and ``loss of coolant results in
+  elevated reactor temperature'' to a common causal structure when their
+  meanings are equivalent.
+  \item \textbf{Missing-link inference:} propose relationships that are not
+  explicitly recorded when historical reports contain only partial chains.
+\end{itemize}
+
+A possible representation is a graph in which nodes denote process-safety
+concepts or events and edges denote relations such as \emph{causes},
+\emph{leads to}, \emph{results in}, \emph{prevented by}, or \emph{mitigated
+by}:
+
+\begin{figure}[htbp]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=5mm]
+  \node[ev] (g1) {Cooling failure};
+  \node[interev,right=of g1] (g2) {Reduced cooling};
+  \node[ev,right=of g2] (g3) {Temperature increase};
+  \node[ev,right=of g3] (g4) {Pressure increase};
+  \node[sg,right=of g4] (g5) {Relief valve opens};
+  \draw[ar] (g1) -- node[tag,above=1mm] {causes} (g2);
+  \draw[ar] (g2) -- node[tag,above=1mm] {leads to} (g3);
+  \draw[ar] (g3) -- node[tag,above=1mm] {results in} (g4);
+  \draw[sgar] (g5) -- node[tag,below=1mm] {mitigates} (g4);
+\end{tikzpicture}
+}%
+\caption[Conceptual causal graph for HAZOP reasoning]{Illustrative causal
+graph. Nodes represent process-safety events and edges represent possible
+causal or safeguard relations; the schema is not yet finalized.}
+\label{fig:w2-conceptual-graph}
+\end{figure}
+
+This is a conceptual example, not a finalized graph schema. A knowledge graph
+could provide the intermediate representation between report-level language
+and reasoning, but whether a knowledge graph, ontology, causal graph, or a
+hybrid is most appropriate requires further investigation.
+
+\paragraph{Open questions for our investigation.}
+Single et al.\ does not by itself answer how causal relationships should be
+extracted from raw HAZOP report text, how implicit causal relationships should
+be detected, or how different expert terminology should be normalized. It
+also leaves open how chains from multiple reports should be merged, how
+previously unseen causal relationships should be handled, how LLM-generated
+relationships should be validated, and how uncertainty in extracted
+relationships should be represented. These are open questions that motivate
+the subsequent literature analysis; they are not yet being presented as the
+research gap.
+
+The observations above define our current working research direction rather
+than a finalized research gap. Subsequent papers, particularly later
+knowledge-graph and HAZOP automation approaches, must be examined to determine
+which parts of this pipeline have already been addressed.
+
+\paragraph{Takeaway.}
+Single et al.\ is useful to our project not because it directly solves our
+intended problem, but because it provides an example of what structured HAZOP
+causal reasoning can look like. It gives us a potential reasoning destination:
+structured HAZOP knowledge $\rightarrow$ causal representation $\rightarrow$
+symbolic reasoning. Our research is currently exploring how the earlier
+stages can be connected: historical HAZOP reports $\rightarrow$ NLP/LLM
+$\rightarrow$ causal structure $\rightarrow$ reasoning and validation. Later
+literature will determine whether this distinction is genuinely novel.
+
+\section{Questions for Subsequent Literature}
+The following questions are added to the literature comparison framework and can be applied to HAZOPCT and other remaining papers:
+\begin{enumerate}
+  \item What is the input --- raw HAZOP report, P\&ID, structured process model, or ontology?
+  \item Does the method perform information extraction (from text or from another unstructured source)?
+  \item What representation is used --- flat table, ontology, knowledge graph, or causal graph?
+  \item Does the method perform genuine causal reasoning, or only store labeled relationships?
+  \item Does it support multi-hop causal chains, as Single et al.\ do?
+  \item Does it infer missing causal relationships, or only reproduce encoded ones?
+  \item How is reasoning validity evaluated, and against what?
+  \item Is expert ground truth used for validation?
+  \item How dependent is the method on predefined/manually encoded knowledge?
+  \item Can it handle previously unseen causal relationships, or only combinations of known ones?
+  \item Is the system equipment-level, process-unit-level, or plant-wide in scope?
+\end{enumerate}
+
+\section{Conclusions}
+The full analysis of Single et al.\ (2020) shows that the paper performs genuine, multi-hop, branching causal reasoning over HAZOP concepts, evaluated against an expert worksheet on a real case study, and it does so entirely on the basis of manually encoded process and safety knowledge rather than on text extracted from historical reports. No research gap is being claimed on this basis. The open question for the project is whether the knowledge-acquisition step this system depends on --- and does not attempt to automate --- can be addressed by NLP/LLM-based extraction from historical report text, and whether the resulting extracted knowledge could be validated using reasoning structures similar to the one this paper demonstrates. HAZOPCT (Li \& Zhao, 2025) is the next knowledge-graph-based alternative to examine before this question is pursued further.

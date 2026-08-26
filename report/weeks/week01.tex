@@ -1,0 +1,294 @@
+% ============================================================
+% Week 01 section --- NLP for Structured HAZOP Reasoning
+%
+% Structure of a week file:
+%   \section[<short title, for header + ToC>]{<full title>}
+%   then \subsection blocks. Shared TikZ styles (ev, interev,
+%   sg, art, proc, outc, ar, sgar, tag, lane), the callout
+%   environments (glance, constraint, provisional) and the
+%   \yes/\prt/\no marks all come from main.tex's preamble.
+%
+% Bibliography entries are in references.bib; several entries
+% are marked VERIFY there and must be checked against the
+% original source before final submission.
+% ============================================================
+
+% The optional short title feeds both the ToC and the running header.
+\chapter[Background and Literature Survey]{Background, Literature Survey, and Research Framing}
+
+This section establishes HAZOP fundamentals, defines the project framing, and
+surveys prior work on automated HAZOP analysis. The review shows that the
+research problem must be stated more narrowly than the initial framing.
+
+\section{Project Motivation}
+HAZOP (Hazard and Operability Study) is a structured method for identifying hazards and operability issues in chemical processes. Reports are typically authored manually and stored as tabular worksheets. This project investigates whether NLP/LLM methods can support structured reasoning over the knowledge contained in HAZOP reports, rather than treating HAZOP text purely as a source for information extraction.
+
+\section{Fundamentals of HAZOP}
+\begin{itemize}
+  \item \textbf{Node}: a defined section of a process (e.g., a vessel, a line between two points) selected for study.
+  \item \textbf{Parameter}: a process variable examined at a node (e.g., flow, temperature, pressure, level).
+  \item \textbf{Guide word}: a standardized qualifier (e.g., NO, MORE, LESS, REVERSE) combined with a parameter to systematically generate deviations.
+  \item \textbf{Deviation}: a guide word applied to a parameter (e.g., ``MORE temperature'').
+  \item \textbf{Cause}: a condition or event that could produce the deviation.
+  \item \textbf{Consequence}: the potential outcome if the deviation occurs and is not mitigated.
+  \item \textbf{Safeguard}: an existing protection (alarm, interlock, relief device, procedure) that reduces likelihood or severity.
+\end{itemize}
+
+\section{HAZOP as a Reasoning Structure}
+A HAZOP worksheet presents Cause, Deviation, Consequence, and Safeguard as flat table columns. This is a presentational simplification: the underlying process-safety knowledge can involve intermediate events, multiple contributing causes, branching consequences, and multiple safeguards acting at different points in a chain. Figure~\ref{fig:flat-vs-chain} contrasts the two views for a single worksheet row.
+
+\begin{figure}[htbp]
+\centering
+
+% ---------- panel (a): what the worksheet records ----------
+{\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Deviation} & \textbf{Cause} & \textbf{Consequence} & \textbf{Safeguards} \\
+\midrule
+MORE temperature & Cooling pump failure & Reactor overpressure & TAH; PSV; ESD \\
+\bottomrule
+\end{tabular}}
+
+\vspace{0.4em}
+{\small (a) the worksheet row: four flat fields, no ordering between them}
+
+\vspace{1.4em}
+
+% ---------- panel (b): the underlying causal structure ----------
+\begin{tikzpicture}[node distance=5.5mm and 6mm]
+  \node[ev]                (n1) {Cooling pump\\ failure};
+  \node[interev,right=of n1] (n2) {Insufficient\\ cooling};
+  \node[ev,right=of n2]      (n3) {High reactor\\ temperature};
+  \node[interev,right=of n3] (n4) {Reaction\\ acceleration};
+  \node[ev,right=of n4]      (n5) {Pressure\\ increase};
+  \foreach \a/\b in {n1/n2,n2/n3,n3/n4,n4/n5} \draw[ar] (\a) -- (\b);
+
+  % worksheet column roles
+  \node[tag,above=1.6mm of n1] {cause};
+  \node[tag,above=1.6mm of n2] {(dropped)};
+  \node[tag,above=1.6mm of n3] {deviation};
+  \node[tag,above=1.6mm of n4] {(dropped)};
+  \node[tag,above=1.6mm of n5] {consequence};
+
+  % safeguards act at specific points, not on the row as a whole
+  \node[sg,below=7mm of n3] (s1) {TAH\\ temperature alarm};
+  \node[sg,below=7mm of n5] (s2) {PSV + ESD\\ relief, shutdown};
+  \draw[sgar] (s1) -- (n3);
+  \draw[sgar] (s2) -- (n5);
+\end{tikzpicture}
+
+\vspace{0.4em}
+{\small (b) the underlying chain: dashed boxes are intermediate events the\\ worksheet has no column for; safeguards attach to specific events}
+
+\caption[Flat worksheet row versus the underlying causal chain]{The same
+hazard scenario as a flat worksheet row (a) and as a causal chain with
+event-specific safeguards (b). The flattening loses the intermediate events
+and the attachment point of each safeguard --- which is what makes the row
+hard to reason over automatically.}
+\label{fig:flat-vs-chain}
+\end{figure}
+
+Representing this as a graph rather than a table is \emph{not} itself a novel observation --- it is a modeling choice that recurs across the digraph, ontology, and knowledge-graph literature (Categories A, B, D below). What varies across papers is not whether a graph representation is used, but how the graph is populated (manual encoding vs.\ text extraction) and what operations are performed on it (traversal vs.\ learned reasoning vs.\ free generation).
+
+\section{Initial Project Objective (Provisional)}
+Initially hypothesized objective: extract causal structure from unstructured historical HAZOP report text and represent it as a graph capable of supporting inference of missing causes, consequences, or safeguards. This objective is recorded here for continuity only --- it predates the literature findings below and should not be treated as validated or final.
+
+\section{Literature Survey}
+The initial literature set was organized into five provisional categories. Figure~\ref{fig:lanes} shows what distinguishes them in practice: where each family gets its structure from, and what it then does with it.
+
+\paragraph{A. Classical model-based / expert-system HAZOP.}
+Vaidhyanathan \& Venkatasubramanian \cite{vaidhyanathan1995digraph,vaidhyanathan1996experience}; Rahman et al., ExpHAZOP+ \cite{rahman2009exphazop}; Rodr{\'i}guez \& de la Mata, D-higraphs \cite{rodriguez2012dhigraphs}; Taylor \cite{taylor2017automated}. These operate on hand-built process models rather than natural-language text; reasoning proceeds via digraph traversal or rule-chaining over a manually constructed representation.
+
+\paragraph{B. Ontology-based causal reasoning.}
+Aziz et al.\ \cite{aziz2019ontology}; Single et al.\ \cite{single2020ontologyhazop}. Causal relationships between HAZOP concepts are explicitly encoded in an ontology and processed by a semantic reasoner.
+
+\paragraph{C. NLP/ML applied to HAZOP text.}
+Feng et al.\ (2021, NLP in HAZOP reports) \cite{feng2021nlphazop}; Wang et al.\ (2021, active learning/text mining) \cite{wang2021activelearning}; Wang \& Gu (2022, data mining) \cite{wanggu2022datamining}; Ekramipooya et al.\ \cite{ekramipooya2023deviation,ekramipooya2024recommendation}. These extract or classify information from HAZOP text (entity recognition, deviation-category prediction, recommendation clustering) without constructing or reasoning over an explicit causal graph.
+
+\paragraph{D. Knowledge graphs and structured HAZOP reasoning.}
+Mao et al.\ \cite{mao2020processsafetykg}; Feng et al.\ (2021, causal ontology description model) \cite{feng2021hazopcausal}; Wang et al.\ (2022, ISKG/HAINEX) \cite{wang2022iskghainex}; Li \& Zhao (2024) \cite{lizhao2024constructing}; Li \& Zhao (2025, HAZOPCT) \cite{lizhao2025hazopct}. These construct HAZOP knowledge graphs, in several cases via NLP-based entity extraction from text, and apply graph-based reasoning methods over the resulting structure.
+
+\paragraph{E. LLM-based HAZOP generation.}
+Lee et al.\ \cite{lee2026llmhazop}. Multimodal LLMs generate complete HAZOP worksheets end-to-end from a P\&ID and a standardized prompt, without an intermediate structured representation.
+
+These categories are provisional and may be revised as the survey deepens.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  % column centres and row baselines
+  \def\ca{0}   \def\cb{2.9} \def\cc{5.8} \def\cd{8.7}
+  \def\ra{0}   \def\rb{-1.95} \def\rc{-3.9} \def\rd{-5.85}
+
+  % --- lane A/B: hand-built model or ontology
+  \node[lane,anchor=east] at (\ca-1.35,\ra) {A,~B\\[-1pt]\itshape model-based};
+  \node[art,anchor=center]  (a1) at (\ca,\ra) {Hand-built model / ontology};
+  \node[proc,anchor=center] (a2) at (\cb,\ra) {Digraph or semantic reasoner};
+  \node[outc,anchor=center] (a3) at (\cc,\ra) {Extended worksheet};
+  \draw[ar] (a1) -- (a2);  \draw[ar] (a2) -- (a3);
+
+  % --- lane C: text mining, no graph
+  \node[lane,anchor=east] at (\ca-1.35,\rb) {C\\[-1pt]\itshape text mining};
+  \node[art,anchor=center]  (c1) at (\ca,\rb) {HAZOP report text};
+  \node[proc,anchor=center] (c2) at (\cb,\rb) {NER / supervised classifier};
+  \node[outc,anchor=center] (c3) at (\cc,\rb) {Labelled flat fields};
+  \draw[ar] (c1) -- (c2);  \draw[ar] (c2) -- (c3);
+
+  % --- lane D: knowledge graph + learned reasoning
+  \node[lane,anchor=east] at (\ca-1.35,\rc) {D\\[-1pt]\itshape knowledge graph};
+  \node[art,anchor=center]  (d1) at (\ca,\rc) {Structured multi-source info};
+  \node[proc,anchor=center] (d2) at (\cb,\rc) {HAZOP knowledge graph};
+  \node[proc,anchor=center] (d3) at (\cc,\rc) {Graph-attention reasoning};
+  \node[outc,anchor=center] (d4) at (\cd,\rc) {Suggested completions};
+  \draw[ar] (d1) -- (d2);  \draw[ar] (d2) -- (d3);  \draw[ar] (d3) -- (d4);
+
+  % --- lane E: unconstrained generation
+  \node[lane,anchor=east] at (\ca-1.35,\rd) {E\\[-1pt]\itshape LLM generation};
+  \node[art,anchor=center]  (e1) at (\ca,\rd) {P\&ID + fixed prompt};
+  \node[proc,anchor=center] (e2) at (\cb,\rd) {Multimodal LLM};
+  \node[outc,anchor=center] (e3) at (\cc,\rd) {Full worksheet, 19--37\% valid};
+  \draw[ar] (e1) -- (e2);  \draw[ar] (e2) -- (e3);
+\end{tikzpicture}
+\caption[Where each literature family gets its structure from]{The five
+categories differ less in whether they use a graph than in where the
+structure comes from and what is done with it. Grey boxes are inputs, blue
+boxes are processing steps, amber boxes are outputs. Only Category C starts
+from report text, and it is the one family that never builds a graph.}
+\label{fig:lanes}
+\end{figure}
+
+\section{Capability Analysis}
+The most important comparison axis identified in this review is the distinction between five operations that are frequently conflated in this literature:
+\begin{enumerate}
+  \item \textbf{Extraction} --- does the method pull information out of text (entities, spans, labels)?
+  \item \textbf{Representation} --- does it explicitly represent relationships (graph, ontology), or only flat fields?
+  \item \textbf{Causal reasoning} --- does it operate over those relationships to derive new statements, or merely store them?
+  \item \textbf{Inference} --- does it produce previously unstated information (a missing cause, consequence, or safeguard)?
+  \item \textbf{Validation} --- is the inferred output checked against expert judgment, process knowledge, or another ground truth?
+\end{enumerate}
+A paper should not be classified as performing causal reasoning merely because its output table contains fields labeled ``cause'' and ``consequence.'' Applying this test across the five categories gives Table~\ref{tab:capability}.
+
+\begin{table}[htbp]
+\centering
+\caption[Capability matrix across the five literature categories]{Capability
+matrix. \yes~= performed, \prt~= partial or method-dependent, \no~= not
+performed. \emph{Validation} records whether validation was attempted, not
+whether it succeeded --- Category E validates carefully and reports a poor
+result. The last row is the profile this project would have to occupy to be
+distinct; it is a target, not a result.}
+\label{tab:capability}
+\small
+\resizebox{\columnwidth}{!}{%
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}Xccccc@{}}
+\toprule
+\textbf{Cat.} & \textbf{Primary input} & \textbf{Extr.} & \textbf{Repr.} & \textbf{Causal reas.} & \textbf{Infer.} & \textbf{Valid.} \\
+\midrule
+A & Hand-built process model (digraph, D-higraph) & \no  & \yes & \yes & \yes & \prt \\
+B & Manually authored ontology                    & \no  & \yes & \yes & \yes & \yes \\
+C & HAZOP report text                             & \yes & \no  & \no  & \no  & \prt \\
+D & Structured multi-source information + ontology & \prt & \yes & \yes & \yes & \yes \\
+E & P\&ID + standardized prompt                   & n/a  & \no  & \prt & \yes & \yes \\
+\midrule
+\textbf{Target} & Unstructured historical report text     & \yes & \yes & \yes & \yes & \yes \\
+\bottomrule
+\end{tabularx}
+}%
+\end{table}
+
+Under this test, the Category C papers (Ekramipooya et al.\ 2023, 2024; Wang \& Gu 2022) perform extraction and classification but not causal reasoning: for example, Ekramipooya et al.\ (2023) predicts a deviation \emph{category} from cause text via supervised classification on a small dataset (three process nodes, 25 records, 42 after oversampling), which is correlational pattern-matching rather than reasoning over a causal structure.
+
+\section{Important Findings}
+
+\subsection{Single et al.\ (2020)}
+This paper already provides ontology-based automated HAZOP reasoning. It models semantic/causal relationships between HAZOP concepts and uses a semantic reasoner to generate extended HAZOP worksheets, explicitly addressing the risk of automatically generated but meaningless scenarios through semantic constraints. Validation was performed on a hexane storage tank case study, where the quality and quantity of the automatically generated results agreed with the original expert worksheets.
+
+\begin{constraint}[Constraint on the write-up]
+The report must not claim that existing work fails to perform causal HAZOP
+reasoning. Single et al.\ (2020) already does, and validates it against
+expert worksheets.
+\end{constraint}
+
+Open questions requiring deeper reading: What exactly is the input (free text vs.\ pre-encoded knowledge)? How much of the ontology is manually authored per new process? How are causal chains represented internally? What precisely does the inference mechanism infer, and how dependent is it on predefined process knowledge?
+
+\subsection{HAZOPCT --- Li \& Zhao (2025)}
+This paper is closer still to the initially proposed direction. It constructs a HAZOP knowledge graph from multi-source process-safety information organized under a predefined ontology, then applies graph-attention-based reasoning over that graph to generate recommended conclusions for completing HAZOP analysis --- i.e., it performs missing-link inference, not just storage. It is evaluated on a sulfur-recovery-process case study, with ablation studies validating the contribution of semantic information and the graph-attention mechanism, and attention weights used to provide interpretability of the reasoning process.
+
+\begin{constraint}[Constraint on the write-up]
+The report must not claim that knowledge-graph-based HAZOP inference is
+unexplored. HAZOPCT performs exactly this, with ablations and an
+interpretability story.
+\end{constraint}
+
+Open questions requiring deeper reading: What is the raw input, and how much of the graph is manually curated versus text-extracted? What exactly are the node and edge types? What does ``completeness'' mean operationally in this paper? Does it reconstruct causal chains directly from unstructured HAZOP report text, or from already-structured data? Does it explicitly model intermediate causal events, or only direct cause--consequence links?
+
+\section{Revision of Initial Assumptions}
+The initial framing --- ``existing work only extracts HAZOP information, while this project introduces causal reasoning'' --- is not supportable given the findings above and has been discarded. The literature survey instead narrows the research problem before system design and evaluation.
+
+\section{Provisional Research Direction}
+One possible direction that survives the literature review, stated here only as a hypothesis, is reconstructing causal chains from \emph{unstructured, historical} HAZOP report text (as opposed to pre-encoded ontological knowledge) using LLM-based extraction, with the resulting chains constrained or validated against a structured graph rather than accepted at face value. Figure~\ref{fig:direction} sketches the shape of this pipeline and marks the two points where it would differ from existing work.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \node[art,anchor=center]  (p1) at (0,0)   {Unstructured historical HAZOP text};
+  \node[proc,anchor=center] (p2) at (2.9,0) {LLM-based causal extraction};
+  \node[proc,anchor=center] (p3) at (5.8,0) {Candidate causal chains};
+  \node[proc,anchor=center] (p4) at (8.7,0) {Constraint check vs.\ graph};
+  \node[outc,anchor=center] (p5) at (11.6,0) {Accepted, validated chains};
+  \foreach \a/\b in {p1/p2,p2/p3,p3/p4,p4/p5} \draw[ar] (\a) -- (\b);
+
+  % rejection path
+  \node[art,anchor=center,draw=hzred,fill=hzredbg] (rej) at (8.7,-1.9)
+        {Rejected: unsupported or ill-formed};
+  \draw[ar,hzred] (p4) -- (rej);
+  \draw[ar,hzred,densely dashed] (rej) -| (2.9,-1.9) -- (p2)
+        node[tag,pos=0.62,below=1mm] {re-prompt};
+
+  % the two claimed differences
+  \node[tag,above=2mm of p1,text width=26mm] {(i) raw text, not\\ pre-encoded knowledge};
+  \node[tag,above=2mm of p4,text width=26mm] {(ii) constrained, not\\ free generation};
+\end{tikzpicture}
+\caption[Provisional research direction]{Provisional pipeline. The two
+annotations are the only points at which it currently claims to differ from
+existing work, and both depend on readings that have not yet been done:
+(i) assumes Single et al.\ and HAZOPCT work from pre-structured knowledge,
+and (ii) responds to the low scenario validity of unconstrained LLM output.}
+\label{fig:direction}
+\end{figure}
+
+This is motivated by two observations that still require confirmation: (i) Single et al.\ and HAZOPCT appear to reason over knowledge that is substantially pre-structured rather than reconstructed from raw report text; (ii) Lee et al.\ (2026) \cite{lee2026llmhazop} found that unconstrained LLM generation of full HAZOP worksheets achieved high textual similarity to expert references but only 19--37\% scenario validity, with safeguards skewed toward procedural rather than design-level interventions, suggesting raw LLM output is not reliable without some form of structural constraint.
+
+\begin{provisional}[Status of this direction]
+This is not yet a defensible novelty claim and must not be presented as the
+final research gap until Single et al.\ (2020) and HAZOPCT have been read in
+full. Both premises (i) and (ii) above are assumptions about papers not yet
+read closely.
+\end{provisional}
+
+\section{Open Questions}
+\begin{itemize}
+  \item Does Single et al.\ (2020) operate on free text at all, or exclusively on pre-encoded ontological knowledge?
+  \item What is the actual node/edge schema in HAZOPCT, and does it model intermediate causal events or only direct links?
+  \item Is ``completeness'' in HAZOPCT defined relative to a fixed schema of expected fields, or relative to open-ended causal chain reconstruction?
+  \item How much manual encoding effort does each approach require per new process, and does this scale to arbitrary historical report corpora?
+  \item Does either paper attempt cross-report generalization, or are results confined to a single case-study process?
+\end{itemize}
+
+\section{Directions for Further Research}
+\begin{enumerate}
+  \item Full read of Single et al.\ (2020), answering the open questions listed above.
+  \item Full read of Li \& Zhao (2025, HAZOPCT), answering the open questions listed above.
+  \item Re-evaluate the provisional research direction in light of these two full reads.
+  \item Only after this: attempt a first defensible statement of the research gap.
+\end{enumerate}
+
+% ------------------------------------------------------------
+% NOTE: Bibliography
+% See references.bib for BibTeX entries. Entries marked
+% "% VERIFY" have incomplete or unconfirmed venue/DOI/page
+% information pulled from secondary citations rather than the
+% primary source, and must be checked before this log is
+% finalized. No DOI has been invented; unverified DOIs are
+% left blank rather than guessed.
+% ------------------------------------------------------------
