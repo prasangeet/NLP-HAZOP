@@ -1,0 +1,1095 @@
+% ============================================================
+% Week 03 section --- NLP for Structured HAZOP Reasoning
+%
+% Research planning and literature synthesis:
+%   - Single et al. (2020)
+%   - Mao et al. (2020)
+%   - HAZOPCT / Li & Zhao (2025)
+%   - Lee et al. (2026)
+%
+% This week moves from paper-by-paper analysis toward defining
+% the case study, research questions, causal representation,
+% experimental design, and validation strategy.
+% ============================================================
+
+\chapter[Literature Synthesis and Research Design]
+{Literature Synthesis and Research Design}
+
+\section{Objective}
+
+The objective of this week was to consolidate the literature studied during
+the previous weeks and use it to begin defining the research problem, case
+study, and experimental methodology for the project. Rather than treating
+the individual papers as isolated approaches, the analysis focuses on the
+different stages involved in automated HAZOP analysis: knowledge
+representation, information extraction, knowledge-graph construction,
+causal reasoning, missing-relationship inference, and direct HAZOP
+generation.
+
+The purpose of this synthesis is not yet to claim a finalized research gap.
+Instead, it is to determine which parts of the HAZOP reasoning pipeline have
+already been addressed, what assumptions existing approaches make, and which
+questions should be investigated through a focused case study.
+
+\begin{glance}[Week 3 at a glance]
+This week moves from reviewing individual automation approaches to defining
+the project's research design. The central working direction is to extract
+causal propositions from historical HAZOP reports, represent them explicitly,
+and evaluate whether the resulting structure supports multi-hop reasoning.
+The case study, schema, and ground-truth strategy remain provisional until
+candidate datasets have been examined.
+\end{glance}
+
+\section{From Automated HAZOP Generation to Structured Causal Reasoning}
+
+The literature studied so far suggests that ``automating HAZOP'' is not a
+single technical problem. Different approaches automate different stages of
+the overall process.
+
+Single et al.\ (2020) demonstrate that HAZOP knowledge can be represented
+using an ontology and that symbolic inference can be used to generate
+multi-step HAZOP scenarios. Their system operates on an already structured
+process and safety representation, with expert knowledge encoded in the
+ontology before the reasoning process begins
+\cite{single2020ontologyhazop}.
+
+Mao et al.\ (2020) move the knowledge-acquisition problem closer to the
+document level by developing a process-safety knowledge graph from
+heterogeneous process-safety information. Their approach uses natural
+language processing for named-entity recognition and relation extraction
+from textual sources, including HAZOP reports. The resulting graph is then
+used for applications including information retrieval and causal-chain
+extraction \cite{mao2020processsafetykg}.
+
+Li and Zhao's HAZOPCT (2025) extends the knowledge-graph direction toward
+HAZOP completeness. Their approach constructs a HAZOP knowledge graph from
+multiple sources and applies graph-based learning to predict potentially
+missing relationships, allowing existing HAZOP information to be used for
+the identification of additional conclusions
+\cite{lizhao2025hazopct}.
+
+Lee et al.\ (2026) investigate a different direction: direct generation of
+complete HAZOP worksheets using multimodal large language models. Their
+experiments show that LLM-generated worksheets can achieve high textual
+similarity to expert-prepared worksheets, while the proportion of semantically
+valid generated scenarios remains considerably lower. This distinction is
+important because linguistic similarity alone does not establish the
+correctness of a causal or process-safety argument
+\cite{lee2026llmhazop}.
+
+The four approaches therefore address different parts of the overall problem,
+as summarized in Figure~\ref{fig:w3-literature-landscape}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=6mm and 7mm,
+    box/.style={
+        draw=hzblue,
+        fill=hzbluebg,
+        rounded corners,
+        align=center,
+        text width=31mm,
+        minimum height=13mm,
+        font=\scriptsize
+    },
+    arrow/.style={ar}
+]
+
+    \node[box] (single)
+        {Single et al.\\(2020)\\
+         Ontology + reasoning};
+
+    \node[box, right=of single] (mao)
+        {Mao et al.\\(2020)\\
+         NLP + knowledge graph};
+
+    \node[box, below=of single] (hazopct)
+        {HAZOPCT\\(2025)\\
+         KG completion};
+
+    \node[box, right=of hazopct] (lee)
+        {Lee et al.\\(2026)\\
+         LLM generation};
+
+    \node[below=8mm of $(hazopct)!0.5!(lee)$,
+          align=center,
+          text width=72mm,
+          font=\small\itshape]
+        (synthesis)
+        {Different stages of automated HAZOP analysis};
+
+    \draw[arrow] (single) -- (mao);
+    \draw[arrow] (hazopct) -- (lee);
+
+\end{tikzpicture}
+\caption[Literature landscape for automated HAZOP analysis]
+{The papers studied so far address different stages of automated HAZOP
+analysis: structured symbolic reasoning, knowledge extraction and graph
+construction, graph-based completion, and direct LLM-based generation.}
+\label{fig:w3-literature-landscape}
+\end{figure}
+
+\section{A Layered View of the HAZOP Problem}
+
+The comparison indicates that several capabilities must be distinguished when
+discussing automated HAZOP analysis.
+
+\begin{enumerate}
+    \item \textbf{Information extraction:} identifying relevant entities,
+    events, and relationships from documents.
+
+    \item \textbf{Representation:} encoding extracted information using a
+    structured representation such as a table, ontology, knowledge graph, or
+    causal graph.
+
+    \item \textbf{Causal reasoning:} determining how deviations, causes,
+    effects, consequences, and safeguards are related and how events
+    propagate through intermediate states.
+
+    \item \textbf{Inference and validation:} identifying potentially missing
+    relationships or scenarios and determining whether the resulting
+    reasoning is consistent with process and safety knowledge.
+\end{enumerate}
+
+These capabilities are related but are not interchangeable. In particular,
+identifying the concepts ``cooling failure'', ``high temperature'', and
+``pressure increase'' does not by itself establish that they form an ordered
+causal sequence.
+
+The distinction is illustrated in Figure~\ref{fig:w3-layered-problem}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=6mm,
+    box/.style={
+        draw=hzblue,
+        fill=hzbluebg,
+        rounded corners,
+        align=center,
+        text width=48mm,
+        minimum height=10mm,
+        font=\scriptsize
+    },
+    arrow/.style={ar}
+]
+
+    \node[box] (text)
+        {HAZOP report text};
+
+    \node[box, below=of text] (extract)
+        {Information extraction\\
+         entities and relations};
+
+    \node[box, below=of extract] (repr)
+        {Structured representation\\
+         events and typed relations};
+
+    \node[box, below=of repr] (reason)
+        {Causal reasoning\\
+         multi-hop propagation};
+
+    \node[box, below=of reason] (valid)
+        {Inference and validation\\
+         process-safety consistency};
+
+    \draw[arrow] (text) -- (extract);
+    \draw[arrow] (extract) -- (repr);
+    \draw[arrow] (repr) -- (reason);
+    \draw[arrow] (reason) -- (valid);
+
+\end{tikzpicture}
+\caption[Layered view of automated HAZOP reasoning]
+{A layered view of the HAZOP problem. Information extraction is an
+intermediate step; causal reasoning additionally requires relationships,
+direction, ordering, and propagation between events.}
+\label{fig:w3-layered-problem}
+\end{figure}
+
+This distinction is particularly relevant to the present project. A system
+may correctly identify individual HAZOP concepts while still failing to
+recover the reasoning connecting those concepts.
+
+\section{Why Causal Structure Is the Central Focus}
+
+The literature studied so far suggests that the causal structure of HAZOP
+information is more important than the presence of individual keywords alone.
+
+Consider the following hypothetical description:
+
+\begin{center}
+\emph{Cooling-water failure may increase reactor temperature, which can cause
+pressure buildup and ultimately result in loss of containment.}
+\end{center}
+
+A conventional information-extraction system may identify:
+
+\begin{center}
+\textit{cooling-water failure}, \quad
+\textit{reactor temperature}, \quad
+\textit{pressure buildup}, \quad
+\textit{loss of containment}.
+\end{center}
+
+However, identifying these concepts does not establish the causal structure:
+
+\begin{center}
+\[
+\text{Cooling failure}
+\rightarrow
+\text{Temperature increase}
+\rightarrow
+\text{Pressure increase}
+\rightarrow
+\text{Loss of containment}.
+\]
+\end{center}
+
+The direction and ordering of these relationships are essential. A system
+that detects all four concepts but assigns incorrect relationships has not
+recovered the causal reasoning expressed by the original statement.
+
+This distinction is also consistent with the progression of the literature.
+Single et al.\ demonstrate that HAZOP reasoning can contain multi-step and
+branching causal structures, while Mao et al.\ demonstrate how process-safety
+information can be organized into a knowledge graph
+\cite{single2020ontologyhazop,mao2020processsafetykg}.
+
+The present investigation therefore focuses on the connection between
+natural-language information and an explicit causal representation.
+
+\section{Current Working Research Pipeline}
+
+Based on the literature studied so far, the current working hypothesis is to
+investigate a pipeline that begins with historical HAZOP reports rather than
+with an already constructed process ontology.
+
+The proposed high-level pipeline is:
+
+\begin{center}
+\emph{Historical HAZOP reports}
+$\rightarrow$
+\emph{NLP/LLM extraction}
+$\rightarrow$
+\emph{causal information}
+$\rightarrow$
+\emph{structured causal representation}
+$\rightarrow$
+\emph{causal reasoning}
+$\rightarrow$
+\emph{validation}.
+\end{center}
+
+Figure~\ref{fig:w3-working-pipeline} presents the same idea in a compact
+system representation.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=5mm and 4mm,
+    box/.style={
+        draw=hzblue,
+        fill=hzbluebg,
+        rounded corners,
+        align=center,
+        text width=25mm,
+        minimum height=12mm,
+        font=\scriptsize
+    },
+    arrow/.style={ar}
+]
+
+    \node[box] (reports)
+        {Historical\\HAZOP reports};
+
+    \node[box, right=of reports] (extract)
+        {NLP / LLM\\
+         causal extraction};
+
+    \node[box, right=of extract] (graph)
+        {Structured\\
+         causal representation};
+
+    \node[box, right=of graph] (reason)
+        {Multi-hop\\
+         reasoning};
+
+    \node[box, right=of reason] (valid)
+        {Process + expert\\
+         validation};
+
+    \draw[arrow] (reports) -- (extract);
+    \draw[arrow] (extract) -- (graph);
+    \draw[arrow] (graph) -- (reason);
+    \draw[arrow] (reason) -- (valid);
+
+\end{tikzpicture}
+\caption[Current working research pipeline]
+{Current working pipeline for investigating structured HAZOP reasoning from
+historical reports. This is a working research hypothesis rather than a
+finalized system architecture.}
+\label{fig:w3-working-pipeline}
+\end{figure}
+
+The purpose of this pipeline is not to assume that a knowledge graph or a
+particular ontology is already the correct representation. Instead, the
+literature is being used to determine the representation and reasoning
+requirements that the case study must satisfy.
+
+In particular, the following questions remain open:
+
+\begin{enumerate}
+    \item Which HAZOP concepts need to be explicitly represented?
+
+    \item Which relation types are required to distinguish causality from
+    simple association?
+
+    \item How should multi-step and branching causal chains be represented?
+
+    \item How should multiple causes leading to a common effect be
+    represented?
+
+    \item How should safeguards be attached to causal chains?
+
+    \item How should uncertainty in extracted relationships be represented?
+
+    \item Can an extracted causal graph support reasoning over more than one
+    causal hop?
+
+    \item Can missing or incomplete causal relationships be identified?
+\end{enumerate}
+
+These questions will be used to define the case study and experimental
+methodology in the subsequent sections of this week's report.
+
+% ============================================================
+% Week 03 --- Part II
+% Case-study design and data requirements
+% ============================================================
+
+\section{Case-Study Design}
+
+The literature review established that the central objective of this
+research is not merely to identify HAZOP entities, but to recover the
+causal structure connecting deviations, causes, consequences, and
+safeguards. Therefore, the choice of case study is an important part of
+the experimental design.
+
+Rather than selecting a process solely because a HAZOP dataset is
+available, the case study should provide sufficient causal structure
+for evaluating information extraction and subsequent reasoning. The
+selected process should also contain enough variation in terminology
+and causal descriptions to test whether the proposed NLP/LLM approach
+can generalize beyond a small collection of nearly identical sentences.
+
+\subsection{Requirements for the Case Study}
+
+The initial requirements for the case study are summarized in
+Figure~\ref{fig:case-study-requirements}.
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    node distance=0.45cm,
+    box/.style={
+        rectangle,
+        rounded corners,
+        draw=hzblue,
+        fill=hzbluebg,
+        align=center,
+        text width=4.0cm,
+        minimum height=0.75cm,
+        font=\scriptsize
+    },
+    arrow/.style={ar}
+]
+
+\node[box] (case) {Selected Chemical Process};
+
+\node[box, below left=0.55cm and 0.15cm of case] (reports)
+    {Historical HAZOP Reports};
+
+\node[box, below=0.55cm of case] (nodes)
+    {Multiple Nodes / Equipment};
+
+\node[box, below right=0.55cm and 0.15cm of case] (chains)
+    {Genuine Causal Chains};
+
+\node[box, below=0.55cm of reports] (branch)
+    {Branching Causes and Consequences};
+
+\node[box, below=0.55cm of nodes] (safeguards)
+    {Safeguards and Recommendations};
+
+\node[box, below=0.55cm of chains] (variation)
+    {Linguistic Variation};
+
+\node[box, below=0.55cm of safeguards] (validation)
+    {Expert-Verifiable Ground Truth};
+
+\draw[arrow] (case) -- (reports);
+\draw[arrow] (case) -- (nodes);
+\draw[arrow] (case) -- (chains);
+
+\draw[arrow] (reports) -- (branch);
+\draw[arrow] (nodes) -- (safeguards);
+\draw[arrow] (chains) -- (variation);
+
+\draw[arrow] (branch) -- (validation);
+\draw[arrow] (safeguards) -- (validation);
+\draw[arrow] (variation) -- (validation);
+
+\end{tikzpicture}
+\caption{Initial requirements for selecting the case study.}
+\label{fig:case-study-requirements}
+\end{figure}
+
+The following characteristics are considered desirable.
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+
+    \item \textbf{Availability of HAZOP reports:}
+    The case study should have access to sufficiently detailed HAZOP
+    worksheets or reports containing deviations, causes, consequences,
+    safeguards, and relevant process context.
+
+    \item \textbf{Multiple process nodes:}
+    The process should contain multiple equipment items or HAZOP nodes
+    so that the proposed method can be evaluated across different
+    process contexts.
+
+    \item \textbf{Explicit causal relationships:}
+    The reports should contain statements from which causal
+    relationships can be recovered rather than only isolated labels
+    or keywords.
+
+    \item \textbf{Multi-step causal chains:}
+    The data should contain cases in which a cause produces an
+    intermediate state or deviation that subsequently produces one or
+    more consequences.
+
+    \item \textbf{Branching structure:}
+    Ideally, individual deviations should have multiple possible causes
+    and consequences. This is important because a simple one-to-one
+    mapping would not adequately test causal graph construction.
+
+    \item \textbf{Safeguard information:}
+    The HAZOP records should contain safeguards or recommendations so
+    that the causal structure can eventually be connected to risk
+    mitigation information.
+
+    \item \textbf{Linguistic variation:}
+    Different HAZOP entries should express similar causal relationships
+    using different terminology or sentence structures. This allows
+    the extraction system to be tested for semantic rather than
+    purely lexical matching.
+
+    \item \textbf{Expert-verifiable ground truth:}
+    The extracted relationships and reconstructed causal chains should
+    be capable of being checked against the original HAZOP analysis
+    and, where possible, by a process-safety expert.
+
+\end{enumerate}
+
+\subsection{Why These Requirements Matter}
+
+The requirements are motivated by the distinction between
+information extraction and causal reasoning identified in the
+literature.
+
+For example, consider a simplified process-safety description:
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=0.55cm,
+    box/.style={
+        rectangle,
+        rounded corners,
+        draw=hzblue,
+        fill=hzbluebg,
+        align=center,
+        text width=3.1cm,
+        minimum height=0.65cm,
+        font=\scriptsize
+    },
+    arrow/.style={ar}
+]
+
+\node[box] (cause) {Cooling failure};
+\node[box, right=0.7cm of cause] (temp) {Temperature increase};
+\node[box, right=0.7cm of temp] (pressure) {Pressure increase};
+\node[box, right=0.7cm of pressure] (loss) {Loss of containment};
+
+\draw[arrow] (cause) -- (temp);
+\draw[arrow] (temp) -- (pressure);
+\draw[arrow] (pressure) -- (loss);
+
+\end{tikzpicture}
+\end{center}
+
+In this example, identifying the four concepts is only the first
+step. A useful system must also recover the relationships between
+them. The resulting structure can be represented as
+
+\begin{equation}
+C_1 \rightarrow D_1 \rightarrow E_1 \rightarrow C_2,
+\end{equation}
+
+where the symbols represent successive causal states rather than
+independent HAZOP entities.
+
+Consequently, a case study containing only isolated statements such as
+``high pressure'', ``valve failure'', or ``fire'' would be insufficient
+for evaluating the main research objective. The dataset must contain
+enough contextual information to determine how such concepts are
+related.
+
+\subsection{HAZOP Entry as the Basic Unit of Analysis}
+
+The initial experimental unit will be an individual HAZOP entry or
+worksheet row. A conventional entry can be viewed as containing
+several semantically distinct components:
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=0.45cm,
+    box/.style={
+        rectangle,
+        rounded corners,
+        draw=hzblue,
+        fill=hzbluebg,
+        align=center,
+        text width=2.4cm,
+        minimum height=0.65cm,
+        font=\scriptsize
+    },
+    arrow/.style={ar}
+]
+
+\node[box] (node) {Node};
+\node[box, right=0.35cm of node] (dev) {Deviation};
+\node[box, right=0.35cm of dev] (cause) {Cause};
+\node[box, right=0.35cm of cause] (effect) {Consequence};
+\node[box, right=0.35cm of effect] (safe) {Safeguard};
+
+\draw[arrow] (node) -- (dev);
+\draw[arrow] (dev) -- (cause);
+\draw[arrow] (cause) -- (effect);
+\draw[arrow] (effect) -- (safe);
+
+\end{tikzpicture}
+\end{center}
+
+This representation should not be interpreted as claiming that every
+HAZOP entry forms a simple linear chain. Instead, it provides an
+initial decomposition of the information contained in a worksheet.
+The actual representation may contain multiple causes, intermediate
+states, several consequences, and safeguards attached to different
+parts of the causal structure.
+
+\subsection{From HAZOP Rows to Causal Propositions}
+
+A major objective of the case-study analysis will therefore be to
+transform the textual information in a HAZOP entry into explicit
+causal propositions.
+
+For example, a textual entry could conceptually produce propositions
+of the form
+
+\begin{align}
+\text{Cause} &\xrightarrow{\text{causes}} \text{Deviation},\\
+\text{Deviation} &\xrightarrow{\text{leads\_to}} \text{Consequence},\\
+\text{Consequence} &\xrightarrow{\text{mitigated\_by}} \text{Safeguard}.
+\end{align}
+
+The precise relation vocabulary is intentionally left open at this
+stage. Determining whether these relations are sufficient, or whether
+additional relations are required to represent intermediate process
+states, is one of the questions to be investigated during the
+subsequent design phase.
+
+\subsection{Ground-Truth Construction}
+
+The original HAZOP reports will serve as the primary source of
+ground-truth information. However, the original worksheet structure
+may not directly provide all of the intermediate causal links required
+for evaluating multi-hop reasoning.
+
+Therefore, the ground truth will be developed in stages:
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+    \item identify the relevant HAZOP entities in the source entry;
+    \item identify explicitly stated causal relationships;
+    \item identify multi-step relationships that are supported by the
+    text and process context;
+    \item represent alternative causes and consequences where they
+    exist;
+    \item associate safeguards with the corresponding causal scenario;
+    \item obtain expert review for relationships that require process
+    interpretation.
+\end{enumerate}
+
+This distinction is important because an automatically extracted graph
+should not be treated as ground truth merely because the model
+generated it. The reference structure must originate from the
+available HAZOP evidence and, where necessary, expert assessment.
+
+\subsection{Case-Study Selection Strategy}
+
+At this stage, a specific process will not be selected solely on the
+basis of convenience. Candidate datasets will instead be evaluated
+against the requirements defined above.
+
+The selection can be formulated as a screening process:
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=0.55cm,
+    box/.style={
+        rectangle,
+        rounded corners,
+        draw=hzblue,
+        fill=hzbluebg,
+        align=center,
+        text width=3.0cm,
+        minimum height=0.7cm,
+        font=\scriptsize
+    },
+    arrow/.style={ar}
+]
+
+\node[box] (candidate) {Candidate Process / Dataset};
+
+\node[box, below=0.55cm of candidate] (availability)
+    {HAZOP Data Available?};
+
+\node[box, below=0.55cm of availability] (structure)
+    {Sufficient Causal Structure?};
+
+\node[box, below=0.55cm of structure] (variation)
+    {Sufficient Linguistic Variation?};
+
+\node[box, below=0.55cm of variation] (validation)
+    {Ground Truth Verifiable?};
+
+\node[box, below=0.55cm of validation] (select)
+    {Selected Case Study};
+
+\draw[arrow] (candidate) -- (availability);
+\draw[arrow] (availability) -- (structure);
+\draw[arrow] (structure) -- (variation);
+\draw[arrow] (variation) -- (validation);
+\draw[arrow] (validation) -- (select);
+
+\end{tikzpicture}
+\end{center}
+
+\subsection{Current Status}
+
+The case-study process is therefore considered an open design
+decision at this point. The immediate objective is to identify a
+dataset that satisfies the causal and validation requirements rather
+than to optimize for dataset size alone.
+
+This approach also allows the research design to remain independent of
+a particular process until the available HAZOP material has been
+examined. Once candidate reports are obtained, their structure,
+terminology, causal depth, branching, and available process context
+can be compared against the requirements established in this section.
+
+\subsection{Implications for the Experimental Design}
+
+The case study will eventually support evaluation at several levels:
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=0.5cm,
+    box/.style={
+        rectangle,
+        rounded corners,
+        draw=hzblue,
+        fill=hzbluebg,
+        align=center,
+        text width=3.2cm,
+        minimum height=0.7cm,
+        font=\scriptsize
+    },
+    arrow/.style={ar}
+]
+
+\node[box] (text) {HAZOP Text};
+\node[box, right=0.7cm of text] (extract)
+    {Entity / Relation Extraction};
+\node[box, right=0.7cm of extract] (graph)
+    {Causal Representation};
+\node[box, right=0.7cm of graph] (reason)
+    {Multi-hop Reasoning};
+
+\draw[arrow] (text) -- (extract);
+\draw[arrow] (extract) -- (graph);
+\draw[arrow] (graph) -- (reason);
+
+\end{tikzpicture}
+\end{center}
+
+This decomposition will make it possible to distinguish errors caused
+by incorrect extraction from errors introduced during graph
+construction or causal reasoning. Such separation is necessary for
+determining whether an observed failure is an NLP problem, a
+representation problem, or a reasoning problem.
+
+The next stage of the research will therefore focus on examining
+candidate HAZOP datasets and determining the exact causal schema that
+can be reliably annotated from them.
+
+% ============================================================
+% Week 03 --- Part III
+% Causal Schema, Experimental Design, and Next Steps
+% ============================================================
+
+\section{Causal Schema and Experimental Design}
+
+The previous sections established the literature landscape and the
+requirements for selecting a suitable HAZOP case study. The remaining
+task is to define how the extracted information will be represented,
+evaluated, and used for causal reasoning.
+
+\subsection{Initial Causal Representation}
+
+The working representation is based on typed entities and relationships
+rather than the original tabular HAZOP format. The initial structure is:
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=0.55cm,
+    box/.style={
+        rectangle,
+        rounded corners,
+        draw=hzblue,
+        fill=hzbluebg,
+        align=center,
+        text width=2.3cm,
+        minimum height=0.65cm,
+        font=\scriptsize
+    },
+    arrow/.style={ar}
+]
+
+\node[box] (cause) {Cause};
+\node[box, right=0.5cm of cause] (dev) {Deviation};
+\node[box, right=0.5cm of dev] (cons) {Consequence};
+\node[box, right=0.5cm of cons] (safe) {Safeguard};
+
+\draw[arrow] (cause) -- (dev);
+\draw[arrow] (dev) -- (cons);
+\draw[arrow] (cons) -- (safe);
+
+\end{tikzpicture}
+\end{center}
+
+This should not be interpreted as a restriction to linear chains. A
+deviation may have multiple causes and consequences, while a
+consequence may itself become an intermediate state in a longer causal
+chain.
+
+The representation can therefore be expressed as
+
+\[
+G=(V,E),
+\]
+
+where \(V\) contains entities and \(E\) contains typed relationships.
+
+The initial entity types are:
+
+\begin{center}
+\begin{tabular}{ll}
+\textbf{Entity} & \textbf{Description} \\
+\hline
+Process Node & HAZOP study location \\
+Equipment & Physical equipment involved \\
+Parameter & Process variable \\
+Deviation & HAZOP deviation \\
+Cause & Initiating or contributing condition \\
+Consequence & Resulting outcome \\
+Safeguard & Existing protective measure \\
+Recommendation & Proposed protective action
+\end{tabular}
+\end{center}
+
+The schema is provisional and will be revised after examination of the
+selected HAZOP data.
+
+\subsection{Causal Relations}
+
+The initial relation vocabulary is:
+
+\begin{center}
+\begin{tabular}{ll}
+\textbf{Relation} & \textbf{Meaning} \\
+\hline
+causes & Cause produces a deviation or state \\
+leads\_to & One state produces another state or consequence \\
+results\_in & Consequence relation \\
+mitigated\_by & Protective measure associated with a scenario \\
+associated\_with & Contextual association \\
+has\_parameter & Equipment/node--parameter relationship \\
+has\_deviation & Node--deviation relationship
+\end{tabular}
+\end{center}
+
+The final relation vocabulary will be determined from the actual
+language and causal structures present in the dataset.
+
+\subsection{Annotation Strategy}
+
+The basic annotation unit will be a causal proposition represented as
+
+\[
+(h,r,t),
+\]
+
+where \(h\) is the source entity, \(r\) is the relation, and \(t\) is
+the target entity.
+
+For example,
+
+\[
+(\text{Cooling Failure},\text{causes},\text{High Temperature})
+\]
+
+followed by
+
+\[
+(\text{High Temperature},\text{leads\_to},\text{Pressure Increase}).
+\]
+
+Multiple propositions can then be combined into a causal graph.
+
+The annotation process will distinguish between:
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+    \item entities and process context;
+    \item explicitly stated causal relationships;
+    \item multi-step relationships;
+    \item alternative causes and consequences;
+    \item safeguards and recommendations.
+\end{enumerate}
+
+Implicit relationships that require substantial process interpretation
+will be marked separately rather than automatically treated as
+ground truth.
+
+\subsection{Proposed Research Pipeline}
+
+The complete working pipeline for the study is:
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=0.4cm,
+    box/.style={
+        rectangle,
+        rounded corners,
+        draw=hzblue,
+        fill=hzbluebg,
+        align=center,
+        text width=2.25cm,
+        minimum height=0.7cm,
+        font=\scriptsize
+    },
+    arrow/.style={ar}
+]
+
+\node[box] (data) {HAZOP Reports};
+\node[box, right=0.35cm of data] (extract) {NLP / LLM};
+\node[box, right=0.35cm of extract] (causal) {Causal Extraction};
+\node[box, right=0.35cm of causal] (graph) {Structured Graph};
+\node[box, right=0.35cm of graph] (reason) {Multi-hop Reasoning};
+
+\draw[arrow] (data) -- (extract);
+\draw[arrow] (extract) -- (causal);
+\draw[arrow] (causal) -- (graph);
+\draw[arrow] (graph) -- (reason);
+
+\end{tikzpicture}
+\end{center}
+
+The extracted structure will then be compared against the annotated
+reference structure and evaluated for causal correctness.
+
+\subsection{Experimental Comparison}
+
+The initial experiments will compare different levels of extraction
+and reasoning rather than evaluating only a single model.
+
+\begin{description}[style=nextline,leftmargin=0pt,labelindent=0pt,font=\bfseries]
+
+    \item[Experiment 1: Classical NLP baseline]
+
+    A conventional pipeline using named entity recognition followed by
+    relation extraction will provide a baseline for comparison.
+
+    \item[Experiment 2: LLM structured extraction]
+
+    An LLM will be prompted to extract HAZOP entities and typed causal
+    relations into a predefined structured format.
+
+    \item[Experiment 3: Explicit causal extraction]
+
+    The extraction task will explicitly require identification of
+    causal direction and intermediate states rather than simply
+    identifying related entities.
+
+    \item[Experiment 4: Causal graph reasoning]
+
+    The extracted relations will be assembled into a graph and used
+    for multi-hop reasoning.
+
+    \item[Experiment 5: Missing-relation experiment]
+
+    Known relationships can be temporarily removed from the graph and
+    the system can be tested on whether it can recover the missing
+    relationship or causal path.
+
+\end{description}
+
+The last experiment is particularly relevant to the distinction
+between extraction and reasoning. A system that merely reproduces
+information from the input is different from one that can use an
+existing causal structure to identify a missing relationship.
+
+\subsection{Evaluation Metrics}
+
+Evaluation will be performed at multiple levels.
+
+\begin{center}
+\begin{tabular}{ll}
+\textbf{Level} & \textbf{Possible Metrics} \\
+\hline
+Entity extraction & Precision, Recall, F1 \\
+Relation extraction & Precision, Recall, F1 \\
+Causal direction & Relation accuracy \\
+Causal chains & Path Precision, Recall, F1 \\
+Multi-hop reasoning & 1-hop / 2-hop / 3-hop accuracy \\
+Missing relationships & Recovery accuracy, false positives \\
+Safety validity & Expert/process-safety assessment
+\end{tabular}
+\end{center}
+
+This separation is important because a system may achieve good entity
+recognition while still producing incorrect causal relationships.
+
+Similarly, correct relation extraction does not necessarily imply
+successful multi-hop reasoning.
+
+\subsection{Validation Strategy}
+
+The final evaluation should therefore include both computational and
+domain-based validation.
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=0.55cm,
+    box/.style={
+        rectangle,
+        rounded corners,
+        draw=hzblue,
+        fill=hzbluebg,
+        align=center,
+        text width=3.0cm,
+        minimum height=0.7cm,
+        font=\scriptsize
+    },
+    arrow/.style={ar}
+]
+
+\node[box] (prediction) {Predicted Causal Structure};
+
+\node[box, below left=0.65cm and 0.35cm of prediction]
+    (metric) {Automatic Metrics};
+
+\node[box, below right=0.65cm and 0.35cm of prediction]
+    (expert) {Process / Expert Validation};
+
+\node[box, below=1.4cm of prediction]
+    (final) {Validated Causal Reasoning};
+
+\draw[arrow] (prediction) -- (metric);
+\draw[arrow] (prediction) -- (expert);
+\draw[arrow] (metric) -- (final);
+\draw[arrow] (expert) -- (final);
+
+\end{tikzpicture}
+\end{center}
+
+Automatic metrics will measure agreement with the annotated reference
+structure, while expert validation will be necessary for relationships
+whose correctness depends on process knowledge or physical
+interpretation.
+
+\subsection{Working Research Question}
+
+Based on the literature examined so far, the working research question
+is:
+
+\begin{quote}
+\textit{Can natural-language processing and large language models
+reliably extract the causal structure embedded in HAZOP reports and
+represent it in a form that supports explicit multi-hop causal
+reasoning?}
+\end{quote}
+
+This remains a working research question rather than a finalized claim
+of novelty.
+
+The investigation will focus on three supporting questions:
+
+\begin{enumerate}
+    \item Can NLP/LLMs reliably extract causal relationships from
+    HAZOP text?
+
+    \item Does an explicit causal representation improve multi-hop
+    reasoning compared with direct generation of HAZOP conclusions?
+
+    \item Can causal reasoning identify missing or overlooked
+    relationships while maintaining process-safety validity?
+\end{enumerate}
+
+\subsection{Expected Research Direction}
+
+The current understanding of the project can therefore be summarized
+as:
+
+\[
+\boxed{\begin{gathered}
+\text{Historical HAZOP Reports}\;\rightarrow\;\text{Causal Extraction}\;\rightarrow\\[-1pt]
+\text{Structured Representation}\;\rightarrow\;\text{Multi-hop Reasoning}\;\rightarrow\;\text{Validation}
+\end{gathered}}
+\]
+
+The specific representation---knowledge graph, ontology, causal graph,
+or a hybrid approach---will not be fixed until the case-study data and
+annotation requirements have been examined.
+
+This preserves flexibility while keeping the central objective
+unchanged: recovering and reasoning over the causal structure embedded
+in HAZOP documentation.
+
+\subsection{Next Steps}
+
+The immediate next steps are:
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+    \item identify candidate HAZOP datasets;
+    \item examine their structure and availability;
+    \item select the case study using the requirements defined earlier;
+    \item inspect representative HAZOP entries;
+    \item refine the entity and relation schema;
+    \item define the annotation format;
+    \item construct an initial annotated subset;
+    \item establish the first extraction baseline.
+\end{enumerate}
+
+These steps will provide the transition from literature and research
+design into the implementation and experimental phase of the project.
