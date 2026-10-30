@@ -15,7 +15,6 @@ from app.domain.entities.hazop_record import (
     ValidationStatus,
 )
 
-
 _EMPTY = {"", "-", "—", "–", "n/a", "na", "none", "not stated"}
 _NOT_PROVIDED_PREFIXES = (
     "not_stated",
