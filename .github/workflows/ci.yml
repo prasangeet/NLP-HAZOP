@@ -105,13 +105,6 @@ jobs:
       NEO4J_USERNAME: neo4j
       NEO4J_PASSWORD: test-password
       NEO4J_DATABASE: neo4j
-    services:
-      neo4j:
-        image: neo4j:5.26-community
-        env:
-          NEO4J_AUTH: neo4j/test-password
-        ports:
-          - 7474:7474
     defaults:
       run:
         working-directory: server
@@ -129,5 +122,18 @@ jobs:
           cache-dependency-glob: server/uv.lock
       - name: Install locked dependencies
         run: uv sync --locked
+      - name: Start Neo4j from the repository Compose configuration
+        working-directory: .
+        run: |
+          cp .env.example .env
+          docker compose up -d --wait --wait-timeout 120 neo4j
+          docker compose ps
       - name: Exercise persistent import and recovery against Neo4j
         run: uv run pytest -v tests/integration/test_neo4j_api.py
+      - name: Stop Neo4j and remove the ephemeral CI database
+        if: always()
+        working-directory: .
+        run: |
+          if [ -f .env ]; then
+            docker compose down -v
+          fi

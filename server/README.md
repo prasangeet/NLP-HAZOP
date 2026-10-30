@@ -226,21 +226,55 @@ The API keeps the preview and persistence boundaries explicit:
   same-dataset cross-scenario evidence, enrich with a bounded graph neighborhood,
   and return candidates plus a graph-reasoning proposal or abstention.
 
-### Configure Neo4j
+### Local Neo4j with Docker Compose
 
-The adapter uses Neo4j's current HTTP Query API v2 through the existing `httpx`
-dependency. It does not use the deprecated transactional HTTP endpoint.
-Configure all three required environment variables before starting the API:
+The repository includes a local Neo4j service using the same `neo4j:5.26-community`
+image used by the integration tests. It exposes the Neo4j Browser/HTTP Query API
+on port 7474 and Bolt on port 7687, bound to localhost only. Named Docker volumes
+persist the database and logs across container restarts.
+
+From the repository root:
 
 ```bash
-export NEO4J_HTTP_URI="http://127.0.0.1:7474"
-export NEO4J_USERNAME="neo4j"
-export NEO4J_PASSWORD="your-local-password"
-export NEO4J_DATABASE="neo4j"  # optional; defaults to neo4j
-export NEO4J_TIMEOUT_SECONDS="15"  # optional
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+cp .env.example .env
+# Edit .env and replace NEO4J_PASSWORD with a strong local password.
+docker compose up -d
+docker compose ps
 ```
 
+Wait until the Neo4j service reports `healthy`. Open
+`http://127.0.0.1:7474/browser` to inspect the local database. The Compose
+health check runs an authenticated `RETURN 1` through `cypher-shell`.
+
+In a second terminal, start the FastAPI server with the same root `.env` file:
+
+```bash
+cd server
+uv sync
+uv run uvicorn app.main:app --reload --env-file ../.env --host 127.0.0.1 --port 8000
+```
+
+The API uses `NEO4J_HTTP_URI=http://127.0.0.1:7474` and the matching
+username/password from `.env`. Check `http://127.0.0.1:8000/health` and
+`http://127.0.0.1:8000/docs`.
+
+Useful lifecycle commands (run from the repository root):
+
+```bash
+docker compose logs -f neo4j
+docker compose stop
+docker compose start
+docker compose down
+```
+
+`docker compose down` removes the container but **preserves** the named database
+volume. `docker compose down -v` also deletes the database and logs permanently.
+Only use the latter when you intentionally want to reset all locally imported data.
+
+Configure the adapter directly with environment variables instead when using a
+managed or externally hosted Neo4j instance. The adapter requires
+`NEO4J_HTTP_URI`, `NEO4J_USERNAME`, and `NEO4J_PASSWORD`; `NEO4J_DATABASE`
+(default `neo4j`) and `NEO4J_TIMEOUT_SECONDS` (default 15) are optional.
 Use the HTTP URI (normally port 7474), not a `bolt://` URI. The adapter creates
 dataset, dataset-scoped scenario, and dataset-scoped concept uniqueness constraints
 on first use. Dataset metadata, normalized scenario payloads, and typed edge writes
@@ -255,5 +289,4 @@ HTTP 503 rather than silently using process-local memory. The in-memory reposito
 remains the deterministic adapter for unit tests and benchmark experiments.
 
 Recovery responses are hypotheses only. Silver row associations, graph paths,
-and model outputs are not expert-validated causal truth. The API never stores a
-recovery proposal as an expert-verified edge.
+and model outputs are not expert-validated causal truth.
