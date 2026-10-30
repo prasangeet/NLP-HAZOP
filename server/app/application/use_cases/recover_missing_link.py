@@ -9,6 +9,7 @@ from app.application.strategies.retrieval.models import (
     RetrievalRequest,
     RetrievalScope,
     RetrievalStrategy,
+    RetrievedEvidence,
 )
 from app.domain.entities.hazop_record import CausalRelation
 
@@ -33,17 +34,10 @@ class RecoveryRequest:
     limit: int = 20
 
     def __post_init__(self) -> None:
-        for field_name in (
-            "scenario_id",
-            "predicate",
-            "known_endpoint",
-        ):
+        for field_name in ("scenario_id", "predicate", "known_endpoint"):
             value = getattr(self, field_name)
-
             if not isinstance(value, str) or not value.strip():
-                raise ValueError(
-                    f"{field_name} must be a non-empty string"
-                )
+                raise ValueError(f"{field_name} must be a non-empty string")
 
         if not isinstance(self.missing_endpoint, MissingEndpoint):
             try:
@@ -59,7 +53,6 @@ class RecoveryRequest:
 
         if isinstance(self.limit, bool) or not isinstance(self.limit, int):
             raise ValueError("limit must be an integer")
-
         if self.limit < 1:
             raise ValueError("limit must be at least 1")
 
@@ -74,9 +67,7 @@ class RecoveryCandidate:
     scope: RetrievalScope = RetrievalScope.SCENARIO_LOCAL
 
     def __post_init__(self) -> None:
-        if not isinstance(self.missing_value, str) or not (
-            self.missing_value.strip()
-        ):
+        if not isinstance(self.missing_value, str) or not self.missing_value.strip():
             raise ValueError("missing_value must be a non-empty string")
 
     @property
@@ -128,9 +119,11 @@ class RecoveryResult:
     status: RecoveryStatus
     candidates: tuple[RecoveryCandidate, ...] = ()
     retrieval_scope: RetrievalScope = RetrievalScope.SCENARIO_LOCAL
+    graph_context: tuple[RetrievedEvidence, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "candidates", tuple(self.candidates))
+        object.__setattr__(self, "graph_context", tuple(self.graph_context))
 
     @property
     def is_empty(self) -> bool:
@@ -142,9 +135,18 @@ class RecoveryResult:
             "status": self.status.value,
             "retrieval_scope": self.retrieval_scope.value,
             "is_empty": self.is_empty,
-            "candidates": [
-                candidate.to_dict()
-                for candidate in self.candidates
+            "candidates": [candidate.to_dict() for candidate in self.candidates],
+            "graph_context": [
+                {
+                    "scenario_id": item.scenario_id,
+                    "subject": item.relation.subject,
+                    "predicate": item.relation.predicate,
+                    "object": item.relation.object,
+                    "origin": item.relation.origin.value,
+                    "source_id": item.relation.source_id,
+                    "scope": item.scope.value,
+                }
+                for item in self.graph_context
             ],
         }
 
@@ -163,7 +165,6 @@ class RecoverMissingLink:
             missing_endpoint=request.missing_endpoint.value,
             limit=request.limit,
         )
-
         retrieval_result = self._retriever.retrieve(retrieval_request)
 
         if not retrieval_result.scenario_exists:
@@ -175,28 +176,19 @@ class RecoverMissingLink:
 
         candidates: list[RecoveryCandidate] = []
         seen: set[str] = set()
-
         for item in retrieval_result.evidence:
             relation = item.relation
-
-            # Never use a model's own inference as independent supporting
-            # evidence for another inference.
             if relation.origin.value == "model_inferred":
                 continue
-
             missing_value = (
                 relation.subject
                 if request.missing_endpoint == MissingEndpoint.SUBJECT
                 else relation.object
             )
-
             normalized_value = missing_value.strip().casefold()
-
             if not normalized_value or normalized_value in seen:
                 continue
-
             seen.add(normalized_value)
-
             candidates.append(
                 RecoveryCandidate(
                     missing_value=missing_value,
@@ -205,19 +197,17 @@ class RecoverMissingLink:
                     scope=item.scope,
                 )
             )
-
             if len(candidates) >= request.limit:
                 break
 
-        status = (
-            RecoveryStatus.CANDIDATES_FOUND
-            if candidates
-            else RecoveryStatus.NO_CANDIDATES
-        )
-
         return RecoveryResult(
             scenario_id=request.scenario_id,
-            status=status,
+            status=(
+                RecoveryStatus.CANDIDATES_FOUND
+                if candidates
+                else RecoveryStatus.NO_CANDIDATES
+            ),
             candidates=tuple(candidates),
             retrieval_scope=retrieval_result.scope,
+            graph_context=retrieval_result.graph_context,
         )
