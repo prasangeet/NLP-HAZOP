@@ -321,6 +321,9 @@ def list_relationships(
                 "source_id": item.source_id,
                 "is_expert_verified": item.is_expert_verified,
                 "dataset_id": item.dataset_id,
+                "subject_type": item.subject_type.value,
+                "object_type": item.object_type.value,
+                "source_location": item.source_location,
             }
             for item in relations
         ],
@@ -368,6 +371,7 @@ def get_graph(
                     "scenario_id": record.scenario_id,
                     "origin": relation.origin.value,
                     "evidence": relation.evidence,
+                    "source_location": relation.source_location,
                     "is_expert_verified": relation.is_expert_verified,
                 }
             )

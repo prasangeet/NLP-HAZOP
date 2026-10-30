@@ -20,6 +20,7 @@ from app.infrastructure.graph.neo4j_graph_repository import (
 def sample_record() -> HazopRecord:
     relation = CausalRelation(
         subject="Pump failure",
+        source_location="row 2",
         predicate="causes_deviation",
         object="No flow",
         origin=RelationshipOrigin.SYNTHETIC,
@@ -137,6 +138,7 @@ def test_get_record_deserializes_full_record_payload() -> None:
     assert restored == record
     assert restored is not None
     assert restored.causal_relations[0].origin == RelationshipOrigin.SYNTHETIC
+    assert restored.causal_relations[0].source_location == "row 2"
     assert restored.raw_row == {"Scenario_ID": "S001"}
     repository.close()
 

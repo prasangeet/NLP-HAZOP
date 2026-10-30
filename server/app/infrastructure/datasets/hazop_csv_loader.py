@@ -554,6 +554,7 @@ class HazopCsvLoader:
                     source_id=f"{dataset_id}:{scenario_id}:row-{row_number or 0}:cause:{cause_index}",
                     is_expert_verified=is_verified,
                     dataset_id=dataset_id,
+                    source_location=(f"row {row_number}" if row_number else scenario_id),
                 )
             )
 
