@@ -21,7 +21,6 @@ from app.domain.entities.hazop_record import (
 )
 from app.domain.repositories.graph_repository import GraphRepository
 
-
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 _STOP_WORDS = frozenset(
     {
