@@ -9,6 +9,7 @@ from app.domain.entities.hazop_record import (
 from app.domain.reasoning.models import (
     AbstentionReason,
     EvidenceContextProtocol,
+    EvidenceItemProtocol,
     ReasoningResult,
     ReasoningStatus,
 )
@@ -17,14 +18,14 @@ from app.domain.reasoning.models import (
 class GraphReasoner:
     """Recover a missing endpoint from query-aligned graph evidence.
 
-    The retriever supplies relationships that match the requested predicate
-    and known endpoint. This strategy validates that alignment, rejects
-    model-inferred or undocumented evidence, deduplicates candidate endpoints,
-    and proposes only when exactly one supported endpoint remains.
+    The current retriever supplies relationships that match the requested
+    predicate and known endpoint. This strategy validates that alignment,
+    rejects model-inferred or undocumented evidence, and proposes only when
+    exactly one distinct missing endpoint remains.
 
-    This is deliberately a conservative one-hop graph baseline. It does not
-    claim multi-hop path reasoning because the current EvidenceContext does
-    not include arbitrary neighboring edges.
+    This is a conservative one-hop graph baseline. It does not claim multi-hop
+    path reasoning because the current evidence context does not contain the
+    full set of neighboring graph edges.
     """
 
     _ELIGIBLE_ORIGINS = frozenset(
@@ -53,7 +54,7 @@ class GraphReasoner:
         predicate = context.predicate.strip().casefold()
         known_endpoint = context.known_endpoint.strip().casefold()
 
-        eligible = []
+        eligible: list[EvidenceItemProtocol] = []
         for item in context.evidence_items:
             if item.origin not in self._ELIGIBLE_ORIGINS:
                 continue
@@ -63,10 +64,8 @@ class GraphReasoner:
                 continue
 
             if missing_endpoint == "object":
-                # The subject is known and the object is missing.
                 aligned = item.subject.strip().casefold() == known_endpoint
             else:
-                # The object is known and the subject is missing.
                 aligned = item.object.strip().casefold() == known_endpoint
 
             if aligned:
@@ -78,10 +77,9 @@ class GraphReasoner:
                 AbstentionReason.INSUFFICIENT_SUPPORT,
             )
 
-        # Multiple evidence rows for the same endpoint are not distinct
-        # candidate links. Preserve all their evidence, but require one
-        # unique missing endpoint before proposing.
-        grouped: dict[str, list] = {}
+        # Several records supporting one endpoint are corroboration, not
+        # competing endpoint candidates.
+        grouped: dict[str, list[EvidenceItemProtocol]] = {}
         for item in eligible:
             missing_value = (
                 item.object if missing_endpoint == "object" else item.subject
@@ -101,8 +99,7 @@ class GraphReasoner:
         supporting_items = next(iter(grouped.values()))
         representative = supporting_items[0]
 
-        # Do not manufacture a new source-supported triple. The proposal is
-        # the exact retrieved edge, retaining the original attribution.
+        # Preserve the exact retrieved triple and its original provenance.
         relation = CausalRelation(
             subject=representative.subject,
             predicate=representative.predicate,
