@@ -92,6 +92,10 @@ def test_retrieves_candidate_and_marks_it_retrieval_inferred() -> None:
     )
 
     assert result.scenario_exists
+    assert all(
+        record.scenario_id != "HELD-OUT-001"
+        for record in repository.find_records(limit=100)
+    )
     assert result.evidence
     first = result.evidence[0]
     assert first.relation.subject == "Inlet valve fails open"
@@ -112,7 +116,7 @@ def test_does_not_return_unrelated_rows_from_metadata_overlap() -> None:
             consequences=("Tank overflow",),
         )
     )
-    repository.save_record(
+    repository.save_context_record(
         HazopRecord(
             scenario_id="HELD-OUT-001",
             plant_unit="Storage",
