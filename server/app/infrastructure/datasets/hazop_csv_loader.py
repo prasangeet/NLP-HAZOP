@@ -253,28 +253,93 @@ def _split_items(value: str) -> tuple[str, ...]:
     return tuple(items)
 
 
+def _normalize_provenance_label(value: str) -> str:
+    """Normalize provenance labels while retaining exact-token semantics."""
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", value.casefold()).split())
+
+
 def _origin_and_type(
     record_type_text: str,
     dataset_id: str,
 ) -> tuple[RecordType, RelationshipOrigin]:
-    text = record_type_text.casefold()
-    if "paper_reported_reconstruction" in text or "reconstruct" in text:
+    label = _normalize_provenance_label(record_type_text)
+    labels = {
+        "paper reported reconstruction": (
+            RecordType.SOURCE_RECONSTRUCTED,
+            RelationshipOrigin.RECONSTRUCTED,
+        ),
+        "paper reported reconstructed": (
+            RecordType.SOURCE_RECONSTRUCTED,
+            RelationshipOrigin.RECONSTRUCTED,
+        ),
+        "source reconstructed": (
+            RecordType.SOURCE_RECONSTRUCTED,
+            RelationshipOrigin.RECONSTRUCTED,
+        ),
+        "reconstructed": (
+            RecordType.SOURCE_RECONSTRUCTED,
+            RelationshipOrigin.RECONSTRUCTED,
+        ),
+        "reconstruction": (
+            RecordType.SOURCE_RECONSTRUCTED,
+            RelationshipOrigin.RECONSTRUCTED,
+        ),
+        "synthetic": (RecordType.SYNTHETIC, RelationshipOrigin.SYNTHETIC),
+        "synthetic continuation": (
+            RecordType.SYNTHETIC,
+            RelationshipOrigin.SYNTHETIC,
+        ),
+        "synthetic scenario": (
+            RecordType.SYNTHETIC,
+            RelationshipOrigin.SYNTHETIC,
+        ),
+        "synthetic record": (
+            RecordType.SYNTHETIC,
+            RelationshipOrigin.SYNTHETIC,
+        ),
+        "source verified": (
+            RecordType.SOURCE_VERIFIED,
+            RelationshipOrigin.SOURCE,
+        ),
+        "verified source": (
+            RecordType.SOURCE_VERIFIED,
+            RelationshipOrigin.SOURCE,
+        ),
+        "source documented": (
+            RecordType.SOURCE_VERIFIED,
+            RelationshipOrigin.SOURCE,
+        ),
+        "expert validated": (
+            RecordType.EXPERT_VALIDATED,
+            RelationshipOrigin.EXPERT,
+        ),
+        "expert reviewed": (
+            RecordType.EXPERT_VALIDATED,
+            RelationshipOrigin.EXPERT,
+        ),
+    }
+    if label in labels:
+        return labels[label]
+
+    dataset_label = _normalize_provenance_label(dataset_id)
+    dataset_tokens = set(dataset_label.split())
+    negations = {
+        "not",
+        "non",
+        "un",
+        "unverified",
+        "unvalidated",
+        "unknown",
+    }
+    if dataset_tokens.intersection(negations):
+        return RecordType.UNSPECIFIED, RelationshipOrigin.UNSPECIFIED
+    if "synthetic" in dataset_tokens:
+        return RecordType.SYNTHETIC, RelationshipOrigin.SYNTHETIC
+    if dataset_tokens.intersection({"reconstruction", "reconstructed"}):
         return (
             RecordType.SOURCE_RECONSTRUCTED,
             RelationshipOrigin.RECONSTRUCTED,
         )
-    if "synthetic" in text:
-        return RecordType.SYNTHETIC, RelationshipOrigin.SYNTHETIC
-    if "source_verified" in text or "verified" in text:
-        return RecordType.SOURCE_VERIFIED, RelationshipOrigin.SOURCE
-    if "expert" in text and "valid" in text:
-        return RecordType.EXPERT_VALIDATED, RelationshipOrigin.EXPERT
-
-    ds_folded = dataset_id.casefold()
-    if "dwsim" in ds_folded or "synthetic" in ds_folded:
-        return RecordType.SYNTHETIC, RelationshipOrigin.SYNTHETIC
-    if "reconstruct" in ds_folded:
-        return RecordType.SOURCE_RECONSTRUCTED, RelationshipOrigin.RECONSTRUCTED
     return RecordType.UNSPECIFIED, RelationshipOrigin.UNSPECIFIED
 
 
