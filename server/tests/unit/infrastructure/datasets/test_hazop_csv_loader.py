@@ -10,7 +10,6 @@ from app.domain.entities.hazop_record import (
 )
 from app.infrastructure.datasets.hazop_csv_loader import HazopCsvLoader
 
-
 ROOT = Path(__file__).resolve().parents[5]
 
 
