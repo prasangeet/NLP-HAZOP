@@ -51,20 +51,18 @@ def sample_dataset() -> DatasetMetadata:
     )
 
 
-def test_dataset_import_uses_single_transaction_for_metadata_records_and_edges() -> None:
+def test_dataset_import_is_one_atomic_query_api_transaction() -> None:
     requests: list[dict[str, object]] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         payload = json.loads(request.content)
-        requests.append(payload)
+        requests.append({"path": request.url.path, "payload": payload})
         return httpx.Response(
-            200,
+            202,
             json={
-                "results": [
-                    {"data": []}
-                    for _ in payload["statements"]
-                ],
+                "data": {"fields": [], "values": []},
                 "errors": [],
+                "bookmarks": [],
             },
         )
 
@@ -77,17 +75,29 @@ def test_dataset_import_uses_single_transaction_for_metadata_records_and_edges()
     )
     repository.import_dataset(sample_dataset(), [sample_record()])
 
-    assert len(requests) == 2
-    schema_statements = requests[0]["statements"]
-    import_statements = requests[1]["statements"]
+    # Three schema constraints plus one atomic dataset write.
+    assert len(requests) == 4
+    assert all(
+        request["path"] == "/db/neo4j/query/v2"
+        for request in requests
+    )
+    schema_statements = [
+        request["payload"]["statement"]
+        for request in requests[:3]
+    ]
     assert len(schema_statements) == 3
-    assert len(import_statements) == 3
-    assert "CREATE (d:HazopDataset" in import_statements[0]["statement"]
-    assert "CREATE (s:HazopScenario" in import_statements[1]["statement"]
-    assert "CAUSAL_EDGE" in import_statements[2]["statement"]
-    assert import_statements[0]["parameters"]["source_sha256"] == "abc123"
-    assert import_statements[1]["parameters"]["records"][0]["payload"]
-    assert import_statements[2]["parameters"]["relations"][0]["origin"] == "synthetic"
+    assert all("CREATE CONSTRAINT" in statement for statement in schema_statements)
+
+    import_request = requests[3]["payload"]
+    import_statement = import_request["statement"]
+    parameters = import_request["parameters"]
+    assert "CREATE (d:HazopDataset" in import_statement
+    assert "CREATE (s:HazopScenario" in import_statement
+    assert "CAUSAL_EDGE" in import_statement
+    assert "CALL {" in import_statement
+    assert parameters["source_sha256"] == "abc123"
+    assert parameters["records"][0]["payload"]
+    assert parameters["relations"][0]["origin"] == "synthetic"
     assert repository.storage_type == "neo4j"
     assert repository.is_persistent is True
     repository.close()
@@ -98,14 +108,16 @@ def test_get_record_deserializes_full_record_payload() -> None:
 
     def handler(request: httpx.Request) -> httpx.Response:
         payload = json.loads(request.content)
-        assert "RETURN s.payload" in payload["statements"][0]["statement"]
+        assert "RETURN s.payload" in payload["statement"]
         return httpx.Response(
-            200,
+            202,
             json={
-                "results": [
-                    {"data": [{"row": [json.dumps(record.to_dict())]}]}
-                ],
+                "data": {
+                    "fields": ["s.payload"],
+                    "values": [[json.dumps(record.to_dict())]],
+                },
                 "errors": [],
+                "bookmarks": [],
             },
         )
 

@@ -1,9 +1,8 @@
-"""Neo4j HTTP transactional adapter for the HAZOP graph repository.
+"""Neo4j Query API adapter for the HAZOP graph repository.
 
 Configure NEO4J_HTTP_URI with the Neo4j HTTP endpoint (for example,
-http://127.0.0.1:7474), not the Bolt URI. Cypher is sent through Neo4j's
-transactional HTTP API so the adapter only needs the project's existing
-httpx dependency.
+http://127.0.0.1:7474), not the Bolt URI. Queries use Neo4j's current HTTP
+Query API through the project's existing httpx dependency.
 """
 
 from __future__ import annotations
@@ -31,7 +30,7 @@ class Neo4jRepositoryError(RuntimeError):
 
 
 class Neo4jGraphRepository:
-    """Persistent graph repository backed by Neo4j's transactional HTTP API."""
+    """Persistent graph repository backed by Neo4j's HTTP Query API."""
 
     storage_type = "neo4j"
     is_persistent = True
@@ -79,7 +78,7 @@ class Neo4jGraphRepository:
             raise ValueError("Neo4j database must not be empty.")
 
         self._endpoint = (
-            f"{http_uri.rstrip('/')}/db/{quote(database.strip(), safe='')}/tx/commit"
+            f"{http_uri.rstrip('/')}/db/{quote(database.strip(), safe='')}/query/v2"
         )
         self._client = client or httpx.Client(
             auth=(username, password),
@@ -96,24 +95,37 @@ class Neo4jGraphRepository:
         self,
         statements: list[dict[str, object]],
     ) -> list[dict[str, object]]:
-        try:
-            response = self._client.post(
-                self._endpoint,
-                json={"statements": statements},
-            )
-            response.raise_for_status()
-            payload = response.json()
-        except (httpx.HTTPError, ValueError) as exc:
-            raise Neo4jRepositoryError(f"Neo4j HTTP request failed: {exc}") from exc
+        """Execute parameterized queries through Neo4j Query API v2."""
+        results: list[dict[str, object]] = []
+        for item in statements:
+            body: dict[str, object] = {
+                "statement": item["statement"],
+                "parameters": item.get("parameters", {}),
+            }
+            try:
+                response = self._client.post(self._endpoint, json=body)
+                response.raise_for_status()
+                payload = response.json()
+            except (httpx.HTTPError, ValueError) as exc:
+                raise Neo4jRepositoryError(
+                    f"Neo4j Query API request failed: {exc}"
+                ) from exc
 
-        errors = payload.get("errors", [])
-        if errors:
-            details = "; ".join(
-                f"{item.get('code', 'Neo4jError')}: {item.get('message', 'Unknown error')}"
-                for item in errors
+            errors = payload.get("errors", [])
+            if errors:
+                details = "; ".join(
+                    f"{error.get('code', 'Neo4jError')}: "
+                    f"{error.get('message', 'Unknown error')}"
+                    for error in errors
+                )
+                raise Neo4jRepositoryError(details)
+
+            data = payload.get("data") or {}
+            values = data.get("values", []) if isinstance(data, dict) else []
+            results.append(
+                {"data": [{"row": row} for row in values]}
             )
-            raise Neo4jRepositoryError(details)
-        return payload.get("results", [])
+        return results
 
     def _ensure_schema(self) -> None:
         if self._schema_ready:
@@ -276,59 +288,48 @@ class Neo4jGraphRepository:
             raise ValueError(
                 "Dataset relationship_count does not match imported relationships."
             )
-        statements: list[dict[str, object]] = [
-            {
-                "statement": (
-                    "CREATE (d:HazopDataset {"
-                    "dataset_id: $dataset_id, name: $name, filename: $filename, "
-                    "source_sha256: $source_sha256, record_count: $record_count, "
-                    "relationship_count: $relationship_count, created_at: $created_at"
-                    "}) RETURN d.dataset_id"
-                ),
-                "parameters": dataset.to_dict(),
-            },
-            {
-                "statement": (
-                    "UNWIND $records AS row "
-                    "MATCH (d:HazopDataset {dataset_id: $dataset_id}) "
-                    "CREATE (s:HazopScenario {"
-                    "dataset_id: $dataset_id, scenario_id: row.scenario_id, "
-                    "equipment: row.equipment, deviation: row.deviation, "
-                    "plant_unit: row.plant_unit, payload: row.payload"
-                    "}) "
-                    "CREATE (d)-[:CONTAINS_SCENARIO]->(s) "
-                    "RETURN count(s)"
-                ),
-                "parameters": {
-                    "dataset_id": dataset.dataset_id,
-                    "records": record_rows,
-                },
-            },
-            {
-                "statement": (
-                    "UNWIND $relations AS row "
-                    "MERGE (source:HazopConcept {"
-                    "dataset_id: $dataset_id, key: row.subject_key"
-                    "}) SET source.name = row.subject "
-                    "MERGE (target:HazopConcept {"
-                    "dataset_id: $dataset_id, key: row.object_key"
-                    "}) SET target.name = row.object "
-                    "MERGE (source)-[edge:CAUSAL_EDGE {edge_id: row.edge_id}]->(target) "
-                    "SET edge.dataset_id = $dataset_id, "
-                    "edge.scenario_id = row.scenario_id, "
-                    "edge.predicate = row.predicate, edge.origin = row.origin, "
-                    "edge.evidence = row.evidence, edge.confidence = row.confidence, "
-                    "edge.source_id = row.source_id, "
-                    "edge.is_expert_verified = row.is_expert_verified "
-                    "RETURN count(edge)"
-                ),
-                "parameters": {
-                    "dataset_id": dataset.dataset_id,
-                    "relations": relation_rows,
-                },
-            },
-        ]
-        self._execute(statements)
+        statement = (
+            "CREATE (d:HazopDataset {"
+            "dataset_id: $dataset_id, name: $name, filename: $filename, "
+            "source_sha256: $source_sha256, record_count: $record_count, "
+            "relationship_count: $relationship_count, created_at: $created_at"
+            "}) "
+            "WITH d "
+            "UNWIND $records AS row "
+            "CREATE (s:HazopScenario {"
+            "dataset_id: $dataset_id, scenario_id: row.scenario_id, "
+            "equipment: row.equipment, deviation: row.deviation, "
+            "plant_unit: row.plant_unit, payload: row.payload"
+            "}) "
+            "CREATE (d)-[:CONTAINS_SCENARIO]->(s) "
+            "WITH d, count(s) AS records_created "
+            "CALL { "
+            "WITH d "
+            "UNWIND $relations AS row "
+            "MERGE (source:HazopConcept {"
+            "dataset_id: $dataset_id, key: row.subject_key"
+            "}) SET source.name = row.subject "
+            "MERGE (target:HazopConcept {"
+            "dataset_id: $dataset_id, key: row.object_key"
+            "}) SET target.name = row.object "
+            "MERGE (source)-[edge:CAUSAL_EDGE {edge_id: row.edge_id}]->(target) "
+            "SET edge.dataset_id = $dataset_id, "
+            "edge.scenario_id = row.scenario_id, "
+            "edge.predicate = row.predicate, edge.origin = row.origin, "
+            "edge.evidence = row.evidence, edge.confidence = row.confidence, "
+            "edge.source_id = row.source_id, "
+            "edge.is_expert_verified = row.is_expert_verified "
+            "RETURN count(edge) AS relationships_created "
+            "} "
+            "RETURN d.dataset_id AS dataset_id, records_created, "
+            "relationships_created"
+        )
+        parameters = {
+            **dataset.to_dict(),
+            "records": record_rows,
+            "relations": relation_rows,
+        }
+        self._execute([{"statement": statement, "parameters": parameters}])
 
     def get_dataset(self, dataset_id: str) -> DatasetMetadata | None:
         result = self._execute(

@@ -228,9 +228,9 @@ The API keeps the preview and persistence boundaries explicit:
 
 ### Configure Neo4j
 
-The adapter uses Neo4j's transactional HTTP endpoint through the existing `httpx`
-dependency. Configure all three required environment variables before starting
-the API:
+The adapter uses Neo4j's current HTTP Query API v2 through the existing `httpx`
+dependency. It does not use the deprecated transactional HTTP endpoint.
+Configure all three required environment variables before starting the API:
 
 ```bash
 export NEO4J_HTTP_URI="http://127.0.0.1:7474"
@@ -243,10 +243,11 @@ uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 Use the HTTP URI (normally port 7474), not a `bolt://` URI. The adapter creates
 dataset, dataset-scoped scenario, and dataset-scoped concept uniqueness constraints
-on first use. Dataset creation, scenario writes, and edge writes are sent in one
-transactional commit. The original uploaded CSV bytes are not stored as a separate
-file; source filename and SHA-256 are retained, and every normalized record keeps
-its raw row and row number.
+on first use. Dataset metadata, normalized scenario payloads, and typed edge writes
+are combined into one parameterized Cypher query. Neo4j executes that query in a
+single implicit transaction and rolls it back on failure. The original uploaded
+CSV bytes are not stored as a separate file; source filename and SHA-256 are
+retained, and every normalized record keeps its raw row and row number.
 
 Without Neo4j settings, the server still starts and `/health` plus CSV preview
 remain available. Confirmed import and dataset/graph/recovery endpoints return
