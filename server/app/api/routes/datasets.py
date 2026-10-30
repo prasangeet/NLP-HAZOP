@@ -17,6 +17,7 @@ from app.api.dependencies import get_graph_repository
 from app.domain.entities.dataset import DatasetMetadata
 from app.domain.entities.hazop_record import HazopRecord
 from app.domain.repositories.graph_repository import DatasetRepository
+from app.domain.ontology.schema import infer_entity_types
 from app.infrastructure.datasets.hazop_csv_loader import (
     COLUMN_ALIASES,
     HazopCsvLoader,
@@ -342,15 +343,17 @@ def get_graph(
     edges: list[dict[str, object]] = []
     for record in records:
         for relation in record.causal_relations:
-            source_key = relation.subject.casefold()
-            target_key = relation.object.casefold()
+            subject_type = relation.subject_type if relation.subject_type.value != "Concept" else infer_entity_types(relation.predicate, relation.subject, relation.object)[0]
+            object_type = relation.object_type if relation.object_type.value != "Concept" else infer_entity_types(relation.predicate, relation.subject, relation.object)[1]
+            source_key = f"{subject_type.value}:{relation.subject.casefold()}"
+            target_key = f"{object_type.value}:{relation.object.casefold()}"
             nodes.setdefault(
                 source_key,
-                {"id": source_key, "label": relation.subject, "dataset_id": dataset_id},
+                {"id": source_key, "label": relation.subject, "entity_type": subject_type.value, "dataset_id": dataset_id},
             )
             nodes.setdefault(
                 target_key,
-                {"id": target_key, "label": relation.object, "dataset_id": dataset_id},
+                {"id": target_key, "label": relation.object, "entity_type": object_type.value, "dataset_id": dataset_id},
             )
             edges.append(
                 {
@@ -360,6 +363,8 @@ def get_graph(
                     "target": target_key,
                     "label": relation.predicate,
                     "predicate": relation.predicate,
+                    "subject_type": subject_type.value,
+                    "object_type": object_type.value,
                     "scenario_id": record.scenario_id,
                     "origin": relation.origin.value,
                     "evidence": relation.evidence,

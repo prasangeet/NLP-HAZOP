@@ -269,9 +269,9 @@ class Neo4jGraphRepository:
                             f"{relation.object.casefold()}"
                         ),
                         "subject": relation.subject,
-                        "subject_key": relation.subject.casefold(),
+                        "subject_key": f"{(relation.subject_type if relation.subject_type != EntityType.CONCEPT else infer_entity_types(relation.predicate, relation.subject, relation.object)[0]).value}:{relation.subject.casefold()}",
                         "object": relation.object,
-                        "object_key": relation.object.casefold(),
+                        "object_key": f"{(relation.object_type if relation.object_type != EntityType.CONCEPT else infer_entity_types(relation.predicate, relation.subject, relation.object)[1]).value}:{relation.object.casefold()}",
                         "predicate": relation.predicate,
                         "subject_type": subject_type.value,
                         "object_type": object_type.value,

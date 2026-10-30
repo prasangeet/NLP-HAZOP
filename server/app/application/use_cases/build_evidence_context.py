@@ -214,7 +214,7 @@ class BuildEvidenceContext:
             missing_endpoint=request.missing_endpoint.value,
             status=recovery_result.status,
             evidence_items=evidence_items,
-            graph_context=graph_context or evidence_items,
+            graph_context=graph_context,
             scenario_context=recovery_result.scenario_context,
             dataset_id=request.dataset_id,
         )

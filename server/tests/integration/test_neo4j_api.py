@@ -113,6 +113,9 @@ def test_import_persists_across_app_restart_and_supports_graph_recovery() -> Non
         assert graph.status_code == 200
         assert graph.json()["node_count"] >= 2
         assert graph.json()["edge_count"] >= 2
+        graph_nodes = graph.json()["nodes"]
+        assert any(node["entity_type"] == "Cause" for node in graph_nodes)
+        assert any(node["entity_type"] == "Deviation" for node in graph_nodes)
 
         recovery = client.post(
             f"/api/v1/datasets/{dataset_id}/recovery",
@@ -122,6 +125,7 @@ def test_import_persists_across_app_restart_and_supports_graph_recovery() -> Non
                 "known_endpoint": "Pump failure",
                 "missing_endpoint": "object",
                 "limit": 10,
+                "strategy": "graph",
             },
         )
         assert recovery.status_code == 200, recovery.text
