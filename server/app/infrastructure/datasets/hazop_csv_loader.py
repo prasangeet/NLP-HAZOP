@@ -33,11 +33,11 @@ def _split_items(value: str) -> tuple[str, ...]:
         return ()
     items: list[str] = []
     seen: set[str] = set()
-    for raw in re.split(r"\\s*[;|]\\s*", value):
+    for raw in re.split(r"\s*[;|]\\s*", value):
         # T-301 reconstruction occasionally uses commas as secondary list
         # separators. DWSIM prose remains intact because its sentences do
         # not use comma-delimited enumerations in cause/consequence fields.
-        parts = re.split(r"\\s*,\\s*", raw) if ";" in value else [raw]
+        parts = re.split(r"\s*,\\s*", raw) if ";" in value else [raw]
         for part in parts:
             cleaned = part.strip().strip('"').strip()
             key = cleaned.casefold()
