@@ -77,6 +77,16 @@ class ScenarioLocalRetriever:
             evidence=tuple(results),
             scenario_exists=True,
             graph_context=graph_context,
+            scenario_context=" | ".join(
+                value for value in (
+                    record.plant_unit,
+                    record.equipment,
+                    record.design_intent,
+                    record.parameter,
+                    record.guideword,
+                    record.deviation,
+                ) if value
+            ),
         )
 
     @staticmethod
