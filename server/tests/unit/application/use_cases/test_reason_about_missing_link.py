@@ -4,8 +4,15 @@ from app.application.strategies.graph_reasoner import GraphReasoner
 from app.application.strategies.retrieval.scenario_local import ScenarioLocalRetriever
 from app.application.use_cases.build_evidence_context import BuildEvidenceContext
 from app.application.use_cases.reason_about_missing_link import ReasonAboutMissingLink
-from app.application.use_cases.recover_missing_link import RecoverMissingLink, RecoveryRequest
-from app.domain.entities.hazop_record import CausalRelation, HazopRecord, RelationshipOrigin
+from app.application.use_cases.recover_missing_link import (
+    RecoverMissingLink,
+    RecoveryRequest,
+)
+from app.domain.entities.hazop_record import (
+    CausalRelation,
+    HazopRecord,
+    RelationshipOrigin,
+)
 from app.domain.reasoning.models import AbstentionReason, ReasoningStatus
 
 
