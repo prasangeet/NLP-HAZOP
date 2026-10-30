@@ -1,11 +1,11 @@
 """Unit tests for the LLM missing-link reasoning strategy."""
 
+from app.application.strategies.llm_reasoner import LLMDecision, LLMReasoner
 from app.application.use_cases.build_evidence_context import (
     EvidenceContext,
     EvidenceItem,
 )
 from app.application.use_cases.recover_missing_link import RecoveryStatus
-from app.application.strategies.llm_reasoner import LLMDecision, LLMReasoner
 from app.domain.entities.hazop_record import RelationshipOrigin
 from app.domain.reasoning.models import AbstentionReason, ReasoningStatus
 
