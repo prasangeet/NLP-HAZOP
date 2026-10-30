@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import re
+import time
 from collections import Counter
 from collections.abc import Iterable
 
@@ -112,6 +113,35 @@ class TfidfRetriever:
         self._repository = repository
         self._min_score = min_score
         self._max_records = max_records
+        self._records: tuple[HazopRecord, ...] = ()
+        self._idf: dict[str, float] = {}
+        self._document_vectors: tuple[dict[str, float], ...] = ()
+        self.index_build_ms = 0.0
+        self.refresh()
+
+    def refresh(self) -> None:
+        """Rebuild the corpus index after records are added or updated."""
+
+        started = time.perf_counter()
+        records = tuple(
+            self._repository.find_records(limit=self._max_records)
+        )
+        documents = [_tokens(_record_text(record)) for record in records]
+        document_frequency: Counter[str] = Counter()
+        for terms in documents:
+            document_frequency.update(set(terms))
+
+        count = len(documents)
+        idf = {
+            term: math.log((count + 1) / (frequency + 1)) + 1.0
+            for term, frequency in document_frequency.items()
+        }
+        self._records = records
+        self._idf = idf
+        self._document_vectors = tuple(
+            self._vector(terms, idf) for terms in documents
+        )
+        self.index_build_ms = (time.perf_counter() - started) * 1000.0
 
     def retrieve(self, request: RetrievalRequest) -> RetrievalResult:
         target = self._repository.get_record(request.scenario_id)
@@ -123,10 +153,7 @@ class TfidfRetriever:
                 scenario_exists=False,
             )
 
-        records = list(
-            self._repository.find_records(limit=self._max_records)
-        )
-        if not records:
+        if not self._records:
             return RetrievalResult(
                 scenario_id=request.scenario_id,
                 scope=RetrievalScope.SCENARIO_LOCAL,
@@ -135,17 +162,8 @@ class TfidfRetriever:
                 scenario_context=_scenario_context(target),
             )
 
-        documents = [_tokens(_record_text(record)) for record in records]
-        document_frequency: Counter[str] = Counter()
-        for terms in documents:
-            document_frequency.update(set(terms))
-
-        count = len(documents)
-        idf = {
-            term: math.log((count + 1) / (frequency + 1)) + 1.0
-            for term, frequency in document_frequency.items()
-        }
-
+        records = self._records
+        idf = self._idf
         query_terms = _tokens(request.known_endpoint)
         query_vector = self._vector(query_terms, idf)
         if not query_vector:
@@ -159,8 +177,10 @@ class TfidfRetriever:
             )
 
         scored_records: list[tuple[float, HazopRecord]] = []
-        for record, terms in zip(records, documents):
-            document_vector = self._vector(terms, idf)
+        for record, document_vector in zip(
+            records,
+            self._document_vectors,
+        ):
             record_score = _cosine(query_vector, document_vector)
             if record_score > 0.0:
                 scored_records.append((record_score, record))
