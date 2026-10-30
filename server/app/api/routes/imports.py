@@ -24,8 +24,50 @@ MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 DEFAULT_PREVIEW_LIMIT = 100
 MAX_PREVIEW_LIMIT = 500
 
-SCENARIO_ID_HEADERS = {"scenario_id", "scenario id"}
-DEVIATION_HEADERS = {"deviation"}
+COLUMN_ALIASES = {
+    "scenario_id": {"scenario_id", "scenario id"},
+    "plant_unit": {"plant/unit", "plant / process", "node"},
+    "equipment": {
+        "node/equipment",
+        "node / equipment",
+        "equipment",
+        "node",
+    },
+    "design_intent": {"design_intent", "design intent"},
+    "guideword": {"guideword"},
+    "parameter": {"parameter"},
+    "deviation": {"deviation"},
+    "causes": {"possible_causes", "possible_cause", "causes"},
+    "effects": {
+        "simulated_or_inferred_effect",
+        "simulated or inferred effect",
+    },
+    "consequences": {
+        "possible_consequences",
+        "possible_consequence",
+        "consequences",
+    },
+    "safeguards": {
+        "existing_safeguards",
+        "existing controls / safeguards",
+    },
+    "recommendations": {
+        "recommendations",
+        "recommendations / candidate safeguards",
+        "candidate_safeguard",
+        "candidate safeguard",
+    },
+    "risk_ranking": {"risk_ranking", "risk ranking"},
+    "record_type": {"record_type", "evidence source", "source_type"},
+    "provenance": {
+        "provenance",
+        "evidence_and_limitation",
+        "remarks / evidence",
+        "remarks",
+        "evidence source",
+        "source_type",
+    },
+}
 
 
 class CsvPreviewResponse(BaseModel):
@@ -55,11 +97,14 @@ def _dataset_id(filename: str) -> str:
     return (slug or "uploaded-dataset")[:80]
 
 
-def _find_header(headers: list[str], accepted: set[str]) -> str | None:
-    for header in headers:
-        if header.strip().casefold() in accepted:
-            return header
-    return None
+def _recognized_columns(headers: list[str]) -> dict[str, str]:
+    recognized: dict[str, str] = {}
+    for canonical_name, aliases in COLUMN_ALIASES.items():
+        for header in headers:
+            if header.strip().casefold() in aliases:
+                recognized[canonical_name] = header
+                break
+    return recognized
 
 
 @router.post(
@@ -127,8 +172,9 @@ async def preview_csv(
                 detail="CSV contains duplicate column names.",
             )
 
-        scenario_header = _find_header(headers, SCENARIO_ID_HEADERS)
-        deviation_header = _find_header(headers, DEVIATION_HEADERS)
+        recognized_columns = _recognized_columns(headers)
+        scenario_header = recognized_columns.get("scenario_id")
+        deviation_header = recognized_columns.get("deviation")
         if scenario_header is None or deviation_header is None:
             missing = []
             if scenario_header is None:
@@ -242,10 +288,7 @@ async def preview_csv(
         filename=filename,
         dataset_id=dataset_id,
         storage="not_persisted",
-        recognized_columns={
-            "scenario_id": scenario_header,
-            "deviation": deviation_header,
-        },
+        recognized_columns=recognized_columns,
         summary={
             "rows_read": len(rows),
             "records_loaded": len(records),
