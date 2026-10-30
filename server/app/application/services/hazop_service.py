@@ -8,7 +8,6 @@ from app.domain.entities.hazop_record import (
     CausalRelation,
     HazopRecord,
 )
-
 from app.domain.repositories.graph_repository import GraphRepository
 
 
