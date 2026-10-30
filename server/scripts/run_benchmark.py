@@ -17,14 +17,14 @@ import re
 import time
 from collections import Counter
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from app.application.strategies.graph_reasoner import GraphReasoner
 from app.application.strategies.hybrid_reasoner import HybridReasoner
-from app.application.strategies.prompt_only_reasoner import PromptOnlyReasoner
 from app.application.strategies.llm_reasoner import LLMReasoner
+from app.application.strategies.prompt_only_reasoner import PromptOnlyReasoner
 from app.application.strategies.retrieval.graph_neighborhood import (
     GraphNeighborhoodRetriever,
 )
@@ -630,7 +630,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "llm_max_cases": args.max_llm_cases,
         "llm_calls_per_evaluated_case_max": 2,
         "cost_measurement": "not captured; cost_usd remains null",
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
 
     return {
