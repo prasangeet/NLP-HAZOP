@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from app.main import create_app
 from app.infrastructure.graph.in_memory_graph_repository import (
     InMemoryGraphRepository,
 )
+from app.main import create_app
 
 
 CSV = (
