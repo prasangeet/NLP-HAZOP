@@ -5,7 +5,6 @@ from __future__ import annotations
 import csv
 import re
 from pathlib import Path
-from typing import Any
 
 from app.domain.entities.hazop_record import (
     CausalRelation,
@@ -34,11 +33,11 @@ def _split_items(value: str) -> tuple[str, ...]:
         return ()
     items: list[str] = []
     seen: set[str] = set()
-    for raw in re.split(r"s*[;|]s*", value):
+    for raw in re.split(r"\\s*[;|]\\s*", value):
         # T-301 reconstruction occasionally uses commas as secondary list
         # separators. DWSIM prose remains intact because its sentences do
         # not use comma-delimited enumerations in cause/consequence fields.
-        parts = re.split(r"s*,s*", raw) if ";" in value else [raw]
+        parts = re.split(r"\\s*,\\s*", raw) if ";" in value else [raw]
         for part in parts:
             cleaned = part.strip().strip('"').strip()
             key = cleaned.casefold()
@@ -110,7 +109,7 @@ class HazopCsvLoader:
         records: list[HazopRecord] = []
         with source_path.open("r", encoding="utf-8-sig", newline="") as handle:
             for index, row in enumerate(csv.DictReader(handle), start=1):
-                record = self._record_from_row(row, dataset_id, index)
+                record = self._record_from_row(row, dataset_id)
                 if record is not None:
                     records.append(record)
         return tuple(records)
@@ -119,7 +118,6 @@ class HazopCsvLoader:
         self,
         row: dict[str, str],
         dataset_id: str,
-        row_number: int,
     ) -> HazopRecord | None:
         scenario_id = _pick(row, "Scenario_ID", "Scenario ID")
         if not scenario_id:
