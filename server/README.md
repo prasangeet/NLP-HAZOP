@@ -160,9 +160,11 @@ require a separately expert-adjudicated held-out set.
 
 ## Local FastAPI upload API
 
-The application endpoint accepts a UTF-8 HAZOP CSV and returns a normalized
-preview. It does **not** persist the uploaded file or records yet; a persistent
-repository/import endpoint will be added with the database integration.
+The preview endpoint accepts a UTF-8 HAZOP CSV and returns a normalized, temporary
+preview. It does not persist records. After reviewing that preview, the client can
+explicitly confirm the dataset through `POST /api/v1/datasets/import`; confirmed
+imports persist dataset metadata, full normalized scenario payloads (including raw
+row provenance), and typed concept relationships in Neo4j.
 
 From the `server/` directory:
 
@@ -199,3 +201,92 @@ The default CORS allowlist supports the Vite development server and common Tauri
 The dependency lockfile is refreshed by `uv sync` when project dependencies
 change. After adding or changing dependencies, run `uv lock` locally and
 commit the updated `uv.lock` for a fully reproducible dependency snapshot.
+
+
+## Persistent API and Neo4j storage
+
+The API keeps the preview and persistence boundaries explicit:
+
+- `POST /api/v1/datasets/preview`: validate and preview; never writes to storage.
+- `POST /api/v1/datasets/import`: explicit confirmation endpoint. Accepts multipart
+  `file`, optional `dataset_id`, and optional `name`. Stores metadata, normalized
+  scenarios, raw row/provenance fields, and typed causal edges in one Neo4j
+  transactional HTTP commit. A dataset ID is immutable after creation; duplicate
+  imports return HTTP 409. Scenario IDs must be unique within a dataset.
+- `GET /api/v1/datasets` and `GET /api/v1/datasets/{dataset_id}`: list and inspect
+  persisted dataset metadata.
+- `GET /api/v1/datasets/{dataset_id}/scenarios`: list scenarios; optional
+  `equipment`, `deviation`, and `limit` filters.
+- `GET /api/v1/datasets/{dataset_id}/scenarios/{scenario_id}`: fetch one scenario.
+- `GET /api/v1/datasets/{dataset_id}/relationships`: query typed relationships by
+  optional `subject`, `predicate`, and `object`.
+- `GET /api/v1/datasets/{dataset_id}/graph`: return nodes and edges suitable for a
+  graph visualization.
+- `POST /api/v1/datasets/{dataset_id}/recovery`: retrieve scenario-local and
+  same-dataset cross-scenario evidence, enrich with a bounded graph neighborhood,
+  and return candidates plus a graph-reasoning proposal or abstention.
+
+### Local Neo4j with Docker Compose
+
+The repository includes a local Neo4j service using the same `neo4j:5.26-community`
+image used by the integration tests. It exposes the Neo4j Browser/HTTP Query API
+on port 7474 and Bolt on port 7687, bound to localhost only. Named Docker volumes
+persist the database and logs across container restarts.
+
+From the repository root:
+
+```bash
+cp .env.example .env
+# Edit .env and replace NEO4J_PASSWORD with a strong local password.
+docker compose up -d
+docker compose ps
+```
+
+Wait until the Neo4j service reports `healthy`. Open
+`http://127.0.0.1:7474/browser` to inspect the local database. The Compose
+health check runs an authenticated `RETURN 1` through `cypher-shell`.
+
+In a second terminal, start the FastAPI server with the same root `.env` file:
+
+```bash
+cd server
+uv sync
+uv run uvicorn app.main:app --reload --env-file ../.env --host 127.0.0.1 --port 8000
+```
+
+The API uses `NEO4J_HTTP_URI=http://127.0.0.1:7474` and the matching
+username/password from `.env`. Check `http://127.0.0.1:8000/health` and
+`http://127.0.0.1:8000/docs`.
+
+Useful lifecycle commands (run from the repository root):
+
+```bash
+docker compose logs -f neo4j
+docker compose stop
+docker compose start
+docker compose down
+```
+
+`docker compose down` removes the container but **preserves** the named database
+volume. `docker compose down -v` also deletes the database and logs permanently.
+Only use the latter when you intentionally want to reset all locally imported data.
+
+Configure the adapter directly with environment variables instead when using a
+managed or externally hosted Neo4j instance. The adapter requires
+`NEO4J_HTTP_URI`, `NEO4J_USERNAME`, and `NEO4J_PASSWORD`; `NEO4J_DATABASE`
+(default `neo4j`) and `NEO4J_TIMEOUT_SECONDS` (default 15) are optional.
+Use the HTTP URI (normally port 7474), not a `bolt://` URI. The adapter creates
+dataset, dataset-scoped scenario, and dataset-scoped concept uniqueness constraints
+on first use. Dataset metadata, normalized scenario payloads, and typed edge writes
+are combined into one parameterized Cypher query. Neo4j executes that query in a
+single implicit transaction and rolls it back on failure. The original uploaded
+CSV bytes are not stored as a separate file; source filename and SHA-256 are
+retained, and every normalized record keeps its raw row and row number.
+
+Without Neo4j settings, the server still starts and `/health` plus CSV preview
+remain available. Confirmed import and dataset/graph/recovery endpoints return
+HTTP 503 rather than silently using process-local memory. The in-memory repository
+remains the deterministic adapter for unit tests and benchmark experiments.
+
+Recovery responses are hypotheses only. Silver row associations, graph paths,
+and model outputs are not expert-validated causal truth.

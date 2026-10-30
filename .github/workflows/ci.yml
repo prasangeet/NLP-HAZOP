@@ -6,6 +6,7 @@ on:
       - main
       - "research/**"
       - "fix/**"
+      - "feat/**"
   pull_request:
     branches:
       - main
@@ -95,3 +96,44 @@ jobs:
           path: results/${{ matrix.dataset }}/
           if-no-files-found: error
           retention-days: 30
+
+  neo4j-integration:
+    name: Neo4j Query API integration
+    runs-on: ubuntu-latest
+    env:
+      NEO4J_HTTP_URI: http://127.0.0.1:7474
+      NEO4J_USERNAME: neo4j
+      NEO4J_PASSWORD: test-password
+      NEO4J_DATABASE: neo4j
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - name: Install locked dependencies
+        run: uv sync --locked
+      - name: Start Neo4j from the repository Compose configuration
+        working-directory: .
+        run: |
+          cp .env.example .env
+          docker compose up -d --wait --wait-timeout 120 neo4j
+          docker compose ps
+      - name: Exercise persistent import and recovery against Neo4j
+        run: uv run pytest -v tests/integration/test_neo4j_api.py
+      - name: Stop Neo4j and remove the ephemeral CI database
+        if: always()
+        working-directory: .
+        run: |
+          if [ -f .env ]; then
+            docker compose down -v
+          fi
