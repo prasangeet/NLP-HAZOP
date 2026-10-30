@@ -96,3 +96,44 @@ jobs:
           path: results/${{ matrix.dataset }}/
           if-no-files-found: error
           retention-days: 30
+
+  neo4j-integration:
+    name: Neo4j Query API integration
+    runs-on: ubuntu-latest
+    env:
+      NEO4J_HTTP_URI: http://127.0.0.1:7474
+      NEO4J_USERNAME: neo4j
+      NEO4J_PASSWORD: test-password
+      NEO4J_DATABASE: neo4j
+    services:
+      neo4j:
+        image: neo4j:5.26-community
+        env:
+          NEO4J_AUTH: neo4j/test-password
+        ports:
+          - 7474:7474
+        options: >-
+          --health-cmd "curl -sS -o /dev/null http://localhost:7474 || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+          --health-start-period 30s
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+      - name: Install locked dependencies
+        run: uv sync --locked
+      - name: Exercise persistent import and recovery against Neo4j
+        run: uv run pytest -v tests/integration/test_neo4j_api.py
