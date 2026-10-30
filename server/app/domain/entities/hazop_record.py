@@ -37,6 +37,7 @@ class RelationshipOrigin(StrEnum):
     EXPERT = "expert"
     MODEL_INFERRED = "model_inferred"
     GRAPH_INFERRED = "graph_inferred"
+    RETRIEVAL_INFERRED = "retrieval_inferred"
 
 
 @dataclass(frozen=True, slots=True)
