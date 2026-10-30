@@ -1,8 +1,6 @@
-"""Graph-based reasoning for structured HAZOP missing-link recovery."""
+"""Conservative graph-structural baseline for HAZOP link recovery."""
 
 from __future__ import annotations
-
-from collections import defaultdict, deque
 
 from app.domain.entities.hazop_record import (
     CausalRelation,
@@ -17,20 +15,27 @@ from app.domain.reasoning.models import (
 
 
 class GraphReasoner:
-    """Reason over an evidence graph without inventing unsupported links.
+    """Recover a missing endpoint from query-aligned graph evidence.
 
-    This baseline uses directed graph structure to inspect candidate
-    relationships. It proposes a relationship only when exactly one
-    evidence-backed relation is supported by the graph.
+    The retriever supplies relationships that match the requested predicate
+    and known endpoint. This strategy validates that alignment, rejects
+    model-inferred or undocumented evidence, deduplicates candidate endpoints,
+    and proposes only when exactly one supported endpoint remains.
+
+    This is deliberately a conservative one-hop graph baseline. It does not
+    claim multi-hop path reasoning because the current EvidenceContext does
+    not include arbitrary neighboring edges.
     """
 
-    _ELIGIBLE_ORIGINS = {
-        RelationshipOrigin.SOURCE,
-        RelationshipOrigin.EXPERT,
-    }
+    _ELIGIBLE_ORIGINS = frozenset(
+        {
+            RelationshipOrigin.SOURCE,
+            RelationshipOrigin.EXPERT,
+        }
+    )
 
     def reason(self, context: EvidenceContextProtocol) -> ReasoningResult:
-        """Return a supported relationship or abstain."""
+        """Return one uniquely supported relationship or abstain."""
 
         if not context.evidence_items:
             return self._abstain(
@@ -38,12 +43,34 @@ class GraphReasoner:
                 AbstentionReason.NO_EVIDENCE,
             )
 
-        eligible = [
-            item
-            for item in context.evidence_items
-            if item.origin in self._ELIGIBLE_ORIGINS
-            and item.evidence.strip()
-        ]
+        missing_endpoint = context.missing_endpoint.casefold()
+        if missing_endpoint not in {"subject", "object"}:
+            return self._abstain(
+                context.scenario_id,
+                AbstentionReason.INSUFFICIENT_SUPPORT,
+            )
+
+        predicate = context.predicate.strip().casefold()
+        known_endpoint = context.known_endpoint.strip().casefold()
+
+        eligible = []
+        for item in context.evidence_items:
+            if item.origin not in self._ELIGIBLE_ORIGINS:
+                continue
+            if not item.evidence.strip():
+                continue
+            if item.predicate.strip().casefold() != predicate:
+                continue
+
+            if missing_endpoint == "object":
+                # The subject is known and the object is missing.
+                aligned = item.subject.strip().casefold() == known_endpoint
+            else:
+                # The object is known and the subject is missing.
+                aligned = item.object.strip().casefold() == known_endpoint
+
+            if aligned:
+                eligible.append(item)
 
         if not eligible:
             return self._abstain(
@@ -51,95 +78,64 @@ class GraphReasoner:
                 AbstentionReason.INSUFFICIENT_SUPPORT,
             )
 
-        adjacency: dict[str, set[str]] = defaultdict(set)
-
+        # Multiple evidence rows for the same endpoint are not distinct
+        # candidate links. Preserve all their evidence, but require one
+        # unique missing endpoint before proposing.
+        grouped: dict[str, list] = {}
         for item in eligible:
-            adjacency[item.subject.casefold()].add(
-                item.object.casefold()
+            missing_value = (
+                item.object if missing_endpoint == "object" else item.subject
             )
+            grouped.setdefault(missing_value.strip().casefold(), []).append(item)
 
-        # Identify evidence-backed relations whose endpoints are connected
-        # through another path in the graph.
-        candidates = []
-
-        for item in eligible:
-            subject = item.subject.casefold()
-            object_ = item.object.casefold()
-
-            if self._has_alternate_path(
-                adjacency,
-                subject,
-                object_,
-            ):
-                candidates.append(item)
-
-        if not candidates:
-            return self._abstain(
-                context.scenario_id,
-                AbstentionReason.INSUFFICIENT_SUPPORT,
-            )
-
-        if len(candidates) > 1:
+        if len(grouped) > 1:
             return ReasoningResult(
                 status=ReasoningStatus.ABSTAINED,
                 scenario_id=context.scenario_id,
                 supporting_evidence=tuple(
-                    item.evidence for item in candidates
+                    item.evidence for item in eligible
                 ),
                 abstention_reason=AbstentionReason.AMBIGUOUS_EVIDENCE,
             )
 
-        item = candidates[0]
+        supporting_items = next(iter(grouped.values()))
+        representative = supporting_items[0]
 
+        # Do not manufacture a new source-supported triple. The proposal is
+        # the exact retrieved edge, retaining the original attribution.
         relation = CausalRelation(
-            subject=item.subject,
-            predicate=item.predicate,
-            object=item.object,
-            origin=item.origin,
-            evidence=item.evidence,
-            confidence=item.confidence,
-            source_id=item.source_id,
+            subject=representative.subject,
+            predicate=representative.predicate,
+            object=representative.object,
+            origin=representative.origin,
+            evidence=representative.evidence,
+            confidence=representative.confidence,
+            source_id=representative.source_id,
         )
+
+        confidences = [
+            item.confidence
+            for item in supporting_items
+            if item.confidence is not None
+        ]
+        confidence = max(confidences) if confidences else None
 
         return ReasoningResult(
             status=ReasoningStatus.PROPOSED,
             scenario_id=context.scenario_id,
             proposed_relation=relation,
-            supporting_evidence=(item.evidence,),
-            confidence=item.confidence,
+            supporting_evidence=tuple(
+                dict.fromkeys(item.evidence for item in supporting_items)
+            ),
+            confidence=confidence,
         )
-
-    @staticmethod
-    def _has_alternate_path(
-        adjacency: dict[str, set[str]],
-        start: str,
-        target: str,
-    ) -> bool:
-        """Check whether another directed path connects two nodes."""
-
-        queue: deque[str] = deque(adjacency.get(start, set()))
-        visited: set[str] = {start}
-
-        while queue:
-            current = queue.popleft()
-
-            if current == target:
-                return True
-
-            if current in visited:
-                continue
-
-            visited.add(current)
-            queue.extend(adjacency.get(current, set()) - visited)
-
-        return False
 
     @staticmethod
     def _abstain(
         scenario_id: str,
         reason: AbstentionReason,
     ) -> ReasoningResult:
-        """Create a standardized abstention result."""
+        """Build a standardized abstention result."""
 
         return ReasoningResult(
             status=ReasoningStatus.ABSTAINED,
