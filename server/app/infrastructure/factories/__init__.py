@@ -1,0 +1,1 @@
+"""Factories that compose infrastructure adapters into application strategies."""
