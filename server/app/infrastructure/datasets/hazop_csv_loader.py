@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import re
 from pathlib import Path
+from typing import TextIO
 
 from app.domain.entities.hazop_record import (
     CausalRelation,
@@ -27,11 +28,11 @@ _NOT_PROVIDED_PREFIXES = (
 )
 
 
-def _pick(row: dict[str, str], *names: str, default: str = "") -> str:
+def _pick(row: dict[str, str | None], *names: str, default: str = "") -> str:
     normalized = {key.strip().casefold(): value for key, value in row.items()}
     for name in names:
         value = normalized.get(name.casefold())
-        if value is not None and value.strip():
+        if isinstance(value, str) and value.strip():
             return value.strip()
     return default
 
@@ -123,12 +124,38 @@ class HazopCsvLoader:
         if not source_path.is_file():
             raise FileNotFoundError(source_path)
 
-        records: list[HazopRecord] = []
         with source_path.open("r", encoding="utf-8-sig", newline="") as handle:
-            for row in csv.DictReader(handle):
-                record = self._record_from_row(row, dataset_id)
-                if record is not None:
-                    records.append(record)
+            return self.load_stream(handle, dataset_id)
+
+    def load_stream(
+        self,
+        handle: TextIO,
+        dataset_id: str,
+    ) -> tuple[HazopRecord, ...]:
+        """Load records from an already-open text stream.
+
+        This is used by the HTTP upload preview so uploaded CSV content can be
+        parsed without writing user-provided files to a temporary directory.
+        """
+        if not dataset_id.strip():
+            raise ValueError("dataset_id must not be empty")
+
+        reader = csv.DictReader(handle)
+        if not reader.fieldnames:
+            raise ValueError("CSV file must contain a header row")
+
+        records: list[HazopRecord] = []
+        for row in reader:
+            # DictReader uses None for columns whose cells are absent in a
+            # malformed short row. Treat those cells as empty strings.
+            normalized_row = {
+                key: value if isinstance(value, str) else ""
+                for key, value in row.items()
+                if isinstance(key, str)
+            }
+            record = self._record_from_row(normalized_row, dataset_id)
+            if record is not None:
+                records.append(record)
         return tuple(records)
 
     def _record_from_row(
