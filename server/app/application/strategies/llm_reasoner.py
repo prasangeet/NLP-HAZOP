@@ -8,8 +8,10 @@ from pathlib import Path
 from typing import Literal, Protocol
 
 from dotenv import load_dotenv
+from groq import APIError
+from langchain_core.exceptions import OutputParserException
 from langchain_groq import ChatGroq
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 
 from app.domain.entities.hazop_record import (
     CausalRelation,
@@ -132,10 +134,15 @@ class LLMReasoner:
                 if isinstance(response, LLMDecision)
                 else LLMDecision.model_validate(response)
             )
-        except Exception:
-            # Provider or parsing failure must never produce an unsupported
-            # relationship. A separate execution-error status can be added
-            # to ReasoningResult in a future change.
+        except (
+            APIError,
+            OutputParserException,
+            ValidationError,
+            ValueError,
+            TypeError,
+        ):
+            # Provider and structured-output failures must never produce an
+            # unsupported relationship. Programming errors are not swallowed.
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,

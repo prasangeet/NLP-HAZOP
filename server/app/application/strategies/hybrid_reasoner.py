@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+from app.application.strategies.retrieval.models import RetrievalScope
 from app.application.use_cases.build_evidence_context import EvidenceItem
+from app.domain.entities.hazop_record import RelationshipOrigin
 from app.domain.reasoning.models import (
     ReasoningResult,
     ReasoningStatus,
     ReasoningStrategy,
 )
-from app.domain.entities.hazop_record import RelationshipOrigin
-from app.application.strategies.retrieval.models import RetrievalScope
 
 
 class HybridReasoner:

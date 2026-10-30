@@ -1,12 +1,12 @@
 """Tests for provenance-aware multi-hop graph reasoning."""
 
 from app.application.strategies.graph_reasoner import GraphReasoner
+from app.application.strategies.retrieval.models import RetrievalScope
 from app.application.use_cases.build_evidence_context import (
     EvidenceContext,
     EvidenceItem,
 )
 from app.application.use_cases.recover_missing_link import RecoveryStatus
-from app.application.strategies.retrieval.models import RetrievalScope
 from app.domain.entities.hazop_record import RelationshipOrigin
 from app.domain.reasoning.models import AbstentionReason, ReasoningStatus
 

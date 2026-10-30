@@ -126,5 +126,5 @@ def test_returns_graph_abstention_when_neither_retrieval_nor_path_exists() -> No
     ).reason(context)
 
     assert result.status == ReasoningStatus.ABSTAINED
-    assert result.abstention_reason == AbstentionReason.INSUFFICIENT_SUPPORT
+    assert result.abstention_reason == AbstentionReason.NO_EVIDENCE
     assert adjudicator.context is None

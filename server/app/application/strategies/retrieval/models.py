@@ -56,7 +56,7 @@ class RetrievalRequest:
             )
 
         if isinstance(self.limit, bool) or not isinstance(self.limit, int):
-            raise ValueError("limit must be an integer")
+            raise TypeError("limit must be an integer")
         if self.limit < 1:
             raise ValueError("limit must be at least 1")
 

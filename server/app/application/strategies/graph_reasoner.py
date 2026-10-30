@@ -23,11 +23,18 @@ class _Path:
     """A directed path through graph evidence."""
 
     nodes: tuple[str, ...]
+    display_nodes: tuple[str, ...]
     edges: tuple[EvidenceItemProtocol, ...]
 
     @property
     def endpoint(self) -> str:
+        """Normalized terminal node for matching and deduplication."""
         return self.nodes[-1]
+
+    @property
+    def display_endpoint(self) -> str:
+        """Original-case terminal node for the returned relationship."""
+        return self.display_nodes[-1]
 
 
 class GraphReasoner:
@@ -61,7 +68,7 @@ class GraphReasoner:
 
     def __init__(self, max_hops: int = 4) -> None:
         if isinstance(max_hops, bool) or not isinstance(max_hops, int):
-            raise ValueError("max_hops must be an integer")
+            raise TypeError("max_hops must be an integer")
         if max_hops < 2:
             raise ValueError("max_hops must be at least 2")
         self._max_hops = max_hops
@@ -112,7 +119,7 @@ class GraphReasoner:
         selected_paths = next(iter(by_endpoint.values()))
         selected = min(selected_paths, key=lambda path: len(path.edges))
         known = context.known_endpoint.strip()
-        endpoint = selected.endpoint
+        endpoint = selected.display_endpoint
         subject, object_ = (
             (endpoint, known)
             if direction == "subject"
@@ -241,7 +248,10 @@ class GraphReasoner:
         direction: str,
     ) -> list[_Path]:
         known = context.known_endpoint.strip().casefold()
-        adjacency: dict[str, list[tuple[str, EvidenceItemProtocol]]] = defaultdict(list)
+        adjacency: dict[
+            str,
+            list[tuple[str, EvidenceItemProtocol, str]],
+        ] = defaultdict(list)
 
         for edge in context.graph_context:
             if edge.origin not in self._DIRECT_ORIGINS:
@@ -254,11 +264,19 @@ class GraphReasoner:
             subject = edge.subject.strip().casefold()
             object_ = edge.object.strip().casefold()
             if direction == "object":
-                adjacency[subject].append((object_, edge))
+                adjacency[subject].append((object_, edge, edge.object))
             else:
-                adjacency[object_].append((subject, edge))
+                adjacency[object_].append((subject, edge, edge.subject))
 
-        queue: deque[_Path] = deque([_Path((known,), ())])
+        queue: deque[_Path] = deque(
+            [
+                _Path(
+                    nodes=(known,),
+                    display_nodes=(context.known_endpoint.strip(),),
+                    edges=(),
+                )
+            ]
+        )
         candidates: list[_Path] = []
 
         while queue:
@@ -267,12 +285,13 @@ class GraphReasoner:
                 continue
 
             current = path.nodes[-1]
-            for neighbour, edge in adjacency.get(current, []):
+            for neighbour, edge, display_value in adjacency.get(current, []):
                 if neighbour in path.nodes:
                     continue
 
                 next_path = _Path(
                     nodes=(*path.nodes, neighbour),
+                    display_nodes=(*path.display_nodes, display_value),
                     edges=(*path.edges, edge),
                 )
 
@@ -329,8 +348,8 @@ class GraphReasoner:
 
     @staticmethod
     def _format_path(path: _Path) -> str:
-        pieces = [path.nodes[0]]
-        for edge, next_node in zip(path.edges, path.nodes[1:]):
+        pieces = [path.display_nodes[0]]
+        for edge, next_node in zip(path.edges, path.display_nodes[1:]):
             provenance = edge.origin.value
             scenario_id = getattr(edge, "scenario_id", "")
             if scenario_id:

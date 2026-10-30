@@ -5,9 +5,9 @@ from __future__ import annotations
 from app.application.strategies.retrieval.models import (
     RetrievalRequest,
     RetrievalResult,
-    RetrievedEvidence,
     RetrievalScope,
     RetrievalStrategy,
+    RetrievedEvidence,
 )
 from app.domain.entities.hazop_record import RelationshipOrigin
 from app.domain.repositories.graph_repository import GraphRepository

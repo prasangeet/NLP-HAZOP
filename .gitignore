@@ -36,4 +36,4 @@ Thumbs.db
 .env
 
 # Local experiment outputs (published as CI artifacts)
-/server/results/
+/results/

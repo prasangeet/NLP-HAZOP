@@ -85,6 +85,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: hazop-results-${{ matrix.dataset }}
-          path: server/results/${{ matrix.dataset }}/
-          if-no-files-found: warn
+          path: results/${{ matrix.dataset }}/
+          if-no-files-found: error
           retention-days: 30
