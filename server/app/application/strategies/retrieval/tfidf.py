@@ -15,6 +15,7 @@ from app.application.strategies.retrieval.models import (
 )
 from app.domain.entities.hazop_record import (
     CausalRelation,
+    HazopRecord,
     RelationshipOrigin,
 )
 from app.domain.repositories.graph_repository import GraphRepository
@@ -52,7 +53,7 @@ def _cosine(
     return dot / (left_norm * right_norm)
 
 
-def _scenario_context(record) -> str:
+def _scenario_context(record: HazopRecord) -> str:
     return " | ".join(
         value
         for value in (
@@ -67,7 +68,7 @@ def _scenario_context(record) -> str:
     )
 
 
-def _record_text(record) -> str:
+def _record_text(record: HazopRecord) -> str:
     parts = [
         record.plant_unit,
         record.equipment,
@@ -83,7 +84,7 @@ def _record_text(record) -> str:
     return " ".join(parts)
 
 
-def _origin(record) -> RelationshipOrigin:
+def _origin(record: HazopRecord) -> RelationshipOrigin:
     if record.causal_relations:
         return record.causal_relations[0].origin
     return RelationshipOrigin.SYNTHETIC
@@ -157,7 +158,7 @@ class TfidfRetriever:
                 scenario_context=_scenario_context(target),
             )
 
-        scored_records: list[tuple[float, object]] = []
+        scored_records: list[tuple[float, HazopRecord]] = []
         for record, terms in zip(records, documents):
             document_vector = self._vector(terms, idf)
             record_score = _cosine(query_vector, document_vector)
@@ -267,7 +268,7 @@ class TfidfRetriever:
         scope = (
             RetrievalScope.HYBRID
             if len(scopes) > 1
-            else next(iter(scopes), RetrievalScope.CROSS_SCENARIO)
+            else next(iter(scopes), RetrievalScope.SCENARIO_LOCAL)
         )
         return RetrievalResult(
             scenario_id=request.scenario_id,
@@ -299,5 +300,9 @@ class TfidfRetriever:
                 scope=RetrievalScope.SCENARIO_LOCAL,
             )
             for relation in record.causal_relations
-            if relation.origin != RelationshipOrigin.MODEL_INFERRED
+            if relation.origin not in {
+                RelationshipOrigin.MODEL_INFERRED,
+                RelationshipOrigin.RETRIEVAL_INFERRED,
+                RelationshipOrigin.GRAPH_INFERRED,
+            }
         )
