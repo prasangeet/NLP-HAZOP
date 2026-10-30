@@ -35,6 +35,7 @@ class EvidenceContextProtocol(Protocol):
     missing_endpoint: str
     evidence_items: tuple[EvidenceItemProtocol, ...]
     graph_context: tuple[EvidenceItemProtocol, ...]
+    scenario_context: str
 
 
 class ReasoningStatus(StrEnum):
