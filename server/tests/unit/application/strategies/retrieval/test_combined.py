@@ -11,8 +11,8 @@ from app.application.strategies.retrieval.combined import CombinedRetriever
 from app.application.strategies.retrieval.models import (
     RetrievalRequest,
     RetrievalResult,
-    RetrievedEvidence,
     RetrievalScope,
+    RetrievedEvidence,
 )
 from app.domain.entities.hazop_record import (
     CausalRelation,
