@@ -160,9 +160,11 @@ require a separately expert-adjudicated held-out set.
 
 ## Local FastAPI upload API
 
-The application endpoint accepts a UTF-8 HAZOP CSV and returns a normalized
-preview. It does **not** persist the uploaded file or records yet; a persistent
-repository/import endpoint will be added with the database integration.
+The preview endpoint accepts a UTF-8 HAZOP CSV and returns a normalized, temporary
+preview. It does not persist records. After reviewing that preview, the client can
+explicitly confirm the dataset through `POST /api/v1/datasets/import`; confirmed
+imports persist dataset metadata, full normalized scenario payloads (including raw
+row provenance), and typed concept relationships in Neo4j.
 
 From the `server/` directory:
 
@@ -199,3 +201,58 @@ The default CORS allowlist supports the Vite development server and common Tauri
 The dependency lockfile is refreshed by `uv sync` when project dependencies
 change. After adding or changing dependencies, run `uv lock` locally and
 commit the updated `uv.lock` for a fully reproducible dependency snapshot.
+
+
+## Persistent API and Neo4j storage
+
+The API keeps the preview and persistence boundaries explicit:
+
+- `POST /api/v1/datasets/preview`: validate and preview; never writes to storage.
+- `POST /api/v1/datasets/import`: explicit confirmation endpoint. Accepts multipart
+  `file`, optional `dataset_id`, and optional `name`. Stores metadata, normalized
+  scenarios, raw row/provenance fields, and typed causal edges in one Neo4j
+  transactional HTTP commit. A dataset ID is immutable after creation; duplicate
+  imports return HTTP 409. Scenario IDs must be unique within a dataset.
+- `GET /api/v1/datasets` and `GET /api/v1/datasets/{dataset_id}`: list and inspect
+  persisted dataset metadata.
+- `GET /api/v1/datasets/{dataset_id}/scenarios`: list scenarios; optional
+  `equipment`, `deviation`, and `limit` filters.
+- `GET /api/v1/datasets/{dataset_id}/scenarios/{scenario_id}`: fetch one scenario.
+- `GET /api/v1/datasets/{dataset_id}/relationships`: query typed relationships by
+  optional `subject`, `predicate`, and `object`.
+- `GET /api/v1/datasets/{dataset_id}/graph`: return nodes and edges suitable for a
+  graph visualization.
+- `POST /api/v1/datasets/{dataset_id}/recovery`: retrieve scenario-local and
+  same-dataset cross-scenario evidence, enrich with a bounded graph neighborhood,
+  and return candidates plus a graph-reasoning proposal or abstention.
+
+### Configure Neo4j
+
+The adapter uses Neo4j's transactional HTTP endpoint through the existing `httpx`
+dependency. Configure all three required environment variables before starting
+the API:
+
+```bash
+export NEO4J_HTTP_URI="http://127.0.0.1:7474"
+export NEO4J_USERNAME="neo4j"
+export NEO4J_PASSWORD="your-local-password"
+export NEO4J_DATABASE="neo4j"  # optional; defaults to neo4j
+export NEO4J_TIMEOUT_SECONDS="15"  # optional
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Use the HTTP URI (normally port 7474), not a `bolt://` URI. The adapter creates
+dataset, dataset-scoped scenario, and dataset-scoped concept uniqueness constraints
+on first use. Dataset creation, scenario writes, and edge writes are sent in one
+transactional commit. The original uploaded CSV bytes are not stored as a separate
+file; source filename and SHA-256 are retained, and every normalized record keeps
+its raw row and row number.
+
+Without Neo4j settings, the server still starts and `/health` plus CSV preview
+remain available. Confirmed import and dataset/graph/recovery endpoints return
+HTTP 503 rather than silently using process-local memory. The in-memory repository
+remains the deterministic adapter for unit tests and benchmark experiments.
+
+Recovery responses are hypotheses only. Silver row associations, graph paths,
+and model outputs are not expert-validated causal truth. The API never stores a
+recovery proposal as an expert-verified edge.

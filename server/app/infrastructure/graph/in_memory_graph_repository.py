@@ -4,21 +4,65 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+from app.domain.entities.dataset import DatasetMetadata
 from app.domain.entities.hazop_record import CausalRelation, HazopRecord
 
 
 class InMemoryGraphRepository:
-    """Simple repository adapter with deterministic ordering.
+    """Deterministic repository adapter for tests and local benchmarks.
 
-    This implementation is intended for local benchmark runs and unit tests.
-    It can be replaced by a persistent graph database adapter without
-    changing application or domain contracts.
+    This adapter deliberately advertises that it is not persistent. API import
+    endpoints require a persistent adapter and will not mistake process memory
+    for durable storage.
     """
 
+    storage_type = "memory"
+    is_persistent = False
+
     def __init__(self) -> None:
+        self._datasets: dict[str, DatasetMetadata] = {}
         self._records: dict[tuple[str, str], HazopRecord] = {}
         self._context_records: dict[tuple[str, str], HazopRecord] = {}
         self._relations: list[CausalRelation] = []
+
+    def import_dataset(
+        self,
+        dataset: DatasetMetadata,
+        records: Sequence[HazopRecord],
+    ) -> None:
+        """Import metadata, records and relationships as one in-memory action."""
+        if dataset.dataset_id in self._datasets:
+            raise ValueError(f"Dataset '{dataset.dataset_id}' already exists.")
+
+        record_map: dict[tuple[str, str], HazopRecord] = {}
+        relations: list[CausalRelation] = []
+        for record in records:
+            if record.dataset_id != dataset.dataset_id:
+                raise ValueError("All records must belong to the imported dataset.")
+            key = (record.dataset_id, record.scenario_id)
+            if key in record_map:
+                raise ValueError(
+                    f"Duplicate scenario ID '{record.scenario_id}' in dataset."
+                )
+            record_map[key] = record
+            relations.extend(record.causal_relations)
+
+        self._datasets[dataset.dataset_id] = dataset
+        self._records.update(record_map)
+        self._relations.extend(relations)
+
+    def get_dataset(self, dataset_id: str) -> DatasetMetadata | None:
+        return self._datasets.get(dataset_id)
+
+    def find_datasets(self, *, limit: int = 100) -> Sequence[DatasetMetadata]:
+        if isinstance(limit, bool) or limit < 1:
+            raise ValueError("limit must be greater than zero")
+        values = sorted(
+            self._datasets.values(),
+            key=lambda item: (item.created_at, item.dataset_id),
+            reverse=True,
+        )
+        return values[:limit]
 
     def save_record(self, record: HazopRecord) -> None:
         self._records[(record.dataset_id, record.scenario_id)] = record
