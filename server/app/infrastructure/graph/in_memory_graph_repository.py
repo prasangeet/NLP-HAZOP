@@ -17,13 +17,21 @@ class InMemoryGraphRepository:
 
     def __init__(self) -> None:
         self._records: dict[str, HazopRecord] = {}
+        self._context_records: dict[str, HazopRecord] = {}
         self._relations: list[CausalRelation] = []
 
     def save_record(self, record: HazopRecord) -> None:
         self._records[record.scenario_id] = record
 
+    def save_context_record(self, record: HazopRecord) -> None:
+        """Register metadata for a held-out target without indexing it."""
+        self._context_records[record.scenario_id] = record
+
     def get_record(self, scenario_id: str) -> HazopRecord | None:
-        return self._records.get(scenario_id)
+        return (
+            self._records.get(scenario_id)
+            or self._context_records.get(scenario_id)
+        )
 
     def find_records(
         self,
