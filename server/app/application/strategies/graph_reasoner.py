@@ -291,7 +291,16 @@ class GraphReasoner:
                         }
                         for predicate in predicates[1:]
                     )
-                    if has_initiating_edge and has_propagation_edge:
+                    terminal_edge = predicates[-1] in {
+                        "leads_to_consequence",
+                        "results_in",
+                    }
+                    dead_end = not adjacency.get(next_path.endpoint)
+                    if (
+                        has_initiating_edge
+                        and has_propagation_edge
+                        and (terminal_edge or dead_end)
+                    ):
                         candidates.append(next_path)
 
                 queue.append(next_path)
