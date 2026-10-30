@@ -66,7 +66,7 @@ def test_retrieves_candidate_and_marks_it_retrieval_inferred() -> None:
             consequences=("Tank overflow", "Loss of containment"),
         )
     )
-    repository.save_record(
+    repository.save_context_record(
         HazopRecord(
             scenario_id="HELD-OUT-001",
             plant_unit="Storage",
