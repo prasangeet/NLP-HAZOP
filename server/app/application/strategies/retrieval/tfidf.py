@@ -203,9 +203,12 @@ class TfidfRetriever:
 
                 for missing_value in missing_values:
                     if request.missing_endpoint == "object":
-                        subject, object_ = anchor, missing_value
+                        # Reframe the retrieved analogue as a candidate for
+                        # the exact query endpoint; preserve the matched
+                        # training anchor in the evidence text below.
+                        subject, object_ = request.known_endpoint, missing_value
                     else:
-                        subject, object_ = missing_value, anchor
+                        subject, object_ = missing_value, request.known_endpoint
 
                     key = (
                         record.scenario_id.casefold(),
@@ -231,8 +234,10 @@ class TfidfRetriever:
                         evidence=(
                             f"TF-IDF row candidate from scenario "
                             f"{record.scenario_id}; the source row lists "
-                            f"{subject!r} and {object_!r} in its cause/"
-                            f"consequence fields. Underlying row origin: "
+                            f"retrieved anchor {anchor!r} and candidate "
+                            f"endpoint {missing_value!r} in its cause/"
+                            f"consequence fields. The query endpoint was "
+                            f"{request.known_endpoint!r}. Underlying row origin: "
                             f"{row_origin.value}. This is co-occurrence-based "
                             f"retrieval, not a directly documented causal "
                             f"edge. Provenance: {provenance}"
