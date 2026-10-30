@@ -171,8 +171,6 @@ class HazopCsvLoader:
                 row,
                 "Existing_Safeguards",
                 "Existing Controls / Safeguards",
-                "Candidate_Safeguard",
-                "Candidate Safeguard",
             )
         )
         recommendations = _split_items(
@@ -180,6 +178,8 @@ class HazopCsvLoader:
                 row,
                 "Recommendations",
                 "Recommendations / Candidate Safeguards",
+                "Candidate_Safeguard",
+                "Candidate Safeguard",
             )
         )
 
@@ -306,7 +306,12 @@ class HazopCsvLoader:
         )
         return HazopRecord(
             scenario_id=scenario_id,
-            plant_unit=_pick(row, "Plant/Unit", "Plant / Process"),
+            plant_unit=_pick(
+                row,
+                "Plant/Unit",
+                "Plant / Process",
+                "Node",
+            ),
             equipment=_pick(
                 row,
                 "Node/Equipment",
