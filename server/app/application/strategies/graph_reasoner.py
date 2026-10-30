@@ -312,6 +312,9 @@ class GraphReasoner:
         pieces = [path.nodes[0]]
         for edge, next_node in zip(path.edges, path.nodes[1:]):
             provenance = edge.origin.value
+            scenario_id = getattr(edge, "scenario_id", "")
+            if scenario_id:
+                provenance += f", scenario_id={scenario_id}"
             if edge.source_id:
                 provenance += f", source_id={edge.source_id}"
             pieces.append(
