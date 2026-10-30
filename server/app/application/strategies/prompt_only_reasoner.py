@@ -7,8 +7,10 @@ from pathlib import Path
 from typing import Literal, Protocol
 
 from dotenv import load_dotenv
+from groq import APIError
+from langchain_core.exceptions import OutputParserException
 from langchain_groq import ChatGroq
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 
 from app.domain.entities.hazop_record import (
     CausalRelation,
@@ -113,7 +115,13 @@ one missing_value, or decision="abstain" with missing_value=null.
                 if isinstance(response, PromptOnlyDecision)
                 else PromptOnlyDecision.model_validate(response)
             )
-        except Exception:
+        except (
+            APIError,
+            OutputParserException,
+            ValidationError,
+            ValueError,
+            TypeError,
+        ):
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
