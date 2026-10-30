@@ -87,10 +87,10 @@ def test_csv_preview_rejects_missing_required_columns() -> None:
 
 def test_csv_preview_reports_rows_without_scenario_id() -> None:
     content = (
-        "Scenario_ID,Deviation,Possible_Causes\n"
-        "S001,No flow,Pump failure\n"
-        ",Low pressure,Valve blockage\n"
-    ).encode()
+        b"Scenario_ID,Deviation,Possible_Causes\n"
+        b"S001,No flow,Pump failure\n"
+        b",Low pressure,Valve blockage\n"
+    )
 
     response = client.post(
         "/api/v1/datasets/preview",
