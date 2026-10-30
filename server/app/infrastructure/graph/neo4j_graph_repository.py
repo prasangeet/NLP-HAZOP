@@ -164,8 +164,8 @@ class Neo4jGraphRepository:
                 source_id=item.get("source_id"),
                 is_expert_verified=item.get("is_expert_verified", False),
                 dataset_id=item.get("dataset_id", data.get("dataset_id", "default")),
-                subject_type=EntityType(item.get("subject_type", "Concept")),
-                object_type=EntityType(item.get("object_type", "Concept")),
+                subject_type=EntityType(item.get("subject_type", infer_entity_types(item["predicate"], item["subject"], item["object"], deviation=data.get("deviation", ""))[0].value)),
+                object_type=EntityType(item.get("object_type", infer_entity_types(item["predicate"], item["subject"], item["object"], deviation=data.get("deviation", ""))[1].value)),
             )
             for item in data.get("causal_relations", [])
         )
@@ -233,8 +233,8 @@ class Neo4jGraphRepository:
             ),
             is_expert_verified=bool(data.get("is_expert_verified", False)),
             dataset_id=str(data.get("dataset_id", "default")),
-            subject_type=EntityType(str(data.get("subject_type", "Concept"))),
-            object_type=EntityType(str(data.get("object_type", "Concept"))),
+            subject_type=EntityType(str(data.get("subject_type", infer_entity_types(str(data["predicate"]), subject, object_value)[0].value))),
+            object_type=EntityType(str(data.get("object_type", infer_entity_types(str(data["predicate"]), subject, object_value)[1].value))),
         )
 
     @staticmethod

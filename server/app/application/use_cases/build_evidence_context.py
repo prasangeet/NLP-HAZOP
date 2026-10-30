@@ -80,6 +80,8 @@ class EvidenceItem:
             relevance_score=item.relevance_score,
             dataset_id=relation.dataset_id,
             is_expert_verified=relation.is_expert_verified,
+            subject_type=relation.subject_type,
+            object_type=relation.object_type,
         )
 
     @staticmethod
@@ -117,6 +119,9 @@ class EvidenceItem:
             ),
             RelationshipOrigin.GRAPH_INFERRED: (
                 "Derived by graph composition; underlying path is shown."
+            ),
+            RelationshipOrigin.LLM_EXTRACTED: (
+                "Extracted from the supplied report by an LLM; the exact quote is retained and expert review is still required."
             ),
         }
         return notes[origin]
