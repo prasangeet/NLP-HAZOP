@@ -14,7 +14,6 @@ import math
 import os
 import random
 import re
-import sys
 import time
 from collections import Counter
 from dataclasses import dataclass, replace
@@ -615,6 +614,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "test_fraction": args.test_fraction,
         "top_k": args.top_k,
         "max_graph_hops": args.max_hops,
+        "tfidf_index_build_ms": vector_retriever.index_build_ms,
         "method": "scenario-level holdout; target labels and target graph edges removed from index",
         "label_status": "silver_row_association",
         "label_warning": (
