@@ -122,7 +122,7 @@ def test_import_rejects_duplicate_scenario_ids() -> None:
 
 
 def test_import_requires_a_persistent_repository() -> None:
-    app = create_app()
+    app = _new_app()
     app.state.graph_repository = InMemoryGraphRepository()
     with TestClient(app) as client:
         response = client.post(
