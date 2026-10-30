@@ -58,6 +58,8 @@ class HybridReasoner:
                     is_expert_verified=relation.is_expert_verified,
                     scope=RetrievalScope.SCENARIO_LOCAL,
                     relevance_score=None,
+                    subject_type=relation.subject_type,
+                    object_type=relation.object_type,
                 )
             )
 

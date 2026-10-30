@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.datasets import router as datasets_router
 from app.api.routes.imports import router as imports_router
 from app.api.routes.recovery import router as recovery_router
+from app.api.routes.report_extraction import router as report_extraction_router
 from app.infrastructure.graph.neo4j_graph_repository import Neo4jGraphRepository
 
 
@@ -94,6 +95,7 @@ def create_app() -> FastAPI:
     app.include_router(imports_router, prefix="/api/v1")
     app.include_router(datasets_router, prefix="/api/v1")
     app.include_router(recovery_router, prefix="/api/v1")
+    app.include_router(report_extraction_router, prefix="/api/v1")
     return app
 
 

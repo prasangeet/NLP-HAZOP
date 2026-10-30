@@ -1,6 +1,5 @@
-"""Interchangeable retrieval strategies for HAZOP reasoning."""
+"""Active retrieval strategies for HAZOP evidence and graph context."""
 
-from app.application.strategies.retrieval.combined import CombinedRetriever
 from app.application.strategies.retrieval.graph_neighborhood import (
     GraphNeighborhoodRetriever,
 )
@@ -11,7 +10,6 @@ from app.application.strategies.retrieval.scenario_local import (
 from app.application.strategies.retrieval.tfidf import TfidfRetriever
 
 __all__ = [
-    "CombinedRetriever",
     "GraphNeighborhoodRetriever",
     "HybridRetriever",
     "ScenarioLocalRetriever",

@@ -1,5 +1,7 @@
 # NLP-HAZOP
 
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the folder map, design patterns, ontology and end-to-end data flows.
+
 A research prototype for recovering missing endpoints in structured HAZOP causal relationships. The system compares prompt-only LLM reasoning, sparse vector retrieval, graph reasoning, and a hybrid graph + vector + LLM strategy.
 
 > **Research caveat:** the benchmark labels currently available in this repository are row-derived *silver associations*. They are not independently expert-validated causal ground truth. Report results as exploratory recovery of worksheet associations, not proof of causal correctness or plant safety.
@@ -290,3 +292,16 @@ remains the deterministic adapter for unit tests and benchmark experiments.
 
 Recovery responses are hypotheses only. Silver row associations, graph paths,
 and model outputs are not expert-validated causal truth.
+
+
+## Source-grounded report extraction
+
+The typed extraction workflow is exposed separately from CSV import:
+
+- `POST /api/v1/reports/extract`
+- Multipart fields: `file` (UTF-8 `.txt`, `.md`, or `.log`), `dataset_id` (letters, numbers, dot, underscore and hyphen), and optional `name`.
+- The endpoint uses the `AIProviderFactory` to select the Groq/Llama adapter, extracts typed scenario propositions, checks exact source quotes and scenario-field consistency, then imports the extracted dataset.
+- Every extracted relationship is stored as `llm_extracted` and remains `unreviewed`. The response includes validation warnings; it is not expert approval.
+- File size is limited to 2 MiB. PDF extraction is not supported yet.
+
+Set `GROQ_API_KEY` in the repository-root `.env` (or `server/.env`) before using extraction or the LLM/hybrid recovery strategies. Keep real keys out of version control. The graph-only recovery strategy does not require Groq.

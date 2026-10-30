@@ -244,3 +244,28 @@ def test_evidence_builder_rejects_dataset_mismatch() -> None:
         assert "dataset_id" in str(exc)
     else:
         raise AssertionError("Expected a ValueError for mismatched dataset IDs.")
+
+def test_vector_candidates_are_not_promoted_to_graph_context() -> None:
+    """Retrieval candidates and traversable graph edges remain separate."""
+    candidate = make_candidate()
+    result = RecoveryResult(
+        status=RecoveryStatus.CANDIDATES_FOUND,
+        scenario_id="HAZOP-001",
+        candidates=(candidate,),
+        graph_context=(),
+    )
+
+    context = BuildEvidenceContext().execute(result, make_request())
+
+    assert len(context.evidence_items) == 1
+    assert context.graph_context == ()
+
+
+def test_llm_extracted_origin_keeps_review_warning() -> None:
+    result = RecoveryResult(
+        status=RecoveryStatus.CANDIDATES_FOUND,
+        scenario_id="HAZOP-001",
+        candidates=(make_candidate(origin=RelationshipOrigin.LLM_EXTRACTED),),
+    )
+    context = BuildEvidenceContext().execute(result, make_request())
+    assert "expert review is still required" in context.evidence_items[0].relevance_note

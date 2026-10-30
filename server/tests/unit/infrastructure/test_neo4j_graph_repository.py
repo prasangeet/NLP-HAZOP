@@ -20,6 +20,7 @@ from app.infrastructure.graph.neo4j_graph_repository import (
 def sample_record() -> HazopRecord:
     relation = CausalRelation(
         subject="Pump failure",
+        source_location="row 2",
         predicate="causes_deviation",
         object="No flow",
         origin=RelationshipOrigin.SYNTHETIC,
@@ -98,6 +99,11 @@ def test_dataset_import_is_one_atomic_query_api_transaction() -> None:
     assert parameters["source_sha256"] == "abc123"
     assert parameters["records"][0]["payload"]
     assert parameters["relations"][0]["origin"] == "synthetic"
+    assert parameters["relations"][0]["subject_type"] == "Cause"
+    assert parameters["relations"][0]["object_type"] == "Deviation"
+    assert parameters["relations"][0]["subject_key"] == "Cause:pump failure"
+    assert parameters["relations"][0]["object_key"] == "Deviation:no flow"
+    assert parameters["relations"][0]["source_location"] == "row 2"
     assert repository.storage_type == "neo4j"
     assert repository.is_persistent is True
     repository.close()
@@ -133,6 +139,7 @@ def test_get_record_deserializes_full_record_payload() -> None:
     assert restored == record
     assert restored is not None
     assert restored.causal_relations[0].origin == RelationshipOrigin.SYNTHETIC
+    assert restored.causal_relations[0].source_location == "row 2"
     assert restored.raw_row == {"Scenario_ID": "S001"}
     repository.close()
 

@@ -113,6 +113,7 @@ class RecoveryCandidate:
             "evidence": self.evidence,
             "confidence": self.confidence,
             "source_id": self.source_id,
+            "source_location": self.relation.source_location,
             "scope": self.scope.value,
             "relevance_score": self.relevance_score,
         }

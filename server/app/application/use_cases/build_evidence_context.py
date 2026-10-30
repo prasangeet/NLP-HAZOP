@@ -15,6 +15,7 @@ from app.application.use_cases.recover_missing_link import (
     RecoveryStatus,
 )
 from app.domain.entities.hazop_record import RelationshipOrigin
+from app.domain.ontology.schema import EntityType
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +35,9 @@ class EvidenceItem:
     relevance_score: float | None = None
     dataset_id: str = "default"
     is_expert_verified: bool = False
+    subject_type: EntityType = EntityType.CONCEPT
+    object_type: EntityType = EntityType.CONCEPT
+    source_location: str | None = None
 
     @classmethod
     def from_candidate(cls, candidate: RecoveryCandidate) -> EvidenceItem:
@@ -54,6 +58,9 @@ class EvidenceItem:
             relevance_score=candidate.relevance_score,
             dataset_id=relation.dataset_id,
             is_expert_verified=relation.is_expert_verified,
+            subject_type=relation.subject_type,
+            object_type=relation.object_type,
+            source_location=relation.source_location,
         )
 
     @classmethod
@@ -75,6 +82,8 @@ class EvidenceItem:
             relevance_score=item.relevance_score,
             dataset_id=relation.dataset_id,
             is_expert_verified=relation.is_expert_verified,
+            subject_type=relation.subject_type,
+            object_type=relation.object_type,
         )
 
     @staticmethod
@@ -113,6 +122,9 @@ class EvidenceItem:
             RelationshipOrigin.GRAPH_INFERRED: (
                 "Derived by graph composition; underlying path is shown."
             ),
+            RelationshipOrigin.LLM_EXTRACTED: (
+                "Extracted from the supplied report by an LLM; the exact quote is retained and expert review is still required."
+            ),
         }
         return notes[origin]
 
@@ -129,6 +141,9 @@ class EvidenceItem:
             "scenario_id": self.scenario_id,
             "dataset_id": self.dataset_id,
             "is_expert_verified": self.is_expert_verified,
+            "subject_type": self.subject_type.value,
+            "object_type": self.object_type.value,
+            "source_location": self.source_location,
             "scope": self.scope.value,
             "relevance_score": self.relevance_score,
         }
@@ -202,7 +217,7 @@ class BuildEvidenceContext:
             missing_endpoint=request.missing_endpoint.value,
             status=recovery_result.status,
             evidence_items=evidence_items,
-            graph_context=graph_context or evidence_items,
+            graph_context=graph_context,
             scenario_context=recovery_result.scenario_context,
             dataset_id=request.dataset_id,
         )

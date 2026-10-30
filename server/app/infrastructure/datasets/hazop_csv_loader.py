@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from typing import Any, TextIO
 
+from app.domain.ontology.schema import EntityType
 from app.domain.entities.hazop_record import (
     CausalRelation,
     HazopRecord,
@@ -541,6 +542,8 @@ class HazopCsvLoader:
                     subject=cause,
                     predicate="causes_deviation",
                     object=deviation,
+                    subject_type=EntityType.CAUSE,
+                    object_type=EntityType.DEVIATION,
                     origin=origin,
                     evidence=(
                         f"Row-level association in scenario {scenario_id}: "
@@ -551,6 +554,7 @@ class HazopCsvLoader:
                     source_id=f"{dataset_id}:{scenario_id}:row-{row_number or 0}:cause:{cause_index}",
                     is_expert_verified=is_verified,
                     dataset_id=dataset_id,
+                    source_location=(f"row {row_number}" if row_number else scenario_id),
                 )
             )
 
@@ -561,6 +565,8 @@ class HazopCsvLoader:
                         subject=deviation,
                         predicate="leads_to",
                         object=effect,
+                        subject_type=EntityType.DEVIATION,
+                        object_type=EntityType.EFFECT,
                         origin=origin,
                         evidence=(
                             f"Scenario {scenario_id} lists simulated or "
@@ -572,6 +578,7 @@ class HazopCsvLoader:
                         source_id=f"{dataset_id}:{scenario_id}:row-{row_number or 0}:effect:{effect_index}",
                         is_expert_verified=is_verified,
                         dataset_id=dataset_id,
+                        source_location=(f"row {row_number}" if row_number else scenario_id),
                     )
                 )
 
@@ -590,6 +597,8 @@ class HazopCsvLoader:
                             subject=single_effect,
                             predicate="leads_to_consequence",
                             object=consequence,
+                            subject_type=EntityType.EFFECT,
+                            object_type=EntityType.CONSEQUENCE,
                             origin=origin,
                             evidence=(
                                 f"Row-level association in scenario {scenario_id}: "
@@ -601,6 +610,7 @@ class HazopCsvLoader:
                             source_id=f"{dataset_id}:{scenario_id}:row-{row_number or 0}:effect:1:consequence:{consequence_index}",
                             is_expert_verified=is_verified,
                             dataset_id=dataset_id,
+                            source_location=(f"row {row_number}" if row_number else scenario_id),
                         )
                     )
             else:
@@ -614,6 +624,8 @@ class HazopCsvLoader:
                             subject=deviation,
                             predicate="co_occurs_with_consequence",
                             object=consequence,
+                            subject_type=EntityType.DEVIATION,
+                            object_type=EntityType.CONSEQUENCE,
                             origin=origin,
                             evidence=(
                                 f"Scenario {scenario_id} co-lists consequence {consequence!r} "
@@ -624,6 +636,7 @@ class HazopCsvLoader:
                             source_id=f"{dataset_id}:{scenario_id}:row-{row_number or 0}:consequence:{consequence_index}",
                             is_expert_verified=False,
                             dataset_id=dataset_id,
+                            source_location=(f"row {row_number}" if row_number else scenario_id),
                         )
                     )
         else:
@@ -635,6 +648,8 @@ class HazopCsvLoader:
                         subject=deviation,
                         predicate="leads_to_consequence",
                         object=consequence,
+                        subject_type=EntityType.DEVIATION,
+                        object_type=EntityType.CONSEQUENCE,
                         origin=origin,
                         evidence=(
                             f"Row-level association in scenario {scenario_id}: "
@@ -646,6 +661,7 @@ class HazopCsvLoader:
                         source_id=f"{dataset_id}:{scenario_id}:row-{row_number or 0}:consequence:{consequence_index}",
                         is_expert_verified=is_verified,
                         dataset_id=dataset_id,
+                        source_location=(f"row {row_number}" if row_number else scenario_id),
                     )
                 )
 

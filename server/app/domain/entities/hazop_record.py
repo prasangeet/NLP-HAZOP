@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from enum import StrEnum
 
+from app.domain.ontology.schema import EntityType
+
 
 class RecordType(StrEnum):
     """Origin or nature of a HAZOP record."""
@@ -39,6 +41,7 @@ class RelationshipOrigin(StrEnum):
     MODEL_INFERRED = "model_inferred"
     GRAPH_INFERRED = "graph_inferred"
     RETRIEVAL_INFERRED = "retrieval_inferred"
+    LLM_EXTRACTED = "llm_extracted"
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,6 +90,9 @@ class CausalRelation:
     source_id: str | None = None
     is_expert_verified: bool = False
     dataset_id: str = "default"
+    subject_type: EntityType = EntityType.CONCEPT
+    object_type: EntityType = EntityType.CONCEPT
+    source_location: str | None = None
 
     def __post_init__(self) -> None:
         for name in ("subject", "predicate", "object"):
@@ -108,6 +114,10 @@ class CausalRelation:
             object.__setattr__(
                 self, "source_id", self.source_id.strip() or None
             )
+        if self.source_location is not None:
+            object.__setattr__(
+                self, "source_location", self.source_location.strip() or None
+            )
 
         if self.confidence is not None and not (
             0.0 <= self.confidence <= 1.0
@@ -115,6 +125,14 @@ class CausalRelation:
             raise ValueError(
                 "CausalRelation.confidence must be between 0.0 and 1.0."
             )
+
+        for field_name in ("subject_type", "object_type"):
+            value = getattr(self, field_name)
+            try:
+                normalized_type = value if isinstance(value, EntityType) else EntityType(value)
+            except ValueError as exc:
+                raise ValueError(f"CausalRelation.{field_name} is not a supported HAZOP entity type.") from exc
+            object.__setattr__(self, field_name, normalized_type)
 
         if self.is_expert_verified and self.origin != RelationshipOrigin.EXPERT:
             object.__setattr__(self, "is_expert_verified", False)
@@ -258,6 +276,9 @@ class HazopRecord:
                     "source_id": relation.source_id,
                     "is_expert_verified": relation.is_expert_verified,
                     "dataset_id": relation.dataset_id,
+                    "subject_type": relation.subject_type.value,
+                    "object_type": relation.object_type.value,
+                    "source_location": relation.source_location,
                 }
                 for relation in self.causal_relations
             ],

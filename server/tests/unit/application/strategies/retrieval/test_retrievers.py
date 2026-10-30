@@ -1,12 +1,9 @@
-"""Tests for scenario-local and cross-scenario retrieval."""
+"""Tests for scenario-local retrieval."""
 
 from __future__ import annotations
 
 import pytest
 
-from app.application.strategies.retrieval.cross_scenario import (
-    CrossScenarioRetriever,
-)
 from app.application.strategies.retrieval.models import (
     RetrievalRequest,
     RetrievalScope,
@@ -185,78 +182,6 @@ def test_local_retrieval_returns_empty_for_unknown_scenario(
     )
 
     assert result.is_empty
-
-
-def test_cross_scenario_retrieval_excludes_target_scenario(
-    repository: FakeRepository,
-) -> None:
-    result = CrossScenarioRetriever(repository).retrieve(
-        RetrievalRequest(
-            scenario_id="HAZOP-001",
-            predicate="causes",
-            known_endpoint="Inlet valve failure",
-            missing_endpoint="object",
-        )
-    )
-
-    assert result.scope == RetrievalScope.CROSS_SCENARIO
-    assert result.evidence
-    assert all(
-        item.scenario_id != "HAZOP-001"
-        for item in result.evidence
-    )
-
-
-def test_cross_scenario_retrieval_preserves_source_scenario(
-    repository: FakeRepository,
-) -> None:
-    result = CrossScenarioRetriever(repository).retrieve(
-        RetrievalRequest(
-            scenario_id="HAZOP-001",
-            predicate="causes",
-            known_endpoint="Inlet valve failure",
-            missing_endpoint="object",
-        )
-    )
-
-    assert any(
-        item.scenario_id == "HAZOP-002"
-        and item.relation.object == "Tank overflow"
-        for item in result.evidence
-    )
-
-
-def test_cross_scenario_retrieval_can_find_missing_subject(
-    repository: FakeRepository,
-) -> None:
-    result = CrossScenarioRetriever(repository).retrieve(
-        RetrievalRequest(
-            scenario_id="HAZOP-001",
-            predicate="causes",
-            known_endpoint="High tank level",
-            missing_endpoint="subject",
-        )
-    )
-
-    assert any(
-        item.relation.subject == "Blocked outlet"
-        and item.scenario_id == "HAZOP-003"
-        for item in result.evidence
-    )
-
-
-def test_retrieval_respects_limit(repository: FakeRepository) -> None:
-    result = CrossScenarioRetriever(repository).retrieve(
-        RetrievalRequest(
-            scenario_id="HAZOP-001",
-            predicate="causes",
-            known_endpoint="Inlet valve failure",
-            missing_endpoint="object",
-            limit=1,
-        )
-    )
-
-    assert len(result.evidence) == 1
 
 
 @pytest.mark.parametrize("limit", [0, -1])

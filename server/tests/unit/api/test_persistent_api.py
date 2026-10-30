@@ -160,6 +160,7 @@ def test_recovery_endpoint_uses_existing_retrieval_and_reasoning() -> None:
                 "known_endpoint": "Pump failure",
                 "missing_endpoint": "object",
                 "limit": 10,
+                "strategy": "graph",
             },
         )
 

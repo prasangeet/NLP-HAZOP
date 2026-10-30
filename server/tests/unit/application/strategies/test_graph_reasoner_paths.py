@@ -8,6 +8,7 @@ from app.application.use_cases.build_evidence_context import (
 )
 from app.application.use_cases.recover_missing_link import RecoveryStatus
 from app.domain.entities.hazop_record import RelationshipOrigin
+from app.domain.ontology.schema import infer_entity_types
 from app.domain.reasoning.models import AbstentionReason, ReasoningStatus
 
 
@@ -30,18 +31,20 @@ def edge(
         relevance_note="Test graph edge.",
         scenario_id=scenario_id,
         scope=RetrievalScope.CROSS_SCENARIO,
+        subject_type=infer_entity_types(predicate, subject, object_)[0],
+        object_type=infer_entity_types(predicate, subject, object_)[1],
     )
 
 
 def graph_context(
     edges: tuple[EvidenceItem, ...],
     *,
-    known: str = "Inlet valve fails open",
+    known: str = "High tank level",
     missing_endpoint: str = "object",
 ) -> EvidenceContext:
     return EvidenceContext(
         scenario_id="HELD-OUT-001",
-        predicate="causes",
+        predicate="leads_to_consequence",
         known_endpoint=known,
         missing_endpoint=missing_endpoint,
         status=RecoveryStatus.NO_CANDIDATES,
@@ -74,22 +77,23 @@ def three_hop_edges() -> tuple[EvidenceItem, ...]:
     )
 
 
-def test_recovers_missing_object_through_three_hop_path() -> None:
+def test_recovers_missing_consequence_through_typed_two_hop_path() -> None:
     result = GraphReasoner(max_hops=4).reason(
         graph_context(three_hop_edges())
     )
 
     assert result.status == ReasoningStatus.PROPOSED
     assert result.proposed_relation is not None
-    assert result.proposed_relation.subject == "Inlet valve fails open"
+    assert result.proposed_relation.subject == "High tank level"
     assert result.proposed_relation.object == "Loss of containment"
     assert result.proposed_relation.origin == RelationshipOrigin.GRAPH_INFERRED
     assert result.proposed_relation.confidence is None
     assert len(result.supporting_evidence) == 1
     path = result.supporting_evidence[0]
-    assert "TRAIN-001" in path
     assert "TRAIN-002" in path
     assert "TRAIN-003" in path
+    assert result.proposed_relation.subject_type.value == "Deviation"
+    assert result.proposed_relation.object_type.value == "Consequence"
 
 
 def test_recovers_missing_subject_by_traversing_path_in_reverse() -> None:
@@ -103,29 +107,29 @@ def test_recovers_missing_subject_by_traversing_path_in_reverse() -> None:
 
     assert result.status == ReasoningStatus.PROPOSED
     assert result.proposed_relation is not None
-    assert result.proposed_relation.subject == "Inlet valve fails open"
+    assert result.proposed_relation.subject == "High tank level"
     assert result.proposed_relation.object == "Loss of containment"
 
 
 def test_abstains_when_multiple_terminal_nodes_are_reachable() -> None:
     edges = (
         edge(
-            "Inlet valve fails open",
-            "causes_deviation",
             "High tank level",
+            "leads_to",
+            "Tank overfill",
             scenario_id="TRAIN-001",
         ),
         edge(
-            "High tank level",
+            "Tank overfill",
             "leads_to_consequence",
             "Tank overflow",
-            scenario_id="TRAIN-001",
+            scenario_id="TRAIN-002",
         ),
         edge(
-            "High tank level",
+            "Tank overfill",
             "leads_to_consequence",
             "Loss of containment",
-            scenario_id="TRAIN-002",
+            scenario_id="TRAIN-003",
         ),
     )
 
@@ -146,8 +150,8 @@ def test_ignores_model_inferred_edges_in_graph_context() -> None:
             origin=RelationshipOrigin.MODEL_INFERRED,
         ),
         edge(
-            "High tank level",
-            "leads_to_consequence",
+            "Other deviation",
+            "leads_to",
             "Tank overflow",
             scenario_id="TRAIN-001",
         ),
@@ -162,7 +166,7 @@ def test_ignores_model_inferred_edges_in_graph_context() -> None:
 def test_does_not_compose_non_causal_association_edges() -> None:
     edges = (
         edge(
-            "Inlet valve fails open",
+            "High tank level",
             "associated_with",
             "High tank level",
             scenario_id="TRAIN-001",
@@ -186,5 +190,17 @@ def test_max_hops_bounds_graph_search() -> None:
         graph_context(three_hop_edges())
     )
 
+    assert result.status == ReasoningStatus.PROPOSED
+    assert result.proposed_relation is not None
+    assert result.proposed_relation.object == "Loss of containment"
+
+
+def test_graph_paths_do_not_join_same_label_with_different_entity_types() -> None:
+    edges = (
+        edge("High tank level", "leads_to", "Shared label", scenario_id="T1"),
+        edge("Shared label", "leads_to", "Another effect", scenario_id="T2"),
+        edge("Another effect", "leads_to_consequence", "Loss of containment", scenario_id="T3"),
+    )
+    result = GraphReasoner().reason(graph_context(edges))
     assert result.status == ReasoningStatus.ABSTAINED
     assert result.abstention_reason == AbstentionReason.INSUFFICIENT_SUPPORT

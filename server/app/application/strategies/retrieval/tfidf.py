@@ -20,6 +20,7 @@ from app.domain.entities.hazop_record import (
     RelationshipOrigin,
 )
 from app.domain.repositories.graph_repository import GraphRepository
+from app.domain.ontology.schema import infer_entity_types
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 _STOP_WORDS = frozenset(
@@ -299,6 +300,8 @@ class TfidfRetriever:
                             else f"{record.dataset_id}:{record.scenario_id}:row-{record.row_number or 0}"
                         ),
                         dataset_id=record.dataset_id,
+                        subject_type=infer_entity_types(request.predicate, subject, object_)[0],
+                        object_type=infer_entity_types(request.predicate, subject, object_)[1],
                     )
                     evidence.append(
                         RetrievedEvidence(
