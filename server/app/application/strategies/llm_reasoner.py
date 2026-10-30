@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Protocol
 
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
@@ -22,6 +22,13 @@ from app.domain.reasoning.models import (
     ReasoningResult,
     ReasoningStatus,
 )
+
+
+class StructuredChatModel(Protocol):
+    """Minimal interface required from a structured-output chat model."""
+
+    def invoke(self, prompt: str) -> object:
+        """Return a structured model response."""
 
 
 # Resolve server/.env independently of the current working directory.
@@ -66,14 +73,20 @@ class LLMReasoner:
         self,
         model_name: str = "llama-3.3-70b-versatile",
         temperature: float = 0.0,
+        *,
+        chat_model: StructuredChatModel | None = None,
     ) -> None:
+        if chat_model is not None:
+            self._llm = chat_model
+            return
+
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
             raise RuntimeError(
                 f"GROQ_API_KEY was not found. Add it to {ENV_FILE}."
             )
 
-        self._llm = ChatGroq(
+        self._llm: StructuredChatModel = ChatGroq(
             model=model_name,
             temperature=temperature,
             api_key=SecretStr(api_key),
