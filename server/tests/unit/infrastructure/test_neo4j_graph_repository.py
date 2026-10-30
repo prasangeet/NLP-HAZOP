@@ -103,6 +103,7 @@ def test_dataset_import_is_one_atomic_query_api_transaction() -> None:
     assert parameters["relations"][0]["object_type"] == "Deviation"
     assert parameters["relations"][0]["subject_key"] == "Cause:pump failure"
     assert parameters["relations"][0]["object_key"] == "Deviation:no flow"
+    assert parameters["relations"][0]["source_location"] == "row 2"
     assert repository.storage_type == "neo4j"
     assert repository.is_persistent is True
     repository.close()

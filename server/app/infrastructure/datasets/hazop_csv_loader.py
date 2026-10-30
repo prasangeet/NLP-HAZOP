@@ -611,7 +611,6 @@ class HazopCsvLoader:
                             is_expert_verified=is_verified,
                             dataset_id=dataset_id,
                             source_location=(f"row {row_number}" if row_number else scenario_id),
-                        source_location=(f"row {row_number}" if row_number else scenario_id),
                         )
                     )
             else:

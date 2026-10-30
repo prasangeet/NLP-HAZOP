@@ -82,6 +82,7 @@ def test_report_extraction_validates_and_persists_source_grounded_records():
     assert relation.subject_type == EntityType.CAUSE
     assert relation.object_type == EntityType.DEVIATION
     assert relation.evidence == SOURCE
+    assert relation.source_location == "paragraph 1"
     assert record.validation_status.value == "unreviewed"
     assert relation.is_expert_verified is False
 

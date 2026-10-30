@@ -54,6 +54,8 @@ def test_loads_dwsim_as_synthetic_and_preserves_simulation_effect_node() -> None
     assert first.safeguards == ()
     assert first.causes
     assert first.consequences
+    assert first.causal_relations[0].source_location is not None
+    assert first.causal_relations[0].source_location.startswith("row ")
     assert any(
         edge.predicate == "leads_to"
         for edge in first.causal_relations
