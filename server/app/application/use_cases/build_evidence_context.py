@@ -171,4 +171,5 @@ class BuildEvidenceContext:
             status=recovery_result.status,
             evidence_items=evidence_items,
             graph_context=graph_context or evidence_items,
+            scenario_context=recovery_result.scenario_context,
         )
