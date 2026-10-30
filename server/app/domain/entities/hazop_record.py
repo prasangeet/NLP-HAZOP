@@ -32,8 +32,11 @@ class RelationshipOrigin(StrEnum):
     """Origin of a causal or semantic relationship."""
 
     SOURCE = "source"
+    RECONSTRUCTED = "reconstructed"
+    SYNTHETIC = "synthetic"
     EXPERT = "expert"
     MODEL_INFERRED = "model_inferred"
+    GRAPH_INFERRED = "graph_inferred"
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,18 +140,12 @@ class HazopRecord:
     remarks: str = ""
 
     def __post_init__(self) -> None:
-        # Validate required fields.
         for name in ("scenario_id", "equipment", "deviation"):
             value = getattr(self, name).strip()
-
             if not value:
-                raise ValueError(
-                    f"HazopRecord.{name} must not be empty."
-                )
-
+                raise ValueError(f"HazopRecord.{name} must not be empty.")
             object.__setattr__(self, name, value)
 
-        # Normalize optional text fields.
         for name in (
             "plant_unit",
             "design_intent",
@@ -156,11 +153,8 @@ class HazopRecord:
             "guideword",
             "remarks",
         ):
-            object.__setattr__(
-                self, name, getattr(self, name).strip()
-            )
+            object.__setattr__(self, name, getattr(self, name).strip())
 
-        # Normalize list fields and remove case-insensitive duplicates.
         for name in (
             "causes",
             "consequences",
@@ -169,18 +163,14 @@ class HazopRecord:
         ):
             normalized: list[str] = []
             seen: set[str] = set()
-
             for item in getattr(self, name):
                 item = item.strip()
                 key = item.casefold()
-
                 if item and key not in seen:
                     normalized.append(item)
                     seen.add(key)
-
             object.__setattr__(self, name, tuple(normalized))
 
-        # Normalize risk ranking.
         if self.risk_ranking is not None:
             object.__setattr__(
                 self,
@@ -188,7 +178,6 @@ class HazopRecord:
                 self.risk_ranking.strip() or None,
             )
 
-        # Ensure collection fields are tuples.
         object.__setattr__(
             self, "causal_relations", tuple(self.causal_relations)
         )
