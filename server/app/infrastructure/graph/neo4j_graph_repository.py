@@ -462,7 +462,8 @@ class Neo4jGraphRepository:
                         "edge.predicate = row.predicate, edge.subject_type = row.subject_type, "
                         "edge.object_type = row.object_type, edge.origin = row.origin, "
                         "edge.evidence = row.evidence, edge.confidence = row.confidence, "
-                        "edge.source_id = row.source_id, edge.is_expert_verified = row.is_expert_verified "
+                        "edge.source_id = row.source_id, edge.is_expert_verified = row.is_expert_verified, "
+                        "edge.source_location = row.source_location "
                         "RETURN count(edge)"
                     ),
                     "parameters": {"dataset_id": dataset_id, "relations": rows},
