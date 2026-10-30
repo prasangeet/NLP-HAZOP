@@ -1,0 +1,100 @@
+name: HAZOP validation and benchmark
+
+on:
+  push:
+    branches:
+      - main
+      - "research/**"
+      - "fix/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hazop-ci-${{ github.ref }
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Unit tests and lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Ruff
+        run: uv run ruff check app tests scripts
+
+      - name: Pytest
+        run: uv run pytest -v
+
+  benchmark:
+    name: Silver-label benchmark (${{ matrix.dataset })
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dataset:
+          - t301-reconstructed
+          - t301-synthetic
+          - dwsim-synthetic
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: server/uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Run leakage-aware benchmark
+        run: |
+          uv run python -m scripts.run_benchmark \
+            --dataset "${{ matrix.dataset }" \
+            --seed 42 \
+            --test-fraction 0.2 \
+            --top-k 10 \
+            --max-hops 4
+
+      - name: Upload benchmark outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hazop-results-${{ matrix.dataset }
+          path: server/results/${{ matrix.dataset }/
+          if-no-files-found: warn
+          retention-days: 30
