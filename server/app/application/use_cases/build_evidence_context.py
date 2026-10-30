@@ -15,6 +15,7 @@ from app.application.use_cases.recover_missing_link import (
     RecoveryStatus,
 )
 from app.domain.entities.hazop_record import RelationshipOrigin
+from app.domain.ontology.schema import EntityType
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +35,8 @@ class EvidenceItem:
     relevance_score: float | None = None
     dataset_id: str = "default"
     is_expert_verified: bool = False
+    subject_type: EntityType = EntityType.CONCEPT
+    object_type: EntityType = EntityType.CONCEPT
 
     @classmethod
     def from_candidate(cls, candidate: RecoveryCandidate) -> EvidenceItem:
@@ -54,6 +57,8 @@ class EvidenceItem:
             relevance_score=candidate.relevance_score,
             dataset_id=relation.dataset_id,
             is_expert_verified=relation.is_expert_verified,
+            subject_type=relation.subject_type,
+            object_type=relation.object_type,
         )
 
     @classmethod
@@ -129,6 +134,8 @@ class EvidenceItem:
             "scenario_id": self.scenario_id,
             "dataset_id": self.dataset_id,
             "is_expert_verified": self.is_expert_verified,
+            "subject_type": self.subject_type.value,
+            "object_type": self.object_type.value,
             "scope": self.scope.value,
             "relevance_score": self.relevance_score,
         }

@@ -214,6 +214,8 @@ class LLMReasoner:
             source_id=selected.source_id,
             dataset_id=getattr(selected, "dataset_id", dataset_id),
             is_expert_verified=getattr(selected, "is_expert_verified", False),
+            subject_type=getattr(selected, "subject_type", "Concept"),
+            object_type=getattr(selected, "object_type", "Concept"),
         )
 
         return ReasoningResult(
@@ -238,6 +240,7 @@ class LLMReasoner:
                 RelationshipOrigin.EXPERT,
                 RelationshipOrigin.RETRIEVAL_INFERRED,
                 RelationshipOrigin.GRAPH_INFERRED,
+                RelationshipOrigin.LLM_EXTRACTED,
             )
             and isinstance(item.evidence, str)
             and bool(item.evidence.strip())
@@ -282,6 +285,8 @@ class LLMReasoner:
                 f"Subject: {item.subject}\n"
                 f"Predicate: {item.predicate}\n"
                 f"Object: {item.object}\n"
+                f"Subject type: {getattr(getattr(item, \"subject_type\", None), \"value\", \"Concept\")}\n"
+                f"Object type: {getattr(getattr(item, \"object_type\", None), \"value\", \"Concept\")}\n"
                 f"Origin: {item.origin.value}\n"
                 f"Evidence: {item.evidence}\n"
                 f"Source ID: {item.source_id or 'Not specified'}\n"

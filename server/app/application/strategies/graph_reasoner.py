@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from dataclasses import dataclass
 
+from app.domain.ontology.schema import EntityType, infer_entity_types
 from app.domain.entities.hazop_record import (
     CausalRelation,
     RelationshipOrigin,
@@ -54,6 +55,7 @@ class GraphReasoner:
             RelationshipOrigin.RECONSTRUCTED,
             RelationshipOrigin.SYNTHETIC,
             RelationshipOrigin.EXPERT,
+            RelationshipOrigin.LLM_EXTRACTED,
         }
     )
     _CAUSAL_PREDICATES = frozenset(
@@ -153,6 +155,8 @@ class GraphReasoner:
                 else None
             ),
             dataset_id=dataset_id,
+            subject_type=infer_entity_types(context.predicate, subject, object_)[0],
+            object_type=infer_entity_types(context.predicate, subject, object_)[1],
         )
         return ReasoningResult(
             status=ReasoningStatus.PROPOSED,
@@ -247,6 +251,8 @@ class GraphReasoner:
             source_id=selected.source_id,
             dataset_id=getattr(selected, "dataset_id", dataset_id),
             is_expert_verified=getattr(selected, "is_expert_verified", False),
+            subject_type=getattr(selected, "subject_type", EntityType.CONCEPT),
+            object_type=getattr(selected, "object_type", EntityType.CONCEPT),
         )
         confidences = [
             item.confidence
