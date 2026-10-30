@@ -61,7 +61,7 @@ class GraphReasoner:
 
     def __init__(self, max_hops: int = 4) -> None:
         if isinstance(max_hops, bool) or not isinstance(max_hops, int):
-            raise ValueError("max_hops must be an integer")
+            raise TypeError("max_hops must be an integer")
         if max_hops < 2:
             raise ValueError("max_hops must be at least 2")
         self._max_hops = max_hops
