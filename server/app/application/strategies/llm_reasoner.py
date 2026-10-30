@@ -290,6 +290,7 @@ class LLMReasoner:
                 f"Origin: {item.origin.value}\n"
                 f"Evidence: {item.evidence}\n"
                 f"Source ID: {item.source_id or 'Not specified'}\n"
+                f"Source location: {getattr(item, 'source_location', None) or 'Not specified'}\n"
                 f"Scenario ID: {getattr(item, 'scenario_id', '')}\n"
                 f"Scope: {getattr(getattr(item, 'scope', None), 'value', 'unknown')}\n"
                 f"Relevance score: {getattr(item, 'relevance_score', None)}\n"

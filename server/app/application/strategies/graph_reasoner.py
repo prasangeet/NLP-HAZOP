@@ -273,6 +273,7 @@ class GraphReasoner:
             is_expert_verified=getattr(selected, "is_expert_verified", False),
             subject_type=getattr(selected, "subject_type", EntityType.CONCEPT),
             object_type=getattr(selected, "object_type", EntityType.CONCEPT),
+            source_location=getattr(selected, "source_location", None),
         )
         confidences = [
             item.confidence
@@ -393,6 +394,8 @@ class GraphReasoner:
                 provenance += f", scenario_id={scenario_id}"
             if edge.source_id:
                 provenance += f", source_id={edge.source_id}"
+            if getattr(edge, "source_location", None):
+                provenance += f", location={edge.source_location}"
             pieces.append(
                 f"-[{edge.predicate} | {provenance}]-> {next_node}"
             )
