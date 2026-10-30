@@ -50,7 +50,6 @@ from app.infrastructure.graph.in_memory_graph_repository import (
     InMemoryGraphRepository,
 )
 
-
 ROOT = Path(__file__).resolve().parents[2]
 DATASET_PATHS = {
     "t301-reconstructed": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
