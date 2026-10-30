@@ -14,6 +14,7 @@ class RetrievalScope(StrEnum):
 
     SCENARIO_LOCAL = "scenario_local"
     CROSS_SCENARIO = "cross_scenario"
+    HYBRID = "hybrid"
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,6 +24,7 @@ class RetrievedEvidence:
     scenario_id: str
     relation: CausalRelation
     scope: RetrievalScope
+    relevance_score: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,7 +45,6 @@ class RetrievalRequest:
             "missing_endpoint",
         ):
             value = getattr(self, field_name)
-
             if not isinstance(value, str) or not value.strip():
                 raise ValueError(
                     f"{field_name} must be a non-empty string"
@@ -56,22 +57,24 @@ class RetrievalRequest:
 
         if isinstance(self.limit, bool) or not isinstance(self.limit, int):
             raise ValueError("limit must be an integer")
-
         if self.limit < 1:
             raise ValueError("limit must be at least 1")
 
 
 @dataclass(frozen=True, slots=True)
 class RetrievalResult:
-    """Retrieved relationships and whether the target scenario exists."""
+    """Retrieved evidence and graph context for the target scenario."""
 
     scenario_id: str
     scope: RetrievalScope
     evidence: tuple[RetrievedEvidence, ...] = ()
     scenario_exists: bool = True
+    graph_context: tuple[RetrievedEvidence, ...] = ()
+    scenario_context: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence", tuple(self.evidence))
+        object.__setattr__(self, "graph_context", tuple(self.graph_context))
 
     @property
     def is_empty(self) -> bool:

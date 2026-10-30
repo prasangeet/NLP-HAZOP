@@ -1,0 +1,177 @@
+"""Prompt-only LLM baseline without retrieval or graph evidence."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from typing import Literal, Protocol
+
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
+from pydantic import BaseModel, Field, SecretStr
+
+from app.domain.entities.hazop_record import (
+    CausalRelation,
+    RelationshipOrigin,
+)
+from app.domain.reasoning.models import (
+    AbstentionReason,
+    EvidenceContextProtocol,
+    ReasoningResult,
+    ReasoningStatus,
+)
+
+
+class PromptOnlyChatModel(Protocol):
+    """Minimal chat-model interface used by the prompt-only baseline."""
+
+    def invoke(self, prompt: str) -> object:
+        """Return a structured decision."""
+        ...
+
+
+class PromptOnlyDecision(BaseModel):
+    """Structured prompt-only response."""
+
+    decision: Literal["propose", "abstain"] = Field(
+        description="Whether the scenario description supports a candidate."
+    )
+    missing_value: str | None = Field(
+        default=None,
+        description="The proposed missing endpoint, if supported."
+    )
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    reason: str = Field(description="Concise explanation.")
+
+
+SERVER_ROOT = Path(__file__).resolve().parents[3]
+ENV_FILE = SERVER_ROOT / ".env"
+load_dotenv(ENV_FILE)
+
+
+class PromptOnlyReasoner:
+    """Ask an LLM to complete a link from scenario context alone.
+
+    No retrieved relationships, vector search, or graph neighborhood is
+    supplied. The output is always marked MODEL_INFERRED.
+    """
+
+    def __init__(
+        self,
+        model_name: str = "llama-3.3-70b-versatile",
+        temperature: float = 0.0,
+        *,
+        chat_model: PromptOnlyChatModel | None = None,
+    ) -> None:
+        if chat_model is not None:
+            self._llm = chat_model
+            return
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                f"GROQ_API_KEY was not found. Add it to {ENV_FILE}."
+            )
+        self._llm: PromptOnlyChatModel = ChatGroq(
+            model=model_name,
+            temperature=temperature,
+            api_key=SecretStr(api_key),
+        ).with_structured_output(PromptOnlyDecision)
+
+    def reason(self, context: EvidenceContextProtocol) -> ReasoningResult:
+        """Return a model-inferred candidate or abstain."""
+
+        if not context.scenario_context.strip():
+            return self._abstain(
+                context.scenario_id,
+                AbstentionReason.NO_EVIDENCE,
+            )
+
+        prompt = f"""
+You are a cautious assistant for missing-link research in HAZOP records.
+
+Task:
+- Scenario ID: {context.scenario_id}
+- Predicate: {context.predicate}
+- Known endpoint: {context.known_endpoint}
+- Missing endpoint: {context.missing_endpoint}
+
+Scenario context only:
+{context.scenario_context}
+
+There is no retrieved evidence or graph context in this baseline.
+Propose a missing endpoint only if it follows clearly from the scenario
+description. Do not invent plant design details, safeguards, or causal facts.
+A HAZOP row association is not proof of causation. If context is inadequate
+or multiple answers are plausible, abstain. Return decision="propose" with
+one missing_value, or decision="abstain" with missing_value=null.
+""".strip()
+
+        try:
+            response = self._llm.invoke(prompt)
+            decision = (
+                response
+                if isinstance(response, PromptOnlyDecision)
+                else PromptOnlyDecision.model_validate(response)
+            )
+        except Exception:
+            return self._abstain(
+                context.scenario_id,
+                AbstentionReason.INSUFFICIENT_SUPPORT,
+            )
+
+        if decision.decision != "propose":
+            return self._abstain(
+                context.scenario_id,
+                AbstentionReason.INSUFFICIENT_SUPPORT,
+                (decision.reason,) if decision.reason.strip() else (),
+            )
+
+        missing = (decision.missing_value or "").strip()
+        if not missing:
+            return self._abstain(
+                context.scenario_id,
+                AbstentionReason.INSUFFICIENT_SUPPORT,
+                (decision.reason,) if decision.reason.strip() else (),
+            )
+
+        if context.missing_endpoint == "object":
+            subject, object_ = context.known_endpoint, missing
+        elif context.missing_endpoint == "subject":
+            subject, object_ = missing, context.known_endpoint
+        else:
+            return self._abstain(
+                context.scenario_id,
+                AbstentionReason.INSUFFICIENT_SUPPORT,
+            )
+
+        relation = CausalRelation(
+            subject=subject,
+            predicate=context.predicate,
+            object=object_,
+            origin=RelationshipOrigin.MODEL_INFERRED,
+            evidence=(
+                "Prompt-only model output based solely on scenario context. "
+                + decision.reason.strip()
+            ),
+            confidence=decision.confidence,
+        )
+        return ReasoningResult(
+            status=ReasoningStatus.PROPOSED,
+            scenario_id=context.scenario_id,
+            proposed_relation=relation,
+            supporting_evidence=(),
+            confidence=decision.confidence,
+        )
+
+    @staticmethod
+    def _abstain(
+        scenario_id: str,
+        reason: AbstentionReason,
+        supporting_evidence: tuple[str, ...] = (),
+    ) -> ReasoningResult:
+        return ReasoningResult(
+            status=ReasoningStatus.ABSTAINED,
+            scenario_id=scenario_id,
+            supporting_evidence=supporting_evidence,
+            abstention_reason=reason,
+        )

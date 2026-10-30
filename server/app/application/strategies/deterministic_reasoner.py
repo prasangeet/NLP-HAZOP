@@ -42,6 +42,8 @@ class DeterministicReasoner:
             if item.origin
             in {
                 RelationshipOrigin.SOURCE,
+                RelationshipOrigin.RECONSTRUCTED,
+                RelationshipOrigin.SYNTHETIC,
                 RelationshipOrigin.EXPERT,
             }
             and item.evidence.strip()
