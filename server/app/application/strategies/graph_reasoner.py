@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from app.domain.ontology.schema import (
     EntityType,
     RELATION_SCHEMA,
-    infer_entity_types,
     validate_relation_types,
 )
 from app.domain.entities.hazop_record import (
@@ -65,11 +64,9 @@ class GraphReasoner:
     )
     _CAUSAL_PREDICATES = frozenset(
         {
-            "causes",
             "causes_deviation",
             "leads_to",
             "leads_to_consequence",
-            "results_in",
         }
     )
 
@@ -364,50 +361,22 @@ class GraphReasoner:
                 )
 
                 if len(next_path.edges) >= 2:
-                    # Require a cause edge followed by at least one
-                    # propagation edge; this avoids treating arbitrary
-                    # associations as transitive causal evidence.
+                    # Only compose the canonical propagation chain:
+                    # Deviation -> Effect -> Consequence. Do not turn a
+                    # cause-to-deviation path into an invented direct cause
+                    # to consequence relationship.
                     predicates = [
                         item.predicate.strip().casefold()
                         for item in next_path.edges
                     ]
-                    if direction == "object":
-                        has_initiating_edge = predicates[0] in {
-                            "causes",
-                            "causes_deviation",
-                        }
-                        propagation_predicates = predicates[1:]
-                        terminal_edge = predicates[-1] in {
-                            "leads_to_consequence",
-                            "results_in",
-                        }
-                    else:
-                        # Traversal is reversed for a missing subject:
-                        # consequence -> deviation -> cause.
-                        has_initiating_edge = predicates[-1] in {
-                            "causes",
-                            "causes_deviation",
-                        }
-                        propagation_predicates = predicates[:-1]
-                        terminal_edge = predicates[0] in {
-                            "leads_to_consequence",
-                            "results_in",
-                        }
-
-                    has_propagation_edge = any(
-                        predicate in {
-                            "leads_to",
-                            "leads_to_consequence",
-                            "results_in",
-                        }
-                        for predicate in propagation_predicates
+                    valid_chain = (
+                        predicates[0] == "leads_to"
+                        and predicates[-1] == "leads_to_consequence"
+                        if direction == "object"
+                        else predicates[0] == "leads_to_consequence"
+                        and predicates[-1] == "leads_to"
                     )
-                    dead_end = not adjacency.get(next_path.endpoint)
-                    if (
-                        has_initiating_edge
-                        and has_propagation_edge
-                        and (terminal_edge or dead_end)
-                    ):
+                    if valid_chain:
                         candidates.append(next_path)
 
                 queue.append(next_path)
