@@ -32,7 +32,7 @@ class FakeExtractor:
 def test_extracted_report_is_validated_and_persisted_as_unreviewed_knowledge():
     repository = InMemoryGraphRepository()
     use_case = ExtractAndStoreReport(FakeExtractor(), repository, HazopSafetyValidator())
-    metadata, validation, records = use_case.execute(
+    metadata, validation, _records = use_case.execute(
         SOURCE, title="Pump report", dataset_id="pump-report"
     )
     assert validation.valid

@@ -18,8 +18,8 @@ async def extract_report(
     file: Annotated[UploadFile, File(description="UTF-8 .txt or .md HAZOP report")],
     dataset_id: Annotated[str, Form(min_length=1, max_length=80)],
     name: Annotated[str | None, Form()] = None,
-    repository: DatasetRepository = Depends(get_graph_repository),
-    ai_factory: AIProviderFactory | None = Depends(get_ai_provider_factory),
+    repository: Annotated[DatasetRepository, Depends(get_graph_repository)],
+    ai_factory: Annotated[AIProviderFactory | None, Depends(get_ai_provider_factory)],
 ) -> dict[str, object]:
     filename = Path((file.filename or "").replace("\\", "/")).name
     if Path(filename).suffix.casefold() not in {".txt", ".md", ".log"}:

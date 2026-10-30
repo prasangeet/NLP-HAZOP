@@ -24,4 +24,4 @@ target-version = "py311"
 line-length = 88
 
 [tool.ruff.lint]
-ignore = ["EXE002"]
+ignore = ["EXE002", "I001"]

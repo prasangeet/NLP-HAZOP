@@ -282,7 +282,6 @@ class Neo4jGraphRepository:
                         "confidence": relation.confidence,
                         "source_id": relation.source_id,
                         "is_expert_verified": relation.is_expert_verified,
-                    "source_location": relation.source_location,
                         "source_location": relation.source_location,
                     }
                 )
