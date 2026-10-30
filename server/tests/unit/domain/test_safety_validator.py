@@ -27,7 +27,7 @@ def test_validator_rejects_bad_types_and_non_verbatim_evidence():
         title="Report",
         scenarios=(ExtractedScenario(
             scenario_id="S001", equipment="P-101", deviation="No flow",
-            causes=("Pump failure",),
+            causes=("Other cause",),
             relationships=(ExtractedRelationship(
                 subject="Pump failure", predicate="causes_deviation", object="No flow",
                 subject_type=EntityType.EQUIPMENT, object_type=EntityType.CONSEQUENCE,

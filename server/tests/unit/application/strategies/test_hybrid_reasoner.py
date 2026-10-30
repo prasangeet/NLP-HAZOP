@@ -9,6 +9,7 @@ from app.application.use_cases.build_evidence_context import (
 )
 from app.application.use_cases.recover_missing_link import RecoveryStatus
 from app.domain.entities.hazop_record import RelationshipOrigin
+from app.domain.ontology.schema import infer_entity_types
 from app.domain.reasoning.models import (
     AbstentionReason,
     ReasoningResult,
@@ -47,27 +48,29 @@ def make_item(
         relevance_note="Test evidence.",
         scenario_id="TRAIN-001",
         scope=RetrievalScope.CROSS_SCENARIO,
+        subject_type=infer_entity_types(predicate, subject, object_)[0],
+        object_type=infer_entity_types(predicate, subject, object_)[1],
     )
 
 
 def test_graph_step_adds_path_candidate_to_vector_evidence_before_llm() -> None:
     vector_candidate = make_item(
-        "Inlet valve fails open",
-        "causes",
-        "Tank overflow",
+        "High tank level",
+        "leads_to_consequence",
+        "Unsupported retrieved consequence",
         RelationshipOrigin.RETRIEVAL_INFERRED,
         "vector-row-1",
     )
     graph_edges = (
         make_item(
-            "Inlet valve fails open",
-            "causes_deviation",
             "High tank level",
+            "leads_to",
+            "Tank overfill",
             RelationshipOrigin.RECONSTRUCTED,
             "graph-row-1",
         ),
         make_item(
-            "High tank level",
+            "Tank overfill",
             "leads_to_consequence",
             "Loss of containment",
             RelationshipOrigin.RECONSTRUCTED,
@@ -76,8 +79,8 @@ def test_graph_step_adds_path_candidate_to_vector_evidence_before_llm() -> None:
     )
     context = EvidenceContext(
         scenario_id="HELD-OUT-001",
-        predicate="causes",
-        known_endpoint="Inlet valve fails open",
+        predicate="leads_to_consequence",
+        known_endpoint="High tank level",
         missing_endpoint="object",
         status=RecoveryStatus.CANDIDATES_FOUND,
         evidence_items=(vector_candidate,),

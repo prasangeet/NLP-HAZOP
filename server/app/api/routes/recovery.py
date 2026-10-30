@@ -45,5 +45,5 @@ def recover_missing_link(
         "dataset_id": dataset_id, "scenario_id": payload.scenario_id, "strategy": payload.strategy,
         "recovery": recovery.to_dict(), "reasoning": reasoning.to_dict(),
         "validation": validation.to_dict() if validation else {"valid":True,"errors":[],"warnings":[]},
-        "notice": "This is a research proposal, not an engineering approval. LLM-extracted, synthetic, retrieved and graph-derived evidence is not expert-validated causal truth.",
+        "notice": "This is a research proposal, not an engineering approval. LLM-extracted, synthetic, retrieved and graph-derived evidence are not expert-validated causal facts or engineering approval.",
     }
