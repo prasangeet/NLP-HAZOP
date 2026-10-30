@@ -61,10 +61,8 @@ def make_context(*items: EvidenceItem) -> EvidenceContext:
 
 
 def make_reasoner(response: LLMDecision) -> tuple[LLMReasoner, FakeLLM]:
-    reasoner = object.__new__(LLMReasoner)
     fake_llm = FakeLLM(response)
-    reasoner._llm = fake_llm
-    return reasoner, fake_llm
+    return LLMReasoner(chat_model=fake_llm), fake_llm
 
 
 def test_proposes_selected_evidence_and_preserves_provenance() -> None:
