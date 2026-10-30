@@ -54,6 +54,8 @@ class HybridReasoner:
                         "direct source-verified causal edge."
                     ),
                     scenario_id=context.scenario_id,
+                    dataset_id=getattr(context, "dataset_id", "default"),
+                    is_expert_verified=relation.is_expert_verified,
                     scope=RetrievalScope.SCENARIO_LOCAL,
                     relevance_score=None,
                 )

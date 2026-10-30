@@ -6,7 +6,7 @@ These models are independent of databases, APIs, and infrastructure.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 
 
@@ -86,6 +86,7 @@ class CausalRelation:
     confidence: float | None = None
     source_id: str | None = None
     is_expert_verified: bool = False
+    dataset_id: str = "default"
 
     def __post_init__(self) -> None:
         for name in ("subject", "predicate", "object"):
@@ -99,6 +100,9 @@ class CausalRelation:
             object.__setattr__(self, name, value)
 
         object.__setattr__(self, "evidence", self.evidence.strip())
+        if not isinstance(self.dataset_id, str) or not self.dataset_id.strip():
+            raise ValueError("CausalRelation.dataset_id must not be empty.")
+        object.__setattr__(self, "dataset_id", self.dataset_id.strip())
 
         if self.source_id is not None:
             object.__setattr__(
@@ -147,8 +151,12 @@ class HazopRecord:
     remarks: str = ""
     row_number: int | None = None
     raw_row: dict[str, object] = field(default_factory=dict)
+    dataset_id: str = "default"
 
     def __post_init__(self) -> None:
+        if not isinstance(self.dataset_id, str) or not self.dataset_id.strip():
+            raise ValueError("HazopRecord.dataset_id must not be empty.")
+        object.__setattr__(self, "dataset_id", self.dataset_id.strip())
         for name in ("scenario_id", "equipment", "deviation"):
             value = getattr(self, name).strip()
             if not value:
@@ -192,9 +200,16 @@ class HazopRecord:
             else:
                 object.__setattr__(self, "risk_ranking", cleaned_risk)
 
-        object.__setattr__(
-            self, "causal_relations", tuple(self.causal_relations)
-        )
+        normalized_relations = []
+        for relation in self.causal_relations:
+            if relation.dataset_id not in {"default", self.dataset_id}:
+                raise ValueError(
+                    "Causal relation dataset_id must match its HAZOP record."
+                )
+            if relation.dataset_id == "default" and self.dataset_id != "default":
+                relation = replace(relation, dataset_id=self.dataset_id)
+            normalized_relations.append(relation)
+        object.__setattr__(self, "causal_relations", tuple(normalized_relations))
         object.__setattr__(
             self, "raw_row", dict(self.raw_row)
         )
@@ -208,6 +223,7 @@ class HazopRecord:
         """Serialize the record into a JSON-friendly dictionary."""
         return {
             "scenario_id": self.scenario_id,
+            "dataset_id": self.dataset_id,
             "plant_unit": self.plant_unit,
             "equipment": self.equipment,
             "design_intent": self.design_intent,
@@ -241,6 +257,7 @@ class HazopRecord:
                     "confidence": relation.confidence,
                     "source_id": relation.source_id,
                     "is_expert_verified": relation.is_expert_verified,
+                    "dataset_id": relation.dataset_id,
                 }
                 for relation in self.causal_relations
             ],

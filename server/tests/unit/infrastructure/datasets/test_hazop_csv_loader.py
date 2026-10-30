@@ -320,7 +320,7 @@ def test_conflicting_expert_record_type_and_validation_status(tmp_path: Path) ->
     assert validated_record.validation_status == ValidationStatus.VALIDATED
     assert validated_record.record_type == RecordType.EXPERT_VALIDATED
     for rel in validated_record.causal_relations:
-        assert rel.is_expert_verified
+        assert not rel.is_expert_verified
         assert rel.origin == RelationshipOrigin.EXPERT
 
 
@@ -336,3 +336,64 @@ def test_delimiters_support_pipes_and_newlines(tmp_path: Path) -> None:
     assert record.causes == ("Valve failure", "Sensor drift")
     assert record.safeguards == ("PSV", "High level alarm")
 
+
+def test_provenance_labels_do_not_match_negative_substrings(tmp_path: Path) -> None:
+    path = tmp_path / "unknown_provenance.csv"
+    path.write_text(
+        "Scenario_ID,Equipment,Deviation,Record_Type,Causes,Consequences\n"
+        "S1,T-1,High level,unverified,Cause 1,Consequence 1\n"
+        "S2,T-2,Low flow,not reconstructed,Cause 2,Consequence 2\n"
+        "S3,T-3,High pressure,unverified source,Cause 3,Consequence 3\n",
+        encoding="utf-8",
+    )
+
+    records = HazopCsvLoader().load(path, "unknown-dataset")
+    assert len(records) == 3
+    assert all(record.record_type == RecordType.UNSPECIFIED for record in records)
+    assert all(
+        relation.origin == RelationshipOrigin.UNSPECIFIED
+        for record in records
+        for relation in record.causal_relations
+    )
+
+
+def test_relationship_expert_verification_requires_relationship_status(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "relationship_validation.csv"
+    path.write_text(
+        "Scenario_ID,Equipment,Deviation,Record_Type,Validation_Status,"
+        "Relationship_Validation_Status,Causes,Consequences\n"
+        "S1,T-1,High level,expert_validated,validated,,Cause 1,Consequence 1\n"
+        "S2,T-2,Low flow,expert_validated,validated,validated,Cause 2,Consequence 2\n",
+        encoding="utf-8",
+    )
+
+    records = HazopCsvLoader().load(path, "expert-dataset")
+    assert records[0].record_type == RecordType.EXPERT_VALIDATED
+    assert all(not rel.is_expert_verified for rel in records[0].causal_relations)
+    assert all(rel.is_expert_verified for rel in records[1].causal_relations)
+    assert records[1].validation_status == ValidationStatus.VALIDATED
+
+
+def test_source_ids_are_unique_across_datasets_with_same_scenario_id(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "same_scenario.csv"
+    path.write_text(
+        "Scenario_ID,Equipment,Deviation,Causes,Consequences\n"
+        "S001,T-1,High level,Cause 1,Consequence 1\n",
+        encoding="utf-8",
+    )
+
+    dataset_a = HazopCsvLoader().load(path, "dataset-a")[0]
+    dataset_b = HazopCsvLoader().load(path, "dataset-b")[0]
+
+    assert dataset_a.scenario_id == dataset_b.scenario_id == "S001"
+    assert dataset_a.dataset_id == "dataset-a"
+    assert dataset_b.dataset_id == "dataset-b"
+    ids_a = {rel.source_id for rel in dataset_a.causal_relations}
+    ids_b = {rel.source_id for rel in dataset_b.causal_relations}
+    assert ids_a.isdisjoint(ids_b)
+    assert all(rel.dataset_id == "dataset-a" for rel in dataset_a.causal_relations)
+    assert all(rel.dataset_id == "dataset-b" for rel in dataset_b.causal_relations)

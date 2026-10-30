@@ -21,20 +21,23 @@ class HazopService:
         """Register or update a HAZOP record."""
         self._repository.save_record(record)
 
-    def get_record(self, scenario_id: str) -> HazopRecord | None:
+    def get_record(
+        self, scenario_id: str, *, dataset_id: str = "default"
+    ) -> HazopRecord | None:
         """Retrieve a HAZOP record by scenario ID."""
         scenario_id = scenario_id.strip()
 
         if not scenario_id:
             raise ValueError("scenario_id must not be empty.")
 
-        return self._repository.get_record(scenario_id)
+        return self._repository.get_record(scenario_id, dataset_id=dataset_id)
 
     def search_records(
         self,
         *,
         equipment: str | None = None,
         deviation: str | None = None,
+        dataset_id: str | None = None,
         limit: int = 20,
     ) -> Sequence[HazopRecord]:
         """Search HAZOP records by equipment and/or deviation."""
@@ -50,6 +53,7 @@ class HazopService:
         return self._repository.find_records(
             equipment=equipment,
             deviation=deviation,
+            dataset_id=dataset_id,
             limit=limit,
         )
 
@@ -66,6 +70,7 @@ class HazopService:
         subject: str | None = None,
         predicate: str | None = None,
         object: str | None = None,
+        dataset_id: str | None = None,
         limit: int = 50,
     ) -> Sequence[CausalRelation]:
         """Search causal relationships using optional filters."""
@@ -85,5 +90,6 @@ class HazopService:
             subject=subject,
             predicate=predicate,
             object=object,
+            dataset_id=dataset_id,
             limit=limit,
         )

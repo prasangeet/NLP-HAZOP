@@ -21,9 +21,11 @@ def record(
     consequences: tuple[str, ...],
     deviation: str = "High tank level",
     unit: str = "Storage",
+    dataset_id: str = "default",
 ) -> HazopRecord:
     return HazopRecord(
         scenario_id=scenario_id,
+        dataset_id=dataset_id,
         plant_unit=unit,
         equipment="T-301",
         deviation=deviation,
@@ -43,7 +45,8 @@ def record(
                 object=deviation,
                 origin=RelationshipOrigin.RECONSTRUCTED,
                 evidence="Cause and deviation co-listed in row.",
-                source_id=f"{scenario_id}:cause",
+                source_id=f"{dataset_id}:{scenario_id}:cause",
+                dataset_id=dataset_id,
             ),
             CausalRelation(
                 subject=deviation,
@@ -51,7 +54,8 @@ def record(
                 object=consequences[0],
                 origin=RelationshipOrigin.RECONSTRUCTED,
                 evidence="Deviation and consequence co-listed in row.",
-                source_id=f"{scenario_id}:consequence",
+                source_id=f"{dataset_id}:{scenario_id}:consequence",
+                dataset_id=dataset_id,
             ),
         ),
     )
@@ -104,7 +108,7 @@ def test_retrieves_candidate_and_marks_it_retrieval_inferred() -> None:
     assert first.relevance_score is not None
     assert first.relevance_score > 0.0
     assert "co-occurrence-based retrieval" in first.relation.evidence
-    assert first.relation.source_id == "single-2020-t301:TRAIN-001"
+    assert first.relation.source_id == "default:single-2020-t301:TRAIN-001"
 
 
 def test_does_not_return_unrelated_rows_from_metadata_overlap() -> None:
@@ -181,3 +185,56 @@ def test_index_can_be_refreshed_after_repository_updates() -> None:
     )
     assert retriever.index_build_ms >= 0.0
     assert result.evidence
+
+def test_tfidf_indexes_are_isolated_by_dataset() -> None:
+    repository = InMemoryGraphRepository()
+    repository.save_record(
+        record(
+            "TRAIN-001",
+            causes=("Valve fails open",),
+            consequences=("Tank overflow",),
+            dataset_id="dataset-a",
+        )
+    )
+    repository.save_record(
+        record(
+            "TRAIN-001",
+            causes=("Valve fails open",),
+            consequences=("Reactor explosion",),
+            dataset_id="dataset-b",
+        )
+    )
+    repository.save_context_record(
+        HazopRecord(
+            dataset_id="dataset-a",
+            scenario_id="HELD-OUT",
+            plant_unit="Storage",
+            equipment="T-301",
+            deviation="High level",
+        )
+    )
+    repository.save_context_record(
+        HazopRecord(
+            dataset_id="dataset-b",
+            scenario_id="HELD-OUT",
+            plant_unit="Storage",
+            equipment="T-301",
+            deviation="High level",
+        )
+    )
+
+    retriever = TfidfRetriever(repository)
+    result = retriever.retrieve(
+        RetrievalRequest(
+            scenario_id="HELD-OUT",
+            dataset_id="dataset-a",
+            predicate="causes",
+            known_endpoint="Valve fails open",
+            missing_endpoint="object",
+        )
+    )
+
+    assert result.scenario_exists
+    assert result.evidence
+    assert {item.dataset_id for item in result.evidence} == {"dataset-a"}
+    assert {item.relation.object for item in result.evidence} == {"Tank overflow"}

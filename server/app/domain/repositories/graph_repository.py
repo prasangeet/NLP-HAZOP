@@ -19,8 +19,10 @@ class GraphRepository(Protocol):
         """Persist a HAZOP record and its associated graph data."""
         ...
 
-    def get_record(self, scenario_id: str) -> HazopRecord | None:
-        """Retrieve a record by its unique scenario ID."""
+    def get_record(
+        self, scenario_id: str, *, dataset_id: str = "default"
+    ) -> HazopRecord | None:
+        """Retrieve a record by its dataset-scoped scenario identity."""
         ...
 
     def find_records(
@@ -28,6 +30,7 @@ class GraphRepository(Protocol):
         *,
         equipment: str | None = None,
         deviation: str | None = None,
+        dataset_id: str | None = None,
         limit: int = 20,
     ) -> Sequence[HazopRecord]:
         """Find records matching the supplied filters."""
@@ -46,6 +49,7 @@ class GraphRepository(Protocol):
         subject: str | None = None,
         predicate: str | None = None,
         object: str | None = None,
+        dataset_id: str | None = None,
         limit: int = 50,
     ) -> Sequence[CausalRelation]:
         """Query relationships using optional filters."""

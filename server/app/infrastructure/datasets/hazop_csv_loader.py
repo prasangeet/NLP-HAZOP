@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from pathlib import Path
 from typing import Any, TextIO
 
@@ -174,6 +175,12 @@ COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
         "notes",
         "comments",
     ),
+    "relationship_validation_status": (
+        "relationship_validation_status",
+        "relationship validation status",
+        "edge_validation_status",
+        "edge validation status",
+    ),
     "validation_status": (
         "validation_status",
         "validation status",
@@ -247,28 +254,93 @@ def _split_items(value: str) -> tuple[str, ...]:
     return tuple(items)
 
 
+def _normalize_provenance_label(value: str) -> str:
+    """Normalize provenance labels while retaining exact-token semantics."""
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", value.casefold()).split())
+
+
 def _origin_and_type(
     record_type_text: str,
     dataset_id: str,
 ) -> tuple[RecordType, RelationshipOrigin]:
-    text = record_type_text.casefold()
-    if "paper_reported_reconstruction" in text or "reconstruct" in text:
+    label = _normalize_provenance_label(record_type_text)
+    labels = {
+        "paper reported reconstruction": (
+            RecordType.SOURCE_RECONSTRUCTED,
+            RelationshipOrigin.RECONSTRUCTED,
+        ),
+        "paper reported reconstructed": (
+            RecordType.SOURCE_RECONSTRUCTED,
+            RelationshipOrigin.RECONSTRUCTED,
+        ),
+        "source reconstructed": (
+            RecordType.SOURCE_RECONSTRUCTED,
+            RelationshipOrigin.RECONSTRUCTED,
+        ),
+        "reconstructed": (
+            RecordType.SOURCE_RECONSTRUCTED,
+            RelationshipOrigin.RECONSTRUCTED,
+        ),
+        "reconstruction": (
+            RecordType.SOURCE_RECONSTRUCTED,
+            RelationshipOrigin.RECONSTRUCTED,
+        ),
+        "synthetic": (RecordType.SYNTHETIC, RelationshipOrigin.SYNTHETIC),
+        "synthetic continuation": (
+            RecordType.SYNTHETIC,
+            RelationshipOrigin.SYNTHETIC,
+        ),
+        "synthetic scenario": (
+            RecordType.SYNTHETIC,
+            RelationshipOrigin.SYNTHETIC,
+        ),
+        "synthetic record": (
+            RecordType.SYNTHETIC,
+            RelationshipOrigin.SYNTHETIC,
+        ),
+        "source verified": (
+            RecordType.SOURCE_VERIFIED,
+            RelationshipOrigin.SOURCE,
+        ),
+        "verified source": (
+            RecordType.SOURCE_VERIFIED,
+            RelationshipOrigin.SOURCE,
+        ),
+        "source documented": (
+            RecordType.SOURCE_VERIFIED,
+            RelationshipOrigin.SOURCE,
+        ),
+        "expert validated": (
+            RecordType.EXPERT_VALIDATED,
+            RelationshipOrigin.EXPERT,
+        ),
+        "expert reviewed": (
+            RecordType.EXPERT_VALIDATED,
+            RelationshipOrigin.EXPERT,
+        ),
+    }
+    if label in labels:
+        return labels[label]
+
+    dataset_label = _normalize_provenance_label(dataset_id)
+    dataset_tokens = set(dataset_label.split())
+    negations = {
+        "not",
+        "non",
+        "un",
+        "unverified",
+        "unvalidated",
+        "unknown",
+    }
+    if dataset_tokens.intersection(negations):
+        return RecordType.UNSPECIFIED, RelationshipOrigin.UNSPECIFIED
+    if "synthetic" in dataset_tokens:
+        return RecordType.SYNTHETIC, RelationshipOrigin.SYNTHETIC
+    if dataset_tokens.intersection({"reconstruction", "reconstructed"}):
         return (
             RecordType.SOURCE_RECONSTRUCTED,
             RelationshipOrigin.RECONSTRUCTED,
         )
-    if "synthetic" in text:
-        return RecordType.SYNTHETIC, RelationshipOrigin.SYNTHETIC
-    if "source_verified" in text or "verified" in text:
-        return RecordType.SOURCE_VERIFIED, RelationshipOrigin.SOURCE
-    if "expert" in text and "valid" in text:
-        return RecordType.EXPERT_VALIDATED, RelationshipOrigin.EXPERT
-
-    ds_folded = dataset_id.casefold()
-    if "dwsim" in ds_folded or "synthetic" in ds_folded:
-        return RecordType.SYNTHETIC, RelationshipOrigin.SYNTHETIC
-    if "reconstruct" in ds_folded:
-        return RecordType.SOURCE_RECONSTRUCTED, RelationshipOrigin.RECONSTRUCTED
     return RecordType.UNSPECIFIED, RelationshipOrigin.UNSPECIFIED
 
 
@@ -415,6 +487,11 @@ class HazopCsvLoader:
             *COLUMN_ALIASES["validation_status"],
             default="not specified",
         )
+        relationship_validation_note = _pick(
+            row,
+            *COLUMN_ALIASES["relationship_validation_status"],
+            default="",
+        )
         validation_note_folded = validation_note.casefold()
 
         # Validate whether validation evidence supports expert validation
@@ -425,22 +502,39 @@ class HazopCsvLoader:
 
         if has_positive_expert_validation:
             validation_status = ValidationStatus.VALIDATED
-            is_verified = (origin == RelationshipOrigin.EXPERT)
         elif validation_note_folded in {"rejected", "failed"}:
             validation_status = ValidationStatus.REJECTED
-            is_verified = False
         else:
             validation_status = ValidationStatus.UNREVIEWED
-            is_verified = False
 
-        # If a record is marked UNREVIEWED, relationships must not be marked expert-verified.
-        # Demote conflicting expert claims to unspecified.
-        if origin == RelationshipOrigin.EXPERT and validation_status != ValidationStatus.VALIDATED:
+        if (
+            origin == RelationshipOrigin.EXPERT
+            and validation_status != ValidationStatus.VALIDATED
+        ):
             origin = RelationshipOrigin.UNSPECIFIED
             if record_type == RecordType.EXPERT_VALIDATED:
                 record_type = RecordType.UNSPECIFIED
 
+        # Record-level validation is not a substitute for explicit
+        # relationship-level expert validation.
+        relationship_status = _normalize_provenance_label(
+            relationship_validation_note
+        )
+        is_verified = (
+            origin == RelationshipOrigin.EXPERT
+            and relationship_status in {
+                "validated",
+                "expert validated",
+                "explicitly expert validated",
+            }
+        )
+
         relations: list[CausalRelation] = []
+        validation_phrase = (
+            "This causal relationship has explicit relationship-level expert validation."
+            if is_verified
+            else "This is not an independently expert-validated causal assertion at the relationship level."
+        )
         for cause_index, cause in enumerate(causes, start=1):
             relations.append(
                 CausalRelation(
@@ -452,11 +546,11 @@ class HazopCsvLoader:
                         f"Row-level association in scenario {scenario_id}: "
                         f"cause {cause!r} is listed with deviation "
                         f"{deviation!r}. Record origin: {origin.value}. "
-                        f"Provenance: {provenance}. This is not an "
-                        "independently expert-validated causal assertion."
+                        f"Provenance: {provenance}. {validation_phrase}"
                     ),
-                    source_id=f"{scenario_id}:cause:{cause_index}",
+                    source_id=f"{dataset_id}:{scenario_id}:row-{row_number or 0}:cause:{cause_index}",
                     is_expert_verified=is_verified,
+                    dataset_id=dataset_id,
                 )
             )
 
@@ -472,11 +566,12 @@ class HazopCsvLoader:
                             f"Scenario {scenario_id} lists simulated or "
                             f"inferred effect {effect!r} for deviation "
                             f"{deviation!r}. This effect retains the row's "
-                            f"origin ({origin.value}); it is not expert "
-                            f"validation. Provenance: {provenance}"
+                            f"origin ({origin.value}). {validation_phrase} "
+                            f"Provenance: {provenance}"
                         ),
-                        source_id=f"{scenario_id}:effect:{effect_index}",
+                        source_id=f"{dataset_id}:{scenario_id}:row-{row_number or 0}:effect:{effect_index}",
                         is_expert_verified=is_verified,
+                        dataset_id=dataset_id,
                     )
                 )
 
@@ -501,11 +596,11 @@ class HazopCsvLoader:
                                 f"single intermediate effect {single_effect!r} and "
                                 f"consequence {consequence!r} are co-listed. "
                                 f"Record origin: {origin.value}. "
-                                f"Provenance: {provenance}. This is not an "
-                                "independently expert-validated causal assertion."
+                                f"Provenance: {provenance}. {validation_phrase}"
                             ),
-                            source_id=f"{scenario_id}:effect:1:consequence:{consequence_index}",
+                            source_id=f"{dataset_id}:{scenario_id}:row-{row_number or 0}:effect:1:consequence:{consequence_index}",
                             is_expert_verified=is_verified,
+                            dataset_id=dataset_id,
                         )
                     )
             else:
@@ -526,8 +621,9 @@ class HazopCsvLoader:
                                 "Explicit causal pairing between intermediate effects and "
                                 "consequences is not provided in the source row."
                             ),
-                            source_id=f"{scenario_id}:consequence:{consequence_index}",
+                            source_id=f"{dataset_id}:{scenario_id}:row-{row_number or 0}:consequence:{consequence_index}",
                             is_expert_verified=False,
+                            dataset_id=dataset_id,
                         )
                     )
         else:
@@ -545,11 +641,11 @@ class HazopCsvLoader:
                             f"deviation {deviation!r} is listed with "
                             f"consequence {consequence!r}. Record origin: "
                             f"{origin.value}. Provenance: {provenance}. "
-                            "This is not an independently expert-validated "
-                            "causal assertion."
+                            f"{validation_phrase}"
                         ),
-                        source_id=f"{scenario_id}:consequence:{consequence_index}",
+                        source_id=f"{dataset_id}:{scenario_id}:row-{row_number or 0}:consequence:{consequence_index}",
                         is_expert_verified=is_verified,
+                        dataset_id=dataset_id,
                     )
                 )
 
@@ -593,6 +689,7 @@ class HazopCsvLoader:
         )
         return HazopRecord(
             scenario_id=scenario_id,
+            dataset_id=dataset_id,
             plant_unit=_pick(row, *COLUMN_ALIASES["plant_unit"]),
             equipment=_pick(
                 row,

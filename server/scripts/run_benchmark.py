@@ -69,6 +69,7 @@ class BenchmarkCase:
     gold_values: tuple[str, ...]
     record_type: str
     scenario_context: str
+    dataset_id: str = "default"
 
 
 def normalize(value: str) -> str:
@@ -127,6 +128,7 @@ def make_cases(records: tuple[HazopRecord, ...]) -> tuple[BenchmarkCase, ...]:
                     gold_values=record.consequences,
                     record_type=record.record_type.value,
                     scenario_context=scenario_context,
+                    dataset_id=record.dataset_id,
                 )
             )
     return tuple(cases)
@@ -203,6 +205,7 @@ def prediction_from_relation(
         "scope": scope,
         "relevance_score": relevance_score,
         "scenario_id": scenario_id,
+        "dataset_id": relation.dataset_id,
     }
 
 
@@ -470,10 +473,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             known_endpoint=case.known_endpoint,
             missing_endpoint=MissingEndpoint.OBJECT,
             limit=args.top_k,
+            dataset_id=case.dataset_id,
         )
         case_result: dict[str, Any] = {
             "case_id": case.case_id,
             "scenario_id": case.scenario_id,
+            "dataset_id": case.dataset_id,
             "record_type": case.record_type,
             "known_endpoint": case.known_endpoint,
             "gold_values": list(case.gold_values),

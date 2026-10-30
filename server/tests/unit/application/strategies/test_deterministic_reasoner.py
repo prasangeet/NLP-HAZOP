@@ -36,6 +36,7 @@ def make_item(
     evidence: str = "Source identifies the valve failure.",
     confidence: float | None = 0.9,
     source_id: str | None = "source-001",
+    is_expert_verified: bool = False,
 ) -> EvidenceItem:
     """Create a test evidence item."""
     return EvidenceItem(
@@ -47,6 +48,7 @@ def make_item(
         confidence=confidence,
         source_id=source_id,
         relevance_note="Test evidence.",
+        is_expert_verified=is_expert_verified,
     )
 
 
@@ -154,7 +156,10 @@ def test_abstains_when_multiple_eligible_candidates_exist() -> None:
 
 def test_expert_evidence_can_support_a_proposal() -> None:
     context = make_context(
-        make_item(origin=RelationshipOrigin.EXPERT)
+        make_item(
+            origin=RelationshipOrigin.EXPERT,
+            is_expert_verified=True,
+        )
     )
 
     result = DeterministicReasoner().reason(context)
@@ -162,6 +167,15 @@ def test_expert_evidence_can_support_a_proposal() -> None:
     assert result.status == ReasoningStatus.PROPOSED
     assert result.proposed_relation is not None
     assert result.proposed_relation.origin == RelationshipOrigin.EXPERT
+
+def test_unverified_expert_attribution_cannot_support_a_proposal() -> None:
+    context = make_context(make_item(origin=RelationshipOrigin.EXPERT))
+
+    result = DeterministicReasoner().reason(context)
+
+    assert result.status == ReasoningStatus.ABSTAINED
+    assert result.abstention_reason == AbstentionReason.INSUFFICIENT_SUPPORT
+
 
 
 def test_proposed_result_serializes_correctly() -> None:

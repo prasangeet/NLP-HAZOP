@@ -75,11 +75,13 @@ class GraphReasoner:
 
     def reason(self, context: EvidenceContextProtocol) -> ReasoningResult:
         """Propose a unique direct candidate or a unique graph path endpoint."""
+        dataset_id = getattr(context, "dataset_id", "default")
 
         if not context.evidence_items and not context.graph_context:
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.NO_EVIDENCE,
+                dataset_id,
             )
 
         direction = context.missing_endpoint.strip().casefold()
@@ -87,17 +89,21 @@ class GraphReasoner:
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
+                dataset_id,
             )
 
         direct = self._direct_candidates(context, direction)
         if direct:
-            return self._resolve_direct(context.scenario_id, direct, direction)
+            return self._resolve_direct(
+                context.scenario_id, direct, direction, dataset_id
+            )
 
         paths = self._find_paths(context, direction)
         if not paths:
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
+                dataset_id,
             )
 
         by_endpoint: dict[str, list[_Path]] = defaultdict(list)
@@ -108,6 +114,7 @@ class GraphReasoner:
             return ReasoningResult(
                 status=ReasoningStatus.ABSTAINED,
                 scenario_id=context.scenario_id,
+                dataset_id=dataset_id,
                 supporting_evidence=tuple(
                     self._format_path(path)
                     for group in by_endpoint.values()
@@ -141,14 +148,16 @@ class GraphReasoner:
             ),
             confidence=None,
             source_id=(
-                "graph-path:" + "->".join(path_source_ids)
+                f"graph-path:{dataset_id}:" + "->".join(path_source_ids)
                 if path_source_ids
                 else None
             ),
+            dataset_id=dataset_id,
         )
         return ReasoningResult(
             status=ReasoningStatus.PROPOSED,
             scenario_id=context.scenario_id,
+            dataset_id=dataset_id,
             proposed_relation=relation,
             supporting_evidence=tuple(
                 self._format_path(path) for path in selected_paths
@@ -168,8 +177,16 @@ class GraphReasoner:
             EvidenceItemProtocol,
         ] = {}
 
+        dataset_id = getattr(context, "dataset_id", "default")
         for item in context.evidence_items:
+            if getattr(item, "dataset_id", "default") != dataset_id:
+                continue
             if item.origin not in self._DIRECT_ORIGINS:
+                continue
+            if (
+                item.origin == RelationshipOrigin.EXPERT
+                and not getattr(item, "is_expert_verified", False)
+            ):
                 continue
             if not item.evidence.strip():
                 continue
@@ -200,6 +217,7 @@ class GraphReasoner:
         scenario_id: str,
         candidates: list[EvidenceItemProtocol],
         direction: str,
+        dataset_id: str,
     ) -> ReasoningResult:
         endpoint_values = {
             (
@@ -211,6 +229,7 @@ class GraphReasoner:
             return ReasoningResult(
                 status=ReasoningStatus.ABSTAINED,
                 scenario_id=scenario_id,
+                dataset_id=dataset_id,
                 supporting_evidence=tuple(
                     item.evidence for item in candidates
                 ),
@@ -226,6 +245,8 @@ class GraphReasoner:
             evidence=selected.evidence,
             confidence=selected.confidence,
             source_id=selected.source_id,
+            dataset_id=getattr(selected, "dataset_id", dataset_id),
+            is_expert_verified=getattr(selected, "is_expert_verified", False),
         )
         confidences = [
             item.confidence
@@ -235,6 +256,7 @@ class GraphReasoner:
         return ReasoningResult(
             status=ReasoningStatus.PROPOSED,
             scenario_id=scenario_id,
+            dataset_id=dataset_id,
             proposed_relation=relation,
             supporting_evidence=tuple(
                 dict.fromkeys(item.evidence for item in candidates)
@@ -253,8 +275,16 @@ class GraphReasoner:
             list[tuple[str, EvidenceItemProtocol, str]],
         ] = defaultdict(list)
 
+        dataset_id = getattr(context, "dataset_id", "default")
         for edge in context.graph_context:
+            if getattr(edge, "dataset_id", "default") != dataset_id:
+                continue
             if edge.origin not in self._DIRECT_ORIGINS:
+                continue
+            if (
+                edge.origin == RelationshipOrigin.EXPERT
+                and not getattr(edge, "is_expert_verified", False)
+            ):
                 continue
             if not edge.evidence.strip():
                 continue
@@ -365,9 +395,11 @@ class GraphReasoner:
     def _abstain(
         scenario_id: str,
         reason: AbstentionReason,
+        dataset_id: str = "default",
     ) -> ReasoningResult:
         return ReasoningResult(
             status=ReasoningStatus.ABSTAINED,
             scenario_id=scenario_id,
+            dataset_id=dataset_id,
             abstention_reason=reason,
         )

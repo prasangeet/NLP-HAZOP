@@ -19,13 +19,19 @@ class CrossScenarioRetriever:
         self._repository = repository
 
     def retrieve(self, request: RetrievalRequest) -> RetrievalResult:
-        records = self._repository.find_records(limit=10_000)
+        records = self._repository.find_records(
+            dataset_id=request.dataset_id,
+            limit=10_000,
+        )
 
         results: list[RetrievedEvidence] = []
         seen: set[tuple[str, str, str, str]] = set()
 
         for record in records:
-            if record.scenario_id == request.scenario_id:
+            if (
+                record.dataset_id != request.dataset_id
+                or record.scenario_id == request.scenario_id
+            ):
                 continue
 
             for relation in record.causal_relations:
@@ -52,6 +58,7 @@ class CrossScenarioRetriever:
                 results.append(
                     RetrievedEvidence(
                         scenario_id=record.scenario_id,
+                        dataset_id=record.dataset_id,
                         relation=relation,
                         scope=RetrievalScope.CROSS_SCENARIO,
                     )
@@ -60,12 +67,14 @@ class CrossScenarioRetriever:
                 if len(results) >= request.limit:
                     return RetrievalResult(
                         scenario_id=request.scenario_id,
+                        dataset_id=request.dataset_id,
                         scope=RetrievalScope.CROSS_SCENARIO,
                         evidence=tuple(results),
                     )
 
         return RetrievalResult(
             scenario_id=request.scenario_id,
+            dataset_id=request.dataset_id,
             scope=RetrievalScope.CROSS_SCENARIO,
             evidence=tuple(results),
         )

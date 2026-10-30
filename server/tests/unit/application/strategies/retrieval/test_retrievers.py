@@ -25,19 +25,24 @@ class FakeRepository:
     """Minimal repository for retrieval strategy tests."""
 
     def __init__(self, records: list[HazopRecord]) -> None:
-        self.records = {record.scenario_id: record for record in records}
+        self.records = {(record.dataset_id, record.scenario_id): record for record in records}
 
-    def get_record(self, scenario_id: str) -> HazopRecord | None:
-        return self.records.get(scenario_id)
+    def get_record(
+        self, scenario_id: str, *, dataset_id: str = "default"
+    ) -> HazopRecord | None:
+        return self.records.get((dataset_id, scenario_id))
 
     def find_records(
         self,
         *,
         equipment: str | None = None,
         deviation: str | None = None,
+        dataset_id: str | None = None,
         limit: int = 20,
     ) -> list[HazopRecord]:
         records = list(self.records.values())
+        if dataset_id is not None:
+            records = [record for record in records if record.dataset_id == dataset_id]
 
         if equipment is not None:
             records = [
@@ -56,7 +61,7 @@ class FakeRepository:
         return records[:limit]
 
     def save_record(self, record: HazopRecord) -> None:
-        self.records[record.scenario_id] = record
+        self.records[(record.dataset_id, record.scenario_id)] = record
 
     def save_relations(self, relations) -> None:
         raise NotImplementedError

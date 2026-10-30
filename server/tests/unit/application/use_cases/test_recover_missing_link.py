@@ -25,26 +25,31 @@ class FakeGraphRepository:
     """In-memory graph repository for isolated unit tests."""
 
     def __init__(self) -> None:
-        self.records: dict[str, HazopRecord] = {}
+        self.records: dict[tuple[str, str], HazopRecord] = {}
         self.relations: list[CausalRelation] = []
 
     def save_record(self, record: HazopRecord) -> None:
-        self.records[record.scenario_id] = record
+        self.records[(record.dataset_id, record.scenario_id)] = record
 
-    def get_record(self, scenario_id: str) -> HazopRecord | None:
-        return self.records.get(scenario_id)
+    def get_record(
+        self, scenario_id: str, *, dataset_id: str = "default"
+    ) -> HazopRecord | None:
+        return self.records.get((dataset_id, scenario_id))
 
     def find_records(
         self,
         *,
         equipment: str | None = None,
         deviation: str | None = None,
+        dataset_id: str | None = None,
         limit: int = 20,
     ) -> list[HazopRecord]:
         if limit < 1:
             raise ValueError("limit must be greater than zero.")
 
         records = list(self.records.values())
+        if dataset_id is not None:
+            records = [record for record in records if record.dataset_id == dataset_id]
 
         if equipment is not None:
             records = [
@@ -74,12 +79,15 @@ class FakeGraphRepository:
         subject: str | None = None,
         predicate: str | None = None,
         object: str | None = None,
+        dataset_id: str | None = None,
         limit: int = 50,
     ) -> list[CausalRelation]:
         if limit < 1:
             raise ValueError("limit must be greater than zero.")
 
         relations = self.relations
+        if dataset_id is not None:
+            relations = [relation for relation in relations if relation.dataset_id == dataset_id]
 
         if subject is not None:
             relations = [

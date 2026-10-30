@@ -32,12 +32,14 @@ class RecoveryRequest:
     known_endpoint: str
     missing_endpoint: MissingEndpoint
     limit: int = 20
+    dataset_id: str = "default"
 
     def __post_init__(self) -> None:
-        for field_name in ("scenario_id", "predicate", "known_endpoint"):
+        for field_name in ("scenario_id", "dataset_id", "predicate", "known_endpoint"):
             value = getattr(self, field_name)
             if not isinstance(value, str) or not value.strip():
                 raise ValueError(f"{field_name} must be a non-empty string")
+            object.__setattr__(self, field_name, value.strip())
 
         if not isinstance(self.missing_endpoint, MissingEndpoint):
             try:
@@ -103,6 +105,7 @@ class RecoveryCandidate:
         return {
             "missing_value": self.missing_value,
             "scenario_id": self.scenario_id,
+            "dataset_id": self.relation.dataset_id,
             "subject": self.subject,
             "predicate": self.predicate,
             "object": self.object,
@@ -123,6 +126,7 @@ class RecoveryResult:
     retrieval_scope: RetrievalScope = RetrievalScope.SCENARIO_LOCAL
     graph_context: tuple[RetrievedEvidence, ...] = ()
     scenario_context: str = ""
+    dataset_id: str = "default"
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "candidates", tuple(self.candidates))
@@ -135,6 +139,7 @@ class RecoveryResult:
     def to_dict(self) -> dict[str, object]:
         return {
             "scenario_id": self.scenario_id,
+            "dataset_id": self.dataset_id,
             "status": self.status.value,
             "retrieval_scope": self.retrieval_scope.value,
             "is_empty": self.is_empty,
@@ -143,6 +148,7 @@ class RecoveryResult:
             "graph_context": [
                 {
                     "scenario_id": item.scenario_id,
+                    "dataset_id": item.dataset_id,
                     "subject": item.relation.subject,
                     "predicate": item.relation.predicate,
                     "object": item.relation.object,
@@ -164,6 +170,7 @@ class RecoverMissingLink:
     def execute(self, request: RecoveryRequest) -> RecoveryResult:
         retrieval_request = RetrievalRequest(
             scenario_id=request.scenario_id,
+            dataset_id=request.dataset_id,
             predicate=request.predicate.strip(),
             known_endpoint=request.known_endpoint.strip(),
             missing_endpoint=request.missing_endpoint.value,
@@ -174,6 +181,7 @@ class RecoverMissingLink:
         if not retrieval_result.scenario_exists:
             return RecoveryResult(
                 scenario_id=request.scenario_id,
+                dataset_id=request.dataset_id,
                 status=RecoveryStatus.SCENARIO_NOT_FOUND,
                 retrieval_scope=retrieval_result.scope,
             )
@@ -207,6 +215,7 @@ class RecoverMissingLink:
 
         return RecoveryResult(
             scenario_id=request.scenario_id,
+            dataset_id=request.dataset_id,
             status=(
                 RecoveryStatus.CANDIDATES_FOUND
                 if candidates
