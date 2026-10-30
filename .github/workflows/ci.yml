@@ -38,7 +38,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: server/uv.lock
       - name: Install locked dependencies
-        run: uv sync --frozen
+        run: uv sync
       - name: Ruff
         run: uv run ruff check app tests scripts
       - name: Pytest
@@ -71,7 +71,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: server/uv.lock
       - name: Install locked dependencies
-        run: uv sync --frozen
+        run: uv sync
       - name: Run leakage-aware benchmark
         run: |
           uv run python -m scripts.run_benchmark \
