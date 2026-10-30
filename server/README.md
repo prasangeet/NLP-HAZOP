@@ -125,7 +125,11 @@ Useful controls:
 - --top-k 10
 - --max-hops 4
 - --limit-cases 20 for a quick smoke run
-- --output-dir results/custom-run
+- --output-dir ../results/custom-run
+
+By default, the runner writes to the repository-root `results/<dataset>/`
+directory (one level above `server/`). A relative custom `--output-dir`
+is resolved from the current working directory.
 
 Each run writes:
 
@@ -133,7 +137,11 @@ Each run writes:
 - summary.csv: compact method comparison.
 - predictions.csv: one row per query and method.
 
-Generated results are intentionally not committed as canonical research findings until the user reviews the run, confirms the split and labels, and (for causal correctness claims) supplies expert-adjudicated ground truth. GitHub Actions runs the test suite and all three non-LLM tracks, then uploads their output files as a workflow artifact.
+Generated result files are not committed as canonical findings. The 30 October 2026 exploratory baseline is summarized in
+`../reports/benchmark-baseline-2026-10-30.md`; its raw JSON/CSV files are uploaded
+as separate GitHub Actions artifacts for each dataset track. The baseline run
+used seed 42 and did not enable the LLM methods. Causal correctness claims still
+require a separately expert-adjudicated held-out set.
 
 ## Current limitations and next research requirements
 
