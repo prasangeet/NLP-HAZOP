@@ -34,3 +34,6 @@ Thumbs.db
 # Environmental files
 .venv/
 .env
+
+# Local experiment outputs (published as CI artifacts)
+/server/results/
