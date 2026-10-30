@@ -162,8 +162,6 @@ def test_index_can_be_refreshed_after_repository_updates() -> None:
         )
     )
     retriever = TfidfRetriever(repository)
-    initial_build_ms = retriever.index_build_ms
-
     repository.save_record(
         record(
             "TRAIN-001",
