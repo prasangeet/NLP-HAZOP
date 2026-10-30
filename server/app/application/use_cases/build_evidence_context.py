@@ -37,6 +37,7 @@ class EvidenceItem:
     is_expert_verified: bool = False
     subject_type: EntityType = EntityType.CONCEPT
     object_type: EntityType = EntityType.CONCEPT
+    source_location: str | None = None
 
     @classmethod
     def from_candidate(cls, candidate: RecoveryCandidate) -> EvidenceItem:
@@ -59,6 +60,7 @@ class EvidenceItem:
             is_expert_verified=relation.is_expert_verified,
             subject_type=relation.subject_type,
             object_type=relation.object_type,
+            source_location=relation.source_location,
         )
 
     @classmethod
@@ -141,6 +143,7 @@ class EvidenceItem:
             "is_expert_verified": self.is_expert_verified,
             "subject_type": self.subject_type.value,
             "object_type": self.object_type.value,
+            "source_location": self.source_location,
             "scope": self.scope.value,
             "relevance_score": self.relevance_score,
         }

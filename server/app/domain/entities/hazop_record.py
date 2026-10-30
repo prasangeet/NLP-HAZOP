@@ -92,6 +92,7 @@ class CausalRelation:
     dataset_id: str = "default"
     subject_type: EntityType = EntityType.CONCEPT
     object_type: EntityType = EntityType.CONCEPT
+    source_location: str | None = None
 
     def __post_init__(self) -> None:
         for name in ("subject", "predicate", "object"):
@@ -112,6 +113,10 @@ class CausalRelation:
         if self.source_id is not None:
             object.__setattr__(
                 self, "source_id", self.source_id.strip() or None
+            )
+        if self.source_location is not None:
+            object.__setattr__(
+                self, "source_location", self.source_location.strip() or None
             )
 
         if self.confidence is not None and not (
@@ -273,6 +278,7 @@ class HazopRecord:
                     "dataset_id": relation.dataset_id,
                     "subject_type": relation.subject_type.value,
                     "object_type": relation.object_type.value,
+                    "source_location": relation.source_location,
                 }
                 for relation in self.causal_relations
             ],

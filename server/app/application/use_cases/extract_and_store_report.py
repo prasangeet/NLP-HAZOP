@@ -33,6 +33,7 @@ class ExtractAndStoreReport:
                 origin=RelationshipOrigin.LLM_EXTRACTED, evidence=item.evidence_quote,
                 source_id=f"{dataset_id}:{scenario.scenario_id}:extracted:{edge_index}",
                 dataset_id=dataset_id, subject_type=item.subject_type, object_type=item.object_type,
+                source_location=item.source_location or scenario.source_location or None,
             ) for edge_index, item in enumerate(scenario.relationships, start=1))
             records.append(HazopRecord(
                 scenario_id=scenario.scenario_id, dataset_id=dataset_id,
