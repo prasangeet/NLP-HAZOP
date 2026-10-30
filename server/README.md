@@ -152,3 +152,37 @@ require a separately expert-adjudicated held-out set.
 5. **LLM limitation:** outputs are model-inferred and may abstain; confidence is model-reported, not calibrated probability. API latency is measured, but token cost is not yet captured.
 6. **Validation still required:** have HAZOP experts adjudicate a held-out subset, define relation-level evidence criteria, measure annotation agreement, and report performance on expert-validated labels separately from synthetic/reconstructed silver labels.
 7. **Safety boundary:** this is a research aid, not an operational HAZOP tool or safety recommendation generator. Engineering decisions require qualified review.
+
+
+## Local FastAPI upload API
+
+The first application endpoint accepts a UTF-8 HAZOP CSV and returns a normalized
+preview. It does **not** persist the uploaded file or records yet; a persistent
+repository/import endpoint will be added with the database integration.
+
+From the `server/` directory:
+
+```bash
+uv sync
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+- Health check: `GET http://127.0.0.1:8000/health`
+- CSV preview: `POST http://127.0.0.1:8000/api/v1/datasets/preview`
+- Interactive API docs: `http://127.0.0.1:8000/docs`
+
+Send the file as multipart form data using the field name `file`. The default
+preview returns up to 100 normalized records; `preview_limit` can be set from
+1 to 500. Uploads are limited to 10 MB and must be UTF-8 CSV files containing
+`Scenario_ID` (or `Scenario ID`) and `Deviation` columns.
+
+The API preserves the existing loader's relationship mapping and returns
+warnings explaining that row-derived relationships are not expert-verified
+causal assertions. It does not silently claim that previewed records have been
+saved. The default CORS allowlist supports the Vite development server and
+common Tauri origins; set `NLP_HAZOP_CORS_ORIGINS` to add comma-separated
+origins when needed.
+
+The dependency lockfile is refreshed by `uv sync` when project dependencies
+change. After adding or changing dependencies, run `uv lock` locally and
+commit the updated `uv.lock` for a fully reproducible dependency snapshot.
