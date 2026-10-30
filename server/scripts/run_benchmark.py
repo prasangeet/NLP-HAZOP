@@ -182,7 +182,7 @@ def build_repository(
     for record in test:
         # The held-out scenario remains addressable but contains no target
         # labels, graph edges, safeguards, recommendations, or remarks.
-        repository.save_record(strip_target_labels(record))
+        repository.save_context_record(strip_target_labels(record))
     return repository
 
 
