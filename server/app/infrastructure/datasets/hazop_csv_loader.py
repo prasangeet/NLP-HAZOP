@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from typing import Any, TextIO
 
+from app.domain.ontology.schema import EntityType
 from app.domain.entities.hazop_record import (
     CausalRelation,
     HazopRecord,
@@ -541,6 +542,8 @@ class HazopCsvLoader:
                     subject=cause,
                     predicate="causes_deviation",
                     object=deviation,
+                    subject_type=EntityType.CAUSE,
+                    object_type=EntityType.DEVIATION,
                     origin=origin,
                     evidence=(
                         f"Row-level association in scenario {scenario_id}: "
@@ -561,6 +564,8 @@ class HazopCsvLoader:
                         subject=deviation,
                         predicate="leads_to",
                         object=effect,
+                        subject_type=EntityType.DEVIATION,
+                        object_type=EntityType.EFFECT,
                         origin=origin,
                         evidence=(
                             f"Scenario {scenario_id} lists simulated or "
@@ -590,6 +595,8 @@ class HazopCsvLoader:
                             subject=single_effect,
                             predicate="leads_to_consequence",
                             object=consequence,
+                            subject_type=EntityType.EFFECT,
+                            object_type=EntityType.CONSEQUENCE,
                             origin=origin,
                             evidence=(
                                 f"Row-level association in scenario {scenario_id}: "
@@ -614,6 +621,8 @@ class HazopCsvLoader:
                             subject=deviation,
                             predicate="co_occurs_with_consequence",
                             object=consequence,
+                            subject_type=EntityType.DEVIATION,
+                            object_type=EntityType.CONSEQUENCE,
                             origin=origin,
                             evidence=(
                                 f"Scenario {scenario_id} co-lists consequence {consequence!r} "
@@ -635,6 +644,8 @@ class HazopCsvLoader:
                         subject=deviation,
                         predicate="leads_to_consequence",
                         object=consequence,
+                        subject_type=EntityType.DEVIATION,
+                        object_type=EntityType.CONSEQUENCE,
                         origin=origin,
                         evidence=(
                             f"Row-level association in scenario {scenario_id}: "
