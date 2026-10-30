@@ -39,12 +39,12 @@ def edge(
 def graph_context(
     edges: tuple[EvidenceItem, ...],
     *,
-    known: str = "Inlet valve fails open",
+    known: str = "High tank level",
     missing_endpoint: str = "object",
 ) -> EvidenceContext:
     return EvidenceContext(
         scenario_id="HELD-OUT-001",
-        predicate="causes",
+        predicate="leads_to_consequence",
         known_endpoint=known,
         missing_endpoint=missing_endpoint,
         status=RecoveryStatus.NO_CANDIDATES,

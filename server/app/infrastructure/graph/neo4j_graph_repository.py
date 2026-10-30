@@ -269,9 +269,9 @@ class Neo4jGraphRepository:
                             f"{relation.object.casefold()}"
                         ),
                         "subject": relation.subject,
-                        "subject_key": f"{(relation.subject_type if relation.subject_type != EntityType.CONCEPT else infer_entity_types(relation.predicate, relation.subject, relation.object)[0]).value}:{relation.subject.casefold()}",
+                        "subject_key": f"{subject_type.value}:{relation.subject.casefold()}",
                         "object": relation.object,
-                        "object_key": f"{(relation.object_type if relation.object_type != EntityType.CONCEPT else infer_entity_types(relation.predicate, relation.subject, relation.object)[1]).value}:{relation.object.casefold()}",
+                        "object_key": f"{object_type.value}:{relation.object.casefold()}",
                         "predicate": relation.predicate,
                         "subject_type": subject_type.value,
                         "object_type": object_type.value,
@@ -524,6 +524,19 @@ class Neo4jGraphRepository:
         self._ensure_schema()
         rows = []
         for index, relation in enumerate(relations):
+            inferred_subject_type, inferred_object_type = infer_entity_types(
+                relation.predicate, relation.subject, relation.object
+            )
+            subject_type = (
+                inferred_subject_type
+                if relation.subject_type == EntityType.CONCEPT
+                else relation.subject_type
+            )
+            object_type = (
+                inferred_object_type
+                if relation.object_type == EntityType.CONCEPT
+                else relation.object_type
+            )
             rows.append(
                 {
                     "scenario_id": "unassigned",
@@ -533,20 +546,12 @@ class Neo4jGraphRepository:
                         f"{relation.object.casefold()}"
                     ),
                     "subject": relation.subject,
-                    "subject_key": relation.subject.casefold(),
+                    "subject_key": f"{subject_type.value}:{relation.subject.casefold()}",
                     "object": relation.object,
-                    "object_key": relation.object.casefold(),
+                    "object_key": f"{object_type.value}:{relation.object.casefold()}",
                     "predicate": relation.predicate,
-                    "subject_type": (
-                        relation.subject_type.value
-                        if relation.subject_type != EntityType.CONCEPT
-                        else infer_entity_types(relation.predicate, relation.subject, relation.object)[0].value
-                    ),
-                    "object_type": (
-                        relation.object_type.value
-                        if relation.object_type != EntityType.CONCEPT
-                        else infer_entity_types(relation.predicate, relation.subject, relation.object)[1].value
-                    ),
+                    "subject_type": subject_type.value,
+                    "object_type": object_type.value,
                     "origin": relation.origin.value,
                     "evidence": relation.evidence,
                     "confidence": relation.confidence,
