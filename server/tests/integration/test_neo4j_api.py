@@ -7,8 +7,10 @@ It exercises the real Cypher, transaction semantics, serialization, and API wiri
 from __future__ import annotations
 
 from os import environ
+from time import sleep
 from uuid import uuid4
 
+import httpx
 from fastapi.testclient import TestClient
 from pytest import mark
 
@@ -21,6 +23,27 @@ pytestmark = mark.skipif(
     not NEO4J_CONFIGURED,
     reason="requires NEO4J_HTTP_URI, NEO4J_USERNAME, and NEO4J_PASSWORD",
 )
+
+
+def _wait_for_neo4j() -> None:
+    """Wait until the authenticated Query API is ready in the service container."""
+    endpoint = (
+        environ["NEO4J_HTTP_URI"].rstrip("/")
+        + "/db/"
+        + environ.get("NEO4J_DATABASE", "neo4j")
+        + "/query/v2"
+    )
+    auth = (environ["NEO4J_USERNAME"], environ["NEO4J_PASSWORD"])
+    with httpx.Client(auth=auth, timeout=3.0) as client:
+        for _ in range(60):
+            try:
+                response = client.post(endpoint, json={"statement": "RETURN 1"})
+                if response.status_code == 202 and not response.json().get("errors"):
+                    return
+            except (httpx.HTTPError, ValueError):
+                pass
+            sleep(1)
+    raise RuntimeError("Neo4j Query API did not become ready within 60 seconds.")
 
 
 def _create_app():
@@ -39,6 +62,7 @@ CSV_CONTENT = (
 
 
 def test_import_persists_across_app_restart_and_supports_graph_recovery() -> None:
+    _wait_for_neo4j()
     dataset_id = f"ci-{uuid4().hex}"
     first_app = _create_app()
 
