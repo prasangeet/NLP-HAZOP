@@ -63,6 +63,7 @@ def test_csv_preview_supports_utf8_bom_and_header_aliases() -> None:
     assert response.json()["recognized_columns"] == {
         "scenario_id": "Scenario ID",
         "deviation": "Deviation",
+        "causes": "Possible_Causes",
     }
 
 
