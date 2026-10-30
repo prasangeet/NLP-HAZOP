@@ -15,6 +15,7 @@ from urllib.parse import quote
 import httpx
 
 from app.domain.entities.dataset import DatasetMetadata
+from app.domain.ontology.schema import EntityType, infer_entity_types
 from app.domain.entities.hazop_record import (
     CausalRelation,
     HazopRecord,
@@ -163,6 +164,8 @@ class Neo4jGraphRepository:
                 source_id=item.get("source_id"),
                 is_expert_verified=item.get("is_expert_verified", False),
                 dataset_id=item.get("dataset_id", data.get("dataset_id", "default")),
+                subject_type=EntityType(item.get("subject_type", "Concept")),
+                object_type=EntityType(item.get("object_type", "Concept")),
             )
             for item in data.get("causal_relations", [])
         )
@@ -230,6 +233,8 @@ class Neo4jGraphRepository:
             ),
             is_expert_verified=bool(data.get("is_expert_verified", False)),
             dataset_id=str(data.get("dataset_id", "default")),
+            subject_type=EntityType(str(data.get("subject_type", "Concept"))),
+            object_type=EntityType(str(data.get("object_type", "Concept"))),
         )
 
     @staticmethod
@@ -239,6 +244,22 @@ class Neo4jGraphRepository:
         rows: list[dict[str, object]] = []
         for record in records:
             for index, relation in enumerate(record.causal_relations):
+                inferred_subject_type, inferred_object_type = infer_entity_types(
+                    relation.predicate,
+                    relation.subject,
+                    relation.object,
+                    deviation=record.deviation,
+                )
+                subject_type = (
+                    inferred_subject_type
+                    if relation.subject_type == EntityType.CONCEPT
+                    else relation.subject_type
+                )
+                object_type = (
+                    inferred_object_type
+                    if relation.object_type == EntityType.CONCEPT
+                    else relation.object_type
+                )
                 rows.append(
                     {
                         "scenario_id": record.scenario_id,
@@ -252,6 +273,8 @@ class Neo4jGraphRepository:
                         "object": relation.object,
                         "object_key": relation.object.casefold(),
                         "predicate": relation.predicate,
+                        "subject_type": subject_type.value,
+                        "object_type": object_type.value,
                         "origin": relation.origin.value,
                         "evidence": relation.evidence,
                         "confidence": relation.confidence,
@@ -288,6 +311,16 @@ class Neo4jGraphRepository:
             raise ValueError(
                 "Dataset relationship_count does not match imported relationships."
             )
+        subject_label_sets = " ".join(
+            f"FOREACH (_ IN CASE WHEN row.subject_type = '{entity.value}' THEN [1] ELSE [] END | SET source:{entity.value})"
+            for entity in EntityType
+            if entity != EntityType.CONCEPT
+        )
+        object_label_sets = " ".join(
+            f"FOREACH (_ IN CASE WHEN row.object_type = '{entity.value}' THEN [1] ELSE [] END | SET target:{entity.value})"
+            for entity in EntityType
+            if entity != EntityType.CONCEPT
+        )
         statement = (
             "CREATE (d:HazopDataset {"
             "dataset_id: $dataset_id, name: $name, filename: $filename, "
@@ -306,23 +339,21 @@ class Neo4jGraphRepository:
             "CALL { "
             "WITH d "
             "UNWIND $relations AS row "
-            "MERGE (source:HazopConcept {"
-            "dataset_id: $dataset_id, key: row.subject_key"
-            "}) SET source.name = row.subject "
-            "MERGE (target:HazopConcept {"
-            "dataset_id: $dataset_id, key: row.object_key"
-            "}) SET target.name = row.object "
-            "MERGE (source)-[edge:CAUSAL_EDGE {edge_id: row.edge_id}]->(target) "
-            "SET edge.dataset_id = $dataset_id, "
-            "edge.scenario_id = row.scenario_id, "
-            "edge.predicate = row.predicate, edge.origin = row.origin, "
+            "MERGE (source:HazopConcept {dataset_id: $dataset_id, key: row.subject_key}) "
+            "SET source.name = row.subject "
+            + subject_label_sets
+            + " MERGE (target:HazopConcept {dataset_id: $dataset_id, key: row.object_key}) "
+            "SET target.name = row.object "
+            + object_label_sets
+            + " MERGE (source)-[edge:CAUSAL_EDGE {edge_id: row.edge_id}]->(target) "
+            "SET edge.dataset_id = $dataset_id, edge.scenario_id = row.scenario_id, "
+            "edge.predicate = row.predicate, edge.subject_type = row.subject_type, "
+            "edge.object_type = row.object_type, edge.origin = row.origin, "
             "edge.evidence = row.evidence, edge.confidence = row.confidence, "
-            "edge.source_id = row.source_id, "
-            "edge.is_expert_verified = row.is_expert_verified "
+            "edge.source_id = row.source_id, edge.is_expert_verified = row.is_expert_verified "
             "RETURN count(edge) AS relationships_created "
             "} "
-            "RETURN d.dataset_id AS dataset_id, records_created, "
-            "relationships_created"
+            "RETURN d.dataset_id AS dataset_id, records_created, relationships_created"
         )
         parameters = {
             **dataset.to_dict(),
@@ -400,22 +431,33 @@ class Neo4jGraphRepository:
     ) -> None:
         if not rows:
             return
+        subject_label_sets = " ".join(
+            f"FOREACH (_ IN CASE WHEN row.subject_type = '{entity.value}' THEN [1] ELSE [] END | SET source:{entity.value})"
+            for entity in EntityType
+            if entity != EntityType.CONCEPT
+        )
+        object_label_sets = " ".join(
+            f"FOREACH (_ IN CASE WHEN row.object_type = '{entity.value}' THEN [1] ELSE [] END | SET target:{entity.value})"
+            for entity in EntityType
+            if entity != EntityType.CONCEPT
+        )
         self._execute(
             [
                 {
                     "statement": (
                         "UNWIND $relations AS row "
-                        "MERGE (source:HazopConcept {dataset_id: $dataset_id, "
-                        "key: row.subject_key}) SET source.name = row.subject "
-                        "MERGE (target:HazopConcept {dataset_id: $dataset_id, "
-                        "key: row.object_key}) SET target.name = row.object "
-                        "MERGE (source)-[edge:CAUSAL_EDGE {edge_id: row.edge_id}]->(target) "
-                        "SET edge.dataset_id = $dataset_id, "
-                        "edge.scenario_id = row.scenario_id, "
-                        "edge.predicate = row.predicate, edge.origin = row.origin, "
+                        "MERGE (source:HazopConcept {dataset_id: $dataset_id, key: row.subject_key}) "
+                        "SET source.name = row.subject "
+                        + subject_label_sets
+                        + " MERGE (target:HazopConcept {dataset_id: $dataset_id, key: row.object_key}) "
+                        "SET target.name = row.object "
+                        + object_label_sets
+                        + " MERGE (source)-[edge:CAUSAL_EDGE {edge_id: row.edge_id}]->(target) "
+                        "SET edge.dataset_id = $dataset_id, edge.scenario_id = row.scenario_id, "
+                        "edge.predicate = row.predicate, edge.subject_type = row.subject_type, "
+                        "edge.object_type = row.object_type, edge.origin = row.origin, "
                         "edge.evidence = row.evidence, edge.confidence = row.confidence, "
-                        "edge.source_id = row.source_id, "
-                        "edge.is_expert_verified = row.is_expert_verified "
+                        "edge.source_id = row.source_id, edge.is_expert_verified = row.is_expert_verified "
                         "RETURN count(edge)"
                     ),
                     "parameters": {"dataset_id": dataset_id, "relations": rows},
@@ -495,6 +537,16 @@ class Neo4jGraphRepository:
                     "object": relation.object,
                     "object_key": relation.object.casefold(),
                     "predicate": relation.predicate,
+                    "subject_type": (
+                        relation.subject_type.value
+                        if relation.subject_type != EntityType.CONCEPT
+                        else infer_entity_types(relation.predicate, relation.subject, relation.object)[0].value
+                    ),
+                    "object_type": (
+                        relation.object_type.value
+                        if relation.object_type != EntityType.CONCEPT
+                        else infer_entity_types(relation.predicate, relation.subject, relation.object)[1].value
+                    ),
                     "origin": relation.origin.value,
                     "evidence": relation.evidence,
                     "confidence": relation.confidence,
