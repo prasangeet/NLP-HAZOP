@@ -252,3 +252,21 @@ def test_evidence_context_builder_integrates_with_reasoner() -> None:
     assert result.status == ReasoningStatus.PROPOSED
     assert result.proposed_relation is not None
     assert result.proposed_relation.source_id == "doc-17"
+
+
+def test_abstains_when_candidate_predicate_does_not_match_query() -> None:
+    context = make_context(make_item(predicate="increases"))
+
+    result = DeterministicReasoner().reason(context)
+
+    assert result.status == ReasoningStatus.ABSTAINED
+    assert result.abstention_reason == AbstentionReason.INSUFFICIENT_SUPPORT
+
+
+def test_abstains_when_candidate_known_endpoint_does_not_match_query() -> None:
+    context = make_context(make_item(subject="Different valve"))
+
+    result = DeterministicReasoner().reason(context)
+
+    assert result.status == ReasoningStatus.ABSTAINED
+    assert result.abstention_reason == AbstentionReason.INSUFFICIENT_SUPPORT
