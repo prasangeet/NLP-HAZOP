@@ -25,6 +25,7 @@ class RetrievedEvidence:
     relation: CausalRelation
     scope: RetrievalScope
     relevance_score: float | None = None
+    dataset_id: str = "default"
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,10 +37,12 @@ class RetrievalRequest:
     known_endpoint: str
     missing_endpoint: str
     limit: int = 20
+    dataset_id: str = "default"
 
     def __post_init__(self) -> None:
         for field_name in (
             "scenario_id",
+            "dataset_id",
             "predicate",
             "known_endpoint",
             "missing_endpoint",
@@ -49,6 +52,7 @@ class RetrievalRequest:
                 raise ValueError(
                     f"{field_name} must be a non-empty string"
                 )
+            object.__setattr__(self, field_name, value.strip())
 
         if self.missing_endpoint not in {"subject", "object"}:
             raise ValueError(
@@ -71,6 +75,7 @@ class RetrievalResult:
     scenario_exists: bool = True
     graph_context: tuple[RetrievedEvidence, ...] = ()
     scenario_context: str = ""
+    dataset_id: str = "default"
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence", tuple(self.evidence))

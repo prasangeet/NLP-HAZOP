@@ -27,6 +27,7 @@ class CombinedRetriever:
         if not local_result.scenario_exists:
             return RetrievalResult(
                 scenario_id=request.scenario_id,
+                dataset_id=request.dataset_id,
                 scope=RetrievalScope.SCENARIO_LOCAL,
                 evidence=(),
                 scenario_exists=False,
@@ -38,6 +39,7 @@ class CombinedRetriever:
         if len(local_evidence) >= request.limit:
             return RetrievalResult(
                 scenario_id=request.scenario_id,
+                dataset_id=request.dataset_id,
                 scope=RetrievalScope.SCENARIO_LOCAL,
                 evidence=tuple(local_evidence[: request.limit]),
                 graph_context=local_result.graph_context,
@@ -45,6 +47,16 @@ class CombinedRetriever:
             )
 
         cross_result = self._cross_scenario_retriever.retrieve(request)
+        if (
+            local_result.dataset_id != request.dataset_id
+            or cross_result.dataset_id != request.dataset_id
+        ):
+            raise ValueError("Combined retrievers must return the requested dataset_id.")
+        if (
+            local_result.dataset_id != request.dataset_id
+            or cross_result.dataset_id != request.dataset_id
+        ):
+            raise ValueError("Combined retrievers must return the requested dataset_id.")
         combined: list[RetrievedEvidence] = []
         seen: set[tuple[str, str, str, str]] = set()
 
@@ -77,6 +89,7 @@ class CombinedRetriever:
 
         return RetrievalResult(
             scenario_id=request.scenario_id,
+            dataset_id=request.dataset_id,
             scope=(
                 RetrievalScope.HYBRID
                 if cross_result.evidence

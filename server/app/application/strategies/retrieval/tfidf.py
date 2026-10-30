@@ -87,7 +87,7 @@ def _record_text(record: HazopRecord) -> str:
 def _origin(record: HazopRecord) -> RelationshipOrigin:
     if record.causal_relations:
         return record.causal_relations[0].origin
-    return RelationshipOrigin.SYNTHETIC
+    return RelationshipOrigin.UNSPECIFIED
 
 
 class TfidfRetriever:
@@ -112,6 +112,14 @@ class TfidfRetriever:
         self._repository = repository
         self._min_score = min_score
         self._max_records = max_records
+        self._indexes: dict[
+            str,
+            tuple[
+                tuple[HazopRecord, ...],
+                dict[str, float],
+                tuple[dict[str, float], ...],
+            ],
+        ] = {}
         self._records: tuple[HazopRecord, ...] = ()
         self._idf: dict[str, float] = {}
         self._document_vectors: tuple[dict[str, float], ...] = ()
@@ -119,55 +127,78 @@ class TfidfRetriever:
         self.refresh()
 
     def refresh(self) -> None:
-        """Rebuild the corpus index after records are added or updated."""
-
+        """Rebuild an independent lexical index for each dataset."""
         started = time.perf_counter()
-        records = tuple(
+        all_records = tuple(
             self._repository.find_records(limit=self._max_records)
         )
-        documents = [_tokens(_record_text(record)) for record in records]
-        document_frequency: Counter[str] = Counter()
-        for terms in documents:
-            document_frequency.update(set(terms))
+        grouped: dict[str, list[HazopRecord]] = {}
+        for record in all_records:
+            grouped.setdefault(record.dataset_id, []).append(record)
 
-        count = len(documents)
-        idf = {
-            term: math.log((count + 1) / (frequency + 1)) + 1.0
-            for term, frequency in document_frequency.items()
-        }
-        self._records = records
-        self._idf = idf
-        self._document_vectors = tuple(
-            self._vector(terms, idf) for terms in documents
+        indexes: dict[
+            str,
+            tuple[
+                tuple[HazopRecord, ...],
+                dict[str, float],
+                tuple[dict[str, float], ...],
+            ],
+        ] = {}
+        for dataset_id, dataset_records in grouped.items():
+            records = tuple(dataset_records)
+            documents = [_tokens(_record_text(record)) for record in records]
+            document_frequency: Counter[str] = Counter()
+            for terms in documents:
+                document_frequency.update(set(terms))
+            count = len(documents)
+            idf = {
+                term: math.log((count + 1) / (frequency + 1)) + 1.0
+                for term, frequency in document_frequency.items()
+            }
+            vectors = tuple(self._vector(terms, idf) for terms in documents)
+            indexes[dataset_id] = (records, idf, vectors)
+
+        self._records = all_records
+        self._indexes = indexes
+        # Keep the legacy attributes as a default-dataset compatibility view.
+        default_index = indexes.get("default", ((), {}, ()))
+        self._records, self._idf, self._document_vectors = (
+            default_index[0], default_index[1], default_index[2]
         )
         self.index_build_ms = (time.perf_counter() - started) * 1000.0
 
     def retrieve(self, request: RetrievalRequest) -> RetrievalResult:
-        target = self._repository.get_record(request.scenario_id)
+        target = self._repository.get_record(
+            request.scenario_id, dataset_id=request.dataset_id
+        )
         if target is None:
             return RetrievalResult(
                 scenario_id=request.scenario_id,
+                dataset_id=request.dataset_id,
                 scope=RetrievalScope.SCENARIO_LOCAL,
                 evidence=(),
                 scenario_exists=False,
             )
 
-        if not self._records:
+        records, idf, document_vectors = self._indexes.get(
+            request.dataset_id, ((), {}, ())
+        )
+        if not records:
             return RetrievalResult(
                 scenario_id=request.scenario_id,
+                dataset_id=request.dataset_id,
                 scope=RetrievalScope.SCENARIO_LOCAL,
                 evidence=(),
                 scenario_exists=True,
                 scenario_context=_scenario_context(target),
             )
 
-        records = self._records
-        idf = self._idf
         query_terms = _tokens(request.known_endpoint)
         query_vector = self._vector(query_terms, idf)
         if not query_vector:
             return RetrievalResult(
                 scenario_id=request.scenario_id,
+                dataset_id=request.dataset_id,
                 scope=RetrievalScope.SCENARIO_LOCAL,
                 evidence=(),
                 scenario_exists=True,
@@ -178,7 +209,7 @@ class TfidfRetriever:
         scored_records: list[tuple[float, HazopRecord]] = []
         for record, document_vector in zip(
             records,
-            self._document_vectors,
+            document_vectors,
         ):
             record_score = _cosine(query_vector, document_vector)
             if record_score > 0.0:
@@ -262,15 +293,17 @@ class TfidfRetriever:
                             f"edge. Provenance: {provenance}"
                         ),
                         source_id=(
-                            f"{record.source.document_id}:"
-                            f"{record.scenario_id}"
+                            f"{record.dataset_id}:{record.source.document_id}:"
+                            f"{record.scenario_id}:row-{record.row_number or 0}"
                             if record.source is not None
-                            else record.scenario_id
+                            else f"{record.dataset_id}:{record.scenario_id}:row-{record.row_number or 0}"
                         ),
+                        dataset_id=record.dataset_id,
                     )
                     evidence.append(
                         RetrievedEvidence(
                             scenario_id=record.scenario_id,
+                            dataset_id=record.dataset_id,
                             relation=relation,
                             scope=(
                                 RetrievalScope.SCENARIO_LOCAL
@@ -301,6 +334,7 @@ class TfidfRetriever:
         )
         return RetrievalResult(
             scenario_id=request.scenario_id,
+            dataset_id=request.dataset_id,
             scope=scope,
             evidence=tuple(evidence),
             scenario_exists=True,
@@ -325,6 +359,7 @@ class TfidfRetriever:
         return tuple(
             RetrievedEvidence(
                 scenario_id=record.scenario_id,
+                dataset_id=record.dataset_id,
                 relation=relation,
                 scope=RetrievalScope.SCENARIO_LOCAL,
             )

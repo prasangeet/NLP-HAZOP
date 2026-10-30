@@ -18,22 +18,27 @@ from app.domain.reasoning.models import AbstentionReason, ReasoningStatus
 
 class InMemoryRepository:
     def __init__(self) -> None:
-        self.records: dict[str, HazopRecord] = {}
+        self.records: dict[tuple[str, str], HazopRecord] = {}
 
     def save_record(self, record: HazopRecord) -> None:
-        self.records[record.scenario_id] = record
+        self.records[(record.dataset_id, record.scenario_id)] = record
 
-    def get_record(self, scenario_id: str) -> HazopRecord | None:
-        return self.records.get(scenario_id)
+    def get_record(
+        self, scenario_id: str, *, dataset_id: str = "default"
+    ) -> HazopRecord | None:
+        return self.records.get((dataset_id, scenario_id))
 
     def find_records(
         self,
         *,
         equipment: str | None = None,
         deviation: str | None = None,
+        dataset_id: str | None = None,
         limit: int = 20,
     ) -> list[HazopRecord]:
         records = list(self.records.values())
+        if dataset_id is not None:
+            records = [record for record in records if record.dataset_id == dataset_id]
         if equipment is not None:
             records = [
                 record for record in records
@@ -55,6 +60,7 @@ class InMemoryRepository:
         subject: str | None = None,
         predicate: str | None = None,
         object: str | None = None,
+        dataset_id: str | None = None,
         limit: int = 50,
     ) -> list[CausalRelation]:
         return []

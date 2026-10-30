@@ -188,3 +188,59 @@ def test_rejects_request_for_different_scenario() -> None:
         raise AssertionError(
             "Expected a ValueError for mismatched scenario IDs."
         )
+
+def test_unspecified_origin_builds_context_without_key_error() -> None:
+    relation = CausalRelation(
+        subject="Valve failure",
+        predicate="causes",
+        object="High level",
+        origin=RelationshipOrigin.UNSPECIFIED,
+        evidence="Origin unavailable in the imported dataset.",
+        source_id="dataset-x:S001:cause:1",
+        dataset_id="dataset-x",
+    )
+    candidate = RecoveryCandidate(
+        missing_value="High level",
+        relation=relation,
+        scenario_id="S001",
+    )
+    request = RecoveryRequest(
+        scenario_id="S001",
+        dataset_id="dataset-x",
+        predicate="causes",
+        known_endpoint="Valve failure",
+        missing_endpoint="object",
+    )
+    recovery = RecoveryResult(
+        status=RecoveryStatus.CANDIDATES_FOUND,
+        scenario_id="S001",
+        dataset_id="dataset-x",
+        candidates=(candidate,),
+    )
+
+    context = BuildEvidenceContext().execute(recovery, request)
+
+    assert context.dataset_id == "dataset-x"
+    assert context.evidence_items[0].origin == RelationshipOrigin.UNSPECIFIED
+    assert "Origin is unspecified" in context.evidence_items[0].relevance_note
+
+
+def test_evidence_builder_rejects_dataset_mismatch() -> None:
+    recovery = RecoveryResult(
+        status=RecoveryStatus.NO_CANDIDATES,
+        scenario_id="S001",
+        dataset_id="dataset-a",
+    )
+    request = RecoveryRequest(
+        scenario_id="S001",
+        dataset_id="dataset-b",
+        predicate="causes",
+        known_endpoint="Valve failure",
+        missing_endpoint="object",
+    )
+    try:
+        BuildEvidenceContext().execute(recovery, request)
+    except ValueError as exc:
+        assert "dataset_id" in str(exc)
+    else:
+        raise AssertionError("Expected a ValueError for mismatched dataset IDs.")

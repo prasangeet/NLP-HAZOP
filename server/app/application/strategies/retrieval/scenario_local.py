@@ -19,10 +19,14 @@ class ScenarioLocalRetriever:
         self._repository = repository
 
     def retrieve(self, request: RetrievalRequest) -> RetrievalResult:
-        record = self._repository.get_record(request.scenario_id)
+        record = self._repository.get_record(
+            request.scenario_id,
+            dataset_id=request.dataset_id,
+        )
         if record is None:
             return RetrievalResult(
                 scenario_id=request.scenario_id,
+                dataset_id=request.dataset_id,
                 scope=RetrievalScope.SCENARIO_LOCAL,
                 evidence=(),
                 scenario_exists=False,
@@ -32,6 +36,7 @@ class ScenarioLocalRetriever:
         graph_context = tuple(
             RetrievedEvidence(
                 scenario_id=record.scenario_id,
+                dataset_id=record.dataset_id,
                 relation=relation,
                 scope=RetrievalScope.SCENARIO_LOCAL,
             )
@@ -64,6 +69,7 @@ class ScenarioLocalRetriever:
             results.append(
                 RetrievedEvidence(
                     scenario_id=record.scenario_id,
+                    dataset_id=record.dataset_id,
                     relation=relation,
                     scope=RetrievalScope.SCENARIO_LOCAL,
                 )
@@ -73,6 +79,7 @@ class ScenarioLocalRetriever:
 
         return RetrievalResult(
             scenario_id=request.scenario_id,
+            dataset_id=request.dataset_id,
             scope=RetrievalScope.SCENARIO_LOCAL,
             evidence=tuple(results),
             scenario_exists=True,

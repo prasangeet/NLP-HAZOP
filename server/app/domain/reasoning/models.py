@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
@@ -23,6 +23,8 @@ class EvidenceItemProtocol(Protocol):
     origin: RelationshipOrigin
     confidence: float | None
     source_id: str | None
+    dataset_id: str
+    is_expert_verified: bool
 
 
 @runtime_checkable
@@ -63,6 +65,7 @@ class ReasoningResult:
     supporting_evidence: tuple[str, ...] = ()
     confidence: float | None = None
     abstention_reason: AbstentionReason | None = None
+    dataset_id: str = "default"
 
     def __post_init__(self) -> None:
         if not isinstance(self.scenario_id, str) or not self.scenario_id.strip():
@@ -95,6 +98,21 @@ class ReasoningResult:
             raise ValueError("Unsupported reasoning status.")
 
         object.__setattr__(self, "scenario_id", self.scenario_id.strip())
+        if not isinstance(self.dataset_id, str) or not self.dataset_id.strip():
+            raise ValueError("dataset_id must not be empty.")
+        dataset_id = self.dataset_id.strip()
+        if self.proposed_relation is not None:
+            relation = self.proposed_relation
+            if relation.dataset_id == "default" and dataset_id != "default":
+                relation = replace(relation, dataset_id=dataset_id)
+                object.__setattr__(self, "proposed_relation", relation)
+            elif dataset_id == "default" and relation.dataset_id != "default":
+                dataset_id = relation.dataset_id
+            elif relation.dataset_id != dataset_id:
+                raise ValueError(
+                    "proposed_relation.dataset_id must match result dataset_id."
+                )
+        object.__setattr__(self, "dataset_id", dataset_id)
         object.__setattr__(
             self,
             "supporting_evidence",
@@ -112,6 +130,7 @@ class ReasoningResult:
         return {
             "status": self.status.value,
             "scenario_id": self.scenario_id,
+            "dataset_id": self.dataset_id,
             "proposed_relation": (
                 {
                     "subject": relation.subject,
@@ -121,6 +140,8 @@ class ReasoningResult:
                     "evidence": relation.evidence,
                     "confidence": relation.confidence,
                     "source_id": relation.source_id,
+                    "dataset_id": relation.dataset_id,
+                    "is_expert_verified": relation.is_expert_verified,
                 }
                 if relation is not None
                 else None

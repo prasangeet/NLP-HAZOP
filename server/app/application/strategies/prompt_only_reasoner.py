@@ -82,10 +82,12 @@ class PromptOnlyReasoner:
     def reason(self, context: EvidenceContextProtocol) -> ReasoningResult:
         """Return a model-inferred candidate or abstain."""
 
+        dataset_id = getattr(context, "dataset_id", "default")
         if not context.scenario_context.strip():
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.NO_EVIDENCE,
+                dataset_id=dataset_id,
             )
 
         prompt = f"""
@@ -125,6 +127,7 @@ one missing_value, or decision="abstain" with missing_value=null.
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
+                dataset_id=dataset_id,
             )
 
         if decision.decision != "propose":
@@ -132,6 +135,7 @@ one missing_value, or decision="abstain" with missing_value=null.
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
                 (decision.reason,) if decision.reason.strip() else (),
+                dataset_id=getattr(context, "dataset_id", "default"),
             )
 
         missing = (decision.missing_value or "").strip()
@@ -140,6 +144,7 @@ one missing_value, or decision="abstain" with missing_value=null.
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
                 (decision.reason,) if decision.reason.strip() else (),
+                dataset_id=getattr(context, "dataset_id", "default"),
             )
 
         if context.missing_endpoint == "object":
@@ -150,6 +155,7 @@ one missing_value, or decision="abstain" with missing_value=null.
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
+                dataset_id=dataset_id,
             )
 
         relation = CausalRelation(
@@ -162,10 +168,12 @@ one missing_value, or decision="abstain" with missing_value=null.
                 + decision.reason.strip()
             ),
             confidence=decision.confidence,
+            dataset_id=dataset_id,
         )
         return ReasoningResult(
             status=ReasoningStatus.PROPOSED,
             scenario_id=context.scenario_id,
+            dataset_id=dataset_id,
             proposed_relation=relation,
             supporting_evidence=(),
             confidence=decision.confidence,
@@ -176,10 +184,12 @@ one missing_value, or decision="abstain" with missing_value=null.
         scenario_id: str,
         reason: AbstentionReason,
         supporting_evidence: tuple[str, ...] = (),
+        dataset_id: str = "default",
     ) -> ReasoningResult:
         return ReasoningResult(
             status=ReasoningStatus.ABSTAINED,
             scenario_id=scenario_id,
+            dataset_id=dataset_id,
             supporting_evidence=supporting_evidence,
             abstention_reason=reason,
         )

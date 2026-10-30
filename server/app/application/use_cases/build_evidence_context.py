@@ -32,6 +32,8 @@ class EvidenceItem:
     scenario_id: str = ""
     scope: RetrievalScope = RetrievalScope.SCENARIO_LOCAL
     relevance_score: float | None = None
+    dataset_id: str = "default"
+    is_expert_verified: bool = False
 
     @classmethod
     def from_candidate(cls, candidate: RecoveryCandidate) -> EvidenceItem:
@@ -44,10 +46,14 @@ class EvidenceItem:
             evidence=relation.evidence,
             confidence=relation.confidence,
             source_id=relation.source_id,
-            relevance_note=cls._origin_note(relation.origin),
+            relevance_note=cls._origin_note(
+                relation.origin, relation.is_expert_verified
+            ),
             scenario_id=candidate.scenario_id,
             scope=candidate.scope,
             relevance_score=candidate.relevance_score,
+            dataset_id=relation.dataset_id,
+            is_expert_verified=relation.is_expert_verified,
         )
 
     @classmethod
@@ -61,14 +67,21 @@ class EvidenceItem:
             evidence=relation.evidence,
             confidence=relation.confidence,
             source_id=relation.source_id,
-            relevance_note=cls._origin_note(relation.origin),
+            relevance_note=cls._origin_note(
+                relation.origin, relation.is_expert_verified
+            ),
             scenario_id=item.scenario_id,
             scope=item.scope,
             relevance_score=item.relevance_score,
+            dataset_id=relation.dataset_id,
+            is_expert_verified=relation.is_expert_verified,
         )
 
     @staticmethod
-    def _origin_note(origin: RelationshipOrigin) -> str:
+    def _origin_note(
+        origin: RelationshipOrigin,
+        is_expert_verified: bool = False,
+    ) -> str:
         notes = {
             RelationshipOrigin.SOURCE: "Directly attributed to a source.",
             RelationshipOrigin.RECONSTRUCTED: (
@@ -77,7 +90,19 @@ class EvidenceItem:
             RelationshipOrigin.SYNTHETIC: (
                 "Synthetic scenario; not source-verified evidence."
             ),
-            RelationshipOrigin.EXPERT: "Attributed to expert validation.",
+            RelationshipOrigin.EXPERT: (
+                "This individual relationship has explicit expert validation."
+                if is_expert_verified
+                else (
+                    "The record is attributed to expert review, but this "
+                    "individual relationship is not independently "
+                    "expert-validated."
+                )
+            ),
+            RelationshipOrigin.UNSPECIFIED: (
+                "Origin is unspecified; this relationship must not be "
+                "treated as source-verified or expert-validated evidence."
+            ),
             RelationshipOrigin.MODEL_INFERRED: (
                 "Model-inferred; not established evidence."
             ),
@@ -91,7 +116,7 @@ class EvidenceItem:
         }
         return notes[origin]
 
-    def to_dict(self) -> dict[str, str | float | None]:
+    def to_dict(self) -> dict[str, str | float | bool | None]:
         return {
             "subject": self.subject,
             "predicate": self.predicate,
@@ -102,6 +127,8 @@ class EvidenceItem:
             "source_id": self.source_id,
             "relevance_note": self.relevance_note,
             "scenario_id": self.scenario_id,
+            "dataset_id": self.dataset_id,
+            "is_expert_verified": self.is_expert_verified,
             "scope": self.scope.value,
             "relevance_score": self.relevance_score,
         }
@@ -119,6 +146,7 @@ class EvidenceContext:
     evidence_items: tuple[EvidenceItem, ...]
     graph_context: tuple[EvidenceItem, ...] = ()
     scenario_context: str = ""
+    dataset_id: str = "default"
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence_items", tuple(self.evidence_items))
@@ -131,6 +159,7 @@ class EvidenceContext:
     def to_dict(self) -> dict[str, object]:
         return {
             "scenario_id": self.scenario_id,
+            "dataset_id": self.dataset_id,
             "predicate": self.predicate,
             "known_endpoint": self.known_endpoint,
             "missing_endpoint": self.missing_endpoint,
@@ -150,9 +179,12 @@ class BuildEvidenceContext:
         recovery_result: RecoveryResult,
         request: RecoveryRequest,
     ) -> EvidenceContext:
-        if recovery_result.scenario_id != request.scenario_id:
+        if (
+            recovery_result.scenario_id != request.scenario_id
+            or recovery_result.dataset_id != request.dataset_id
+        ):
             raise ValueError(
-                "Recovery result scenario_id must match the request."
+                "Recovery result dataset_id and scenario_id must match the request."
             )
 
         evidence_items = tuple(
@@ -172,4 +204,5 @@ class BuildEvidenceContext:
             evidence_items=evidence_items,
             graph_context=graph_context or evidence_items,
             scenario_context=recovery_result.scenario_context,
+            dataset_id=request.dataset_id,
         )

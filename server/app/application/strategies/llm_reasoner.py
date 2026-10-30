@@ -100,16 +100,23 @@ class LLMReasoner:
     ) -> ReasoningResult:
         """Propose an evidence-supported relationship or abstain."""
 
+        dataset_id = getattr(context, "dataset_id", "default")
         if not context.evidence_items:
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.NO_EVIDENCE,
+                dataset_id=dataset_id,
             )
 
         eligible_items = [
             item
             for item in context.evidence_items
-            if self._is_eligible(item)
+            if getattr(item, "dataset_id", "default") == dataset_id
+            and self._is_eligible(item)
+            and (
+                item.origin != RelationshipOrigin.EXPERT
+                or getattr(item, "is_expert_verified", False)
+            )
             and self._matches_query(item, context)
         ]
 
@@ -117,6 +124,7 @@ class LLMReasoner:
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
+                dataset_id=dataset_id,
             )
 
         prompt = self._build_prompt(
@@ -146,6 +154,7 @@ class LLMReasoner:
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
+                dataset_id=dataset_id,
             )
 
         if decision.decision == "abstain_ambiguous":
@@ -153,6 +162,7 @@ class LLMReasoner:
                 context.scenario_id,
                 AbstentionReason.AMBIGUOUS_EVIDENCE,
                 (decision.reason,),
+                dataset_id=dataset_id,
             )
 
         if decision.decision == "abstain_insufficient":
@@ -160,6 +170,7 @@ class LLMReasoner:
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
                 (decision.reason,),
+                dataset_id=dataset_id,
             )
 
         if len(decision.evidence_indices) != 1:
@@ -172,6 +183,7 @@ class LLMReasoner:
                 context.scenario_id,
                 reason,
                 (decision.reason,),
+                dataset_id=getattr(context, "dataset_id", "default"),
             )
 
         index = decision.evidence_indices[0]
@@ -180,6 +192,7 @@ class LLMReasoner:
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
                 (decision.reason,),
+                dataset_id=getattr(context, "dataset_id", "default"),
             )
 
         if not 0 <= index < len(eligible_items):
@@ -187,6 +200,7 @@ class LLMReasoner:
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
                 (decision.reason,),
+                dataset_id=dataset_id,
             )
 
         selected = eligible_items[index]
@@ -198,11 +212,14 @@ class LLMReasoner:
             evidence=selected.evidence,
             confidence=selected.confidence,
             source_id=selected.source_id,
+            dataset_id=getattr(selected, "dataset_id", dataset_id),
+            is_expert_verified=getattr(selected, "is_expert_verified", False),
         )
 
         return ReasoningResult(
             status=ReasoningStatus.PROPOSED,
             scenario_id=context.scenario_id,
+            dataset_id=dataset_id,
             proposed_relation=relation,
             supporting_evidence=(selected.evidence,),
             confidence=decision.confidence,
@@ -323,12 +340,14 @@ Evidence:
         scenario_id: str,
         reason: AbstentionReason,
         supporting_evidence: tuple[str, ...] = (),
+        dataset_id: str = "default",
     ) -> ReasoningResult:
         """Construct a consistent abstention result."""
 
         return ReasoningResult(
             status=ReasoningStatus.ABSTAINED,
             scenario_id=scenario_id,
+            dataset_id=dataset_id,
             supporting_evidence=supporting_evidence,
             abstention_reason=reason,
         )

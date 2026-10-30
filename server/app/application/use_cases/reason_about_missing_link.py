@@ -43,6 +43,7 @@ class ReasonAboutMissingLink:
             return ReasoningResult(
                 status=ReasoningStatus.ABSTAINED,
                 scenario_id=request.scenario_id,
+                dataset_id=request.dataset_id,
                 abstention_reason=AbstentionReason.NO_EVIDENCE,
             )
 

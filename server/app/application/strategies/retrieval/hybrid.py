@@ -27,6 +27,7 @@ class HybridRetriever:
         if not local.scenario_exists:
             return RetrievalResult(
                 scenario_id=request.scenario_id,
+                dataset_id=request.dataset_id,
                 scope=RetrievalScope.SCENARIO_LOCAL,
                 evidence=(),
                 scenario_exists=False,
@@ -34,6 +35,13 @@ class HybridRetriever:
             )
 
         vector = self._vector_retriever.retrieve(request)
+        if (
+            local.dataset_id != request.dataset_id
+            or vector.dataset_id != request.dataset_id
+        ):
+            raise ValueError("Hybrid retrievers must return the requested dataset_id.")
+        if local.dataset_id != request.dataset_id or vector.dataset_id != request.dataset_id:
+            raise ValueError("Hybrid retrievers must return the requested dataset_id.")
         evidence: list[RetrievedEvidence] = []
         seen: set[tuple[str, str, str, str]] = set()
 
@@ -74,6 +82,7 @@ class HybridRetriever:
 
         return RetrievalResult(
             scenario_id=request.scenario_id,
+            dataset_id=request.dataset_id,
             scope=scope,
             evidence=tuple(evidence[: request.limit]),
             scenario_exists=True,

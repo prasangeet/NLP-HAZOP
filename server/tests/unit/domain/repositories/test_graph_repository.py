@@ -16,26 +16,31 @@ class InMemoryGraphRepository:
     """In-memory implementation used to test the repository contract."""
 
     def __init__(self) -> None:
-        self.records: dict[str, HazopRecord] = {}
+        self.records: dict[tuple[str, str], HazopRecord] = {}
         self.relations: list[CausalRelation] = []
 
     def save_record(self, record: HazopRecord) -> None:
-        self.records[record.scenario_id] = record
+        self.records[(record.dataset_id, record.scenario_id)] = record
 
-    def get_record(self, scenario_id: str) -> HazopRecord | None:
-        return self.records.get(scenario_id)
+    def get_record(
+        self, scenario_id: str, *, dataset_id: str = "default"
+    ) -> HazopRecord | None:
+        return self.records.get((dataset_id, scenario_id))
 
     def find_records(
         self,
         *,
         equipment: str | None = None,
         deviation: str | None = None,
+        dataset_id: str | None = None,
         limit: int = 20,
     ) -> Sequence[HazopRecord]:
         if limit < 1:
             raise ValueError("limit must be greater than zero")
 
         results = list(self.records.values())
+        if dataset_id is not None:
+            results = [record for record in results if record.dataset_id == dataset_id]
 
         if equipment is not None:
             results = [
@@ -65,12 +70,15 @@ class InMemoryGraphRepository:
         subject: str | None = None,
         predicate: str | None = None,
         object: str | None = None,
+        dataset_id: str | None = None,
         limit: int = 50,
     ) -> Sequence[CausalRelation]:
         if limit < 1:
             raise ValueError("limit must be greater than zero")
 
         results = list(self.relations)
+        if dataset_id is not None:
+            results = [relation for relation in results if relation.dataset_id == dataset_id]
 
         if subject is not None:
             results = [

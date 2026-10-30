@@ -40,11 +40,17 @@ class GraphNeighborhoodRetriever:
         if not result.scenario_exists:
             return result
 
-        target = self._repository.get_record(request.scenario_id)
+        target = self._repository.get_record(
+            request.scenario_id,
+            dataset_id=request.dataset_id,
+        )
         if target is None:
             return result
 
-        records = self._repository.find_records(limit=self._max_records)
+        records = self._repository.find_records(
+            dataset_id=request.dataset_id,
+            limit=self._max_records,
+        )
         if target.plant_unit.strip():
             family_records = [
                 record
@@ -69,7 +75,10 @@ class GraphNeighborhoodRetriever:
             for item in edges
         }
         for record in family_records:
-            if record.scenario_id.casefold() == request.scenario_id.casefold():
+            if (
+                record.dataset_id != request.dataset_id
+                or record.scenario_id.casefold() == request.scenario_id.casefold()
+            ):
                 continue
             for relation in record.causal_relations:
                 if relation.origin in {
@@ -90,6 +99,7 @@ class GraphNeighborhoodRetriever:
                 edges.append(
                     RetrievedEvidence(
                         scenario_id=record.scenario_id,
+                        dataset_id=record.dataset_id,
                         relation=relation,
                         scope=RetrievalScope.CROSS_SCENARIO,
                     )
@@ -97,6 +107,7 @@ class GraphNeighborhoodRetriever:
 
         return RetrievalResult(
             scenario_id=result.scenario_id,
+            dataset_id=request.dataset_id,
             scope=result.scope,
             evidence=result.evidence,
             scenario_exists=True,
