@@ -13,6 +13,7 @@ from app.application.use_cases.recover_missing_link import (
 from app.domain.reasoning.models import (
     AbstentionReason,
     ReasoningResult,
+    ReasoningStatus,
     ReasoningStrategy,
 )
 
@@ -35,11 +36,12 @@ class ReasonAboutMissingLink:
         request: RecoveryRequest,
     ) -> ReasoningResult:
         """Recover evidence and reason about the missing relationship."""
+
         recovery_result = self._recovery_use_case.execute(request)
 
         if recovery_result.status == RecoveryStatus.SCENARIO_NOT_FOUND:
             return ReasoningResult(
-                status="abstained",
+                status=ReasoningStatus.ABSTAINED,
                 scenario_id=request.scenario_id,
                 abstention_reason=AbstentionReason.NO_EVIDENCE,
             )
@@ -48,5 +50,4 @@ class ReasonAboutMissingLink:
             recovery_result,
             request,
         )
-
         return self._reasoning_strategy.reason(evidence_context)

@@ -6,7 +6,10 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
-from app.domain.entities.hazop_record import CausalRelation
+from app.domain.entities.hazop_record import (
+    CausalRelation,
+    RelationshipOrigin,
+)
 
 
 @runtime_checkable
@@ -17,16 +20,19 @@ class EvidenceItemProtocol(Protocol):
     predicate: str
     object: str
     evidence: str
-    origin: object
+    origin: RelationshipOrigin
     confidence: float | None
     source_id: str | None
 
 
 @runtime_checkable
 class EvidenceContextProtocol(Protocol):
-    """Minimum evidence-context interface required for reasoning."""
+    """Evidence context and query required for missing-link reasoning."""
 
     scenario_id: str
+    predicate: str
+    known_endpoint: str
+    missing_endpoint: str
     evidence_items: tuple[EvidenceItemProtocol, ...]
 
 
@@ -70,23 +76,19 @@ class ReasoningResult:
                 raise ValueError(
                     "A proposed result must include a relationship."
                 )
-
             if self.abstention_reason is not None:
                 raise ValueError(
                     "A proposed result cannot have an abstention reason."
                 )
-
         elif self.status == ReasoningStatus.ABSTAINED:
             if self.proposed_relation is not None:
                 raise ValueError(
                     "An abstained result cannot include a proposed relation."
                 )
-
             if self.abstention_reason is None:
                 raise ValueError(
                     "An abstained result must include a reason."
                 )
-
         else:
             raise ValueError("Unsupported reasoning status.")
 
@@ -105,7 +107,6 @@ class ReasoningResult:
         """Serialize the result into a JSON-friendly dictionary."""
 
         relation = self.proposed_relation
-
         return {
             "status": self.status.value,
             "scenario_id": self.scenario_id,
