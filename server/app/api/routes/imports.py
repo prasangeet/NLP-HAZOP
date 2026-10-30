@@ -7,7 +7,7 @@ import io
 import re
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
@@ -113,7 +113,10 @@ def _recognized_columns(headers: list[str]) -> dict[str, str]:
     summary="Upload and preview a HAZOP CSV",
 )
 async def preview_csv(
-    file: UploadFile = File(..., description="UTF-8 CSV HAZOP worksheet"),
+    file: Annotated[
+        UploadFile,
+        File(description="UTF-8 CSV HAZOP worksheet"),
+    ],
     preview_limit: int = Query(
         DEFAULT_PREVIEW_LIMIT,
         ge=1,
