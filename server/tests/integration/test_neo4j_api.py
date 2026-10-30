@@ -6,11 +6,28 @@ It exercises the real Cypher, transaction semantics, serialization, and API wiri
 
 from __future__ import annotations
 
+from os import environ
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+from pytest import mark
 
-from app.main import create_app
+
+NEO4J_CONFIGURED = all(
+    environ.get(key)
+    for key in ("NEO4J_HTTP_URI", "NEO4J_USERNAME", "NEO4J_PASSWORD")
+)
+pytestmark = mark.skipif(
+    not NEO4J_CONFIGURED,
+    reason="requires NEO4J_HTTP_URI, NEO4J_USERNAME, and NEO4J_PASSWORD",
+)
+
+
+def _create_app():
+    """Import the app factory only when the live Neo4j test is enabled."""
+    from app.main import create_app
+
+    return create_app()
 
 
 CSV_CONTENT = (
@@ -23,7 +40,7 @@ CSV_CONTENT = (
 
 def test_import_persists_across_app_restart_and_supports_graph_recovery() -> None:
     dataset_id = f"ci-{uuid4().hex}"
-    first_app = create_app()
+    first_app = _create_app()
 
     with TestClient(first_app) as client:
         repository = first_app.state.graph_repository
@@ -49,7 +66,7 @@ def test_import_persists_across_app_restart_and_supports_graph_recovery() -> Non
 
     # A new app creates a new repository/client. Reads must come from Neo4j,
     # not from the first app's process memory.
-    second_app = create_app()
+    second_app = _create_app()
     with TestClient(second_app) as client:
         metadata = client.get(f"/api/v1/datasets/{dataset_id}")
         assert metadata.status_code == 200
