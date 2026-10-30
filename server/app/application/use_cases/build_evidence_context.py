@@ -31,6 +31,7 @@ class EvidenceItem:
     relevance_note: str
     scenario_id: str = ""
     scope: RetrievalScope = RetrievalScope.SCENARIO_LOCAL
+    relevance_score: float | None = None
 
     @classmethod
     def from_candidate(cls, candidate: RecoveryCandidate) -> EvidenceItem:
@@ -46,6 +47,7 @@ class EvidenceItem:
             relevance_note=cls._origin_note(relation.origin),
             scenario_id=candidate.scenario_id,
             scope=candidate.scope,
+            relevance_score=candidate.relevance_score,
         )
 
     @classmethod
@@ -62,6 +64,7 @@ class EvidenceItem:
             relevance_note=cls._origin_note(relation.origin),
             scenario_id=item.scenario_id,
             scope=item.scope,
+            relevance_score=item.relevance_score,
         )
 
     @staticmethod
@@ -96,6 +99,7 @@ class EvidenceItem:
             "relevance_note": self.relevance_note,
             "scenario_id": self.scenario_id,
             "scope": self.scope.value,
+            "relevance_score": self.relevance_score,
         }
 
 
