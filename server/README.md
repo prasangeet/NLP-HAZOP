@@ -156,7 +156,7 @@ require a separately expert-adjudicated held-out set.
 
 ## Local FastAPI upload API
 
-The first application endpoint accepts a UTF-8 HAZOP CSV and returns a normalized
+The application endpoint accepts a UTF-8 HAZOP CSV and returns a normalized
 preview. It does **not** persist the uploaded file or records yet; a persistent
 repository/import endpoint will be added with the database integration.
 
@@ -173,15 +173,24 @@ uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 Send the file as multipart form data using the field name `file`. The default
 preview returns up to 100 normalized records; `preview_limit` can be set from
-1 to 500. Uploads are limited to 10 MB and must be UTF-8 CSV files containing
-`Scenario_ID` (or `Scenario ID`) and `Deviation` columns.
+1 to 500. Uploads are limited to 10 MB and must be UTF-8 CSV files (UTF-8 BOM
+is supported) containing `Scenario_ID` (or `Scenario ID`) and `Deviation` columns.
 
-The API preserves the existing loader's relationship mapping and returns
-warnings explaining that row-derived relationships are not expert-verified
-causal assertions. It does not silently claim that previewed records have been
-saved. The default CORS allowlist supports the Vite development server and
-common Tauri origins; set `NLP_HAZOP_CORS_ORIGINS` to add comma-separated
-origins when needed.
+### Ingestion and normalization capabilities
+
+- **Parenthetical preservation:** List-valued fields (safeguards, recommendations, causes, consequences, effects) do not split commas or semicolons inside balanced parentheses or brackets. Explanatory annotations (e.g. `OverfillProtection (reported/ontology safeguard concepts, actual installation status requires source interpretation)`) are preserved intact with their item.
+- **Effects and intermediate states:** Recognizes `effects` and aliases (`Intermediate Effect`, `Intermediate_Effects`, `Simulated_or_Inferred_Effect`, etc.) and maps multi-step chains (`deviation -> leads_to -> effect -> leads_to_consequence -> consequence`) without inventing phantom effects or creating arbitrary Cartesian products.
+- **Row-level provenance and lossless data:** Records preserve the exact 1-based CSV `row_number` and the complete `raw_row` dictionary alongside normalized values.
+- **Explicit relationship semantics:** Generated relationships carry their explicit origin (`reconstructed`, `synthetic`, etc.), evidence clarifying that they are row-level associations, and `is_expert_verified: false`.
+- **Inspection transparency:** The preview response exposes:
+  - `recognized_columns`: Canonical HAZOP fields matched to CSV headers.
+  - `unrecognized_columns`: Non-empty headers not mapped to standard fields.
+  - `missing_expected_columns`: Standard fields (causes, consequences, safeguards, equipment) missing from the CSV.
+  - `persisted: false` and `storage: "not_persisted"`.
+  - `summary`: Counts of rows read, records loaded, rows skipped, record types, validation statuses, and detailed breakdowns of relationships by origin and predicate.
+  - `warnings`: Explanatory warnings regarding unverified row-level associations, unrecognized columns, missing expected columns, skipped rows, or malformed lines.
+
+The default CORS allowlist supports the Vite development server and common Tauri origins; set `NLP_HAZOP_CORS_ORIGINS` to add comma-separated origins when needed.
 
 The dependency lockfile is refreshed by `uv sync` when project dependencies
 change. After adding or changing dependencies, run `uv lock` locally and

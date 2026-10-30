@@ -110,6 +110,11 @@ class CausalRelation:
                 "CausalRelation.confidence must be between 0.0 and 1.0."
             )
 
+    @property
+    def is_expert_verified(self) -> bool:
+        """Return whether this relationship has been verified by an expert."""
+        return self.origin == RelationshipOrigin.EXPERT
+
 
 @dataclass(frozen=True, slots=True)
 class HazopRecord:
@@ -125,6 +130,7 @@ class HazopRecord:
     guideword: str = ""
 
     causes: tuple[str, ...] = field(default_factory=tuple)
+    effects: tuple[str, ...] = field(default_factory=tuple)
     consequences: tuple[str, ...] = field(default_factory=tuple)
     safeguards: tuple[str, ...] = field(default_factory=tuple)
     recommendations: tuple[str, ...] = field(default_factory=tuple)
@@ -139,6 +145,8 @@ class HazopRecord:
 
     risk_ranking: str | None = None
     remarks: str = ""
+    row_number: int | None = None
+    raw_row: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         for name in ("scenario_id", "equipment", "deviation"):
@@ -158,6 +166,7 @@ class HazopRecord:
 
         for name in (
             "causes",
+            "effects",
             "consequences",
             "safeguards",
             "recommendations",
@@ -173,14 +182,21 @@ class HazopRecord:
             object.__setattr__(self, name, tuple(normalized))
 
         if self.risk_ranking is not None:
-            object.__setattr__(
-                self,
-                "risk_ranking",
-                self.risk_ranking.strip() or None,
-            )
+            cleaned_risk = self.risk_ranking.strip()
+            if (
+                not cleaned_risk
+                or cleaned_risk.casefold() in {"", "-", "—", "–", "n/a", "na", "none", "not stated", "null"}
+                or all(char in "-—–_ \t" for char in cleaned_risk)
+            ):
+                object.__setattr__(self, "risk_ranking", None)
+            else:
+                object.__setattr__(self, "risk_ranking", cleaned_risk)
 
         object.__setattr__(
             self, "causal_relations", tuple(self.causal_relations)
+        )
+        object.__setattr__(
+            self, "raw_row", dict(self.raw_row)
         )
 
     @property
@@ -199,6 +215,7 @@ class HazopRecord:
             "parameter": self.parameter,
             "deviation": self.deviation,
             "causes": list(self.causes),
+            "effects": list(self.effects),
             "consequences": list(self.consequences),
             "safeguards": list(self.safeguards),
             "recommendations": list(self.recommendations),
@@ -223,9 +240,12 @@ class HazopRecord:
                     "evidence": relation.evidence,
                     "confidence": relation.confidence,
                     "source_id": relation.source_id,
+                    "is_expert_verified": relation.is_expert_verified,
                 }
                 for relation in self.causal_relations
             ],
             "risk_ranking": self.risk_ranking,
             "remarks": self.remarks,
+            "row_number": self.row_number,
+            "raw_row": dict(self.raw_row),
         }

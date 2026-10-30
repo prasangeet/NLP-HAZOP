@@ -16,58 +16,17 @@ from app.domain.entities.hazop_record import (
     RecordType,
     ValidationStatus,
 )
-from app.infrastructure.datasets.hazop_csv_loader import HazopCsvLoader
+from app.infrastructure.datasets.hazop_csv_loader import (
+    COLUMN_ALIASES,
+    HazopCsvLoader,
+)
 
 router = APIRouter(tags=["datasets"])
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 DEFAULT_PREVIEW_LIMIT = 100
 MAX_PREVIEW_LIMIT = 500
-
-COLUMN_ALIASES = {
-    "scenario_id": {"scenario_id", "scenario id"},
-    "plant_unit": {"plant/unit", "plant / process", "node"},
-    "equipment": {
-        "node/equipment",
-        "node / equipment",
-        "equipment",
-        "node",
-    },
-    "design_intent": {"design_intent", "design intent"},
-    "guideword": {"guideword"},
-    "parameter": {"parameter"},
-    "deviation": {"deviation"},
-    "causes": {"possible_causes", "possible_cause", "causes"},
-    "effects": {
-        "simulated_or_inferred_effect",
-        "simulated or inferred effect",
-    },
-    "consequences": {
-        "possible_consequences",
-        "possible_consequence",
-        "consequences",
-    },
-    "safeguards": {
-        "existing_safeguards",
-        "existing controls / safeguards",
-    },
-    "recommendations": {
-        "recommendations",
-        "recommendations / candidate safeguards",
-        "candidate_safeguard",
-        "candidate safeguard",
-    },
-    "risk_ranking": {"risk_ranking", "risk ranking"},
-    "record_type": {"record_type", "evidence source", "source_type"},
-    "provenance": {
-        "provenance",
-        "evidence_and_limitation",
-        "remarks / evidence",
-        "remarks",
-        "evidence source",
-        "source_type",
-    },
-}
+EXPECTED_HAZOP_COLUMNS = ("causes", "consequences", "safeguards", "equipment")
 
 
 class CsvPreviewResponse(BaseModel):
@@ -77,7 +36,10 @@ class CsvPreviewResponse(BaseModel):
     filename: str
     dataset_id: str
     storage: str
+    persisted: bool = False
     recognized_columns: dict[str, str]
+    unrecognized_columns: list[str] = []
+    missing_expected_columns: list[str] = []
     summary: dict[str, Any]
     warnings: list[str]
     preview_limit: int
@@ -99,10 +61,13 @@ def _dataset_id(filename: str) -> str:
 
 def _recognized_columns(headers: list[str]) -> dict[str, str]:
     recognized: dict[str, str] = {}
+    normalized_headers = {
+        header.strip().casefold(): header for header in headers
+    }
     for canonical_name, aliases in COLUMN_ALIASES.items():
-        for header in headers:
-            if header.strip().casefold() in aliases:
-                recognized[canonical_name] = header
+        for alias in aliases:
+            if alias.casefold() in normalized_headers:
+                recognized[canonical_name] = normalized_headers[alias.casefold()]
                 break
     return recognized
 
@@ -202,6 +167,17 @@ async def preview_csv(
             detail="CSV contains a header but no data rows.",
         )
 
+    recognized_headers = set(recognized_columns.values())
+    unrecognized_columns = [
+        header
+        for header in headers
+        if header not in recognized_headers
+        and any(str(row.get(header) or "").strip() for row in rows)
+    ]
+    missing_expected_columns = [
+        col for col in EXPECTED_HAZOP_COLUMNS if col not in recognized_columns
+    ]
+
     dataset_id = _dataset_id(filename)
     try:
         records = HazopCsvLoader().load_stream(
@@ -243,6 +219,16 @@ async def preview_csv(
         record.validation_status.value for record in records
     )
     relationship_count = sum(len(record.causal_relations) for record in records)
+    origin_counts = Counter(
+        relation.origin.value
+        for record in records
+        for relation in record.causal_relations
+    )
+    predicate_counts = Counter(
+        relation.predicate
+        for record in records
+        for relation in record.causal_relations
+    )
 
     warnings = [
         (
@@ -255,6 +241,17 @@ async def preview_csv(
             "or retained after this request."
         ),
     ]
+    if unrecognized_columns:
+        warnings.append(
+            "Unrecognized non-empty column(s) will not be mapped to standard "
+            f"HAZOP fields: {', '.join(unrecognized_columns)}."
+        )
+    if missing_expected_columns:
+        warnings.append(
+            "Expected HAZOP column(s) not found in CSV: "
+            f"{', '.join(missing_expected_columns)}. Scenarios may have "
+            "incomplete causal chains."
+        )
     if skipped_rows:
         shown = ", ".join(str(number) for number in skipped_rows[:20])
         suffix = " ..." if len(skipped_rows) > 20 else ""
@@ -291,14 +288,22 @@ async def preview_csv(
         filename=filename,
         dataset_id=dataset_id,
         storage="not_persisted",
+        persisted=False,
         recognized_columns=recognized_columns,
+        unrecognized_columns=unrecognized_columns,
+        missing_expected_columns=missing_expected_columns,
         summary={
             "rows_read": len(rows),
             "records_loaded": len(records),
             "rows_skipped": len(skipped_rows),
             "relationships_generated": relationship_count,
+            "relationships_by_origin": dict(origin_counts),
+            "relationships_by_predicate": dict(predicate_counts),
             "record_type_counts": dict(record_type_counts),
             "validation_status_counts": dict(validation_counts),
+            "unrecognized_columns": unrecognized_columns,
+            "missing_expected_columns": missing_expected_columns,
+            "persisted": False,
         },
         warnings=warnings,
         preview_limit=preview_limit,

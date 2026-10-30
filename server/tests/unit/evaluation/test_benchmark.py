@@ -57,6 +57,7 @@ def test_held_out_target_is_stripped_of_all_answer_fields() -> None:
     target = strip_target_labels(make_record("TEST-001"))
 
     assert target.causes == ()
+    assert target.effects == ()
     assert target.consequences == ()
     assert target.safeguards == ()
     assert target.recommendations == ()

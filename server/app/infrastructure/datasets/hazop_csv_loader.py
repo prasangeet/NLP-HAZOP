@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import csv
-import re
 from pathlib import Path
 from typing import TextIO
 
@@ -16,7 +15,7 @@ from app.domain.entities.hazop_record import (
     ValidationStatus,
 )
 
-_EMPTY = {"", "-", "—", "–", "n/a", "na", "none", "not stated"}
+_EMPTY = {"", "-", "—", "–", "n/a", "na", "none", "not stated", "null"}
 _NOT_PROVIDED_PREFIXES = (
     "not_stated",
     "not stated",
@@ -25,43 +24,228 @@ _NOT_PROVIDED_PREFIXES = (
     "no existing",
     "no safeguard",
     "none provided",
+    "none listed",
 )
 
 
+def _is_empty(value: str) -> bool:
+    cleaned = value.strip()
+    if not cleaned:
+        return True
+    folded = cleaned.casefold()
+    if folded in _EMPTY:
+        return True
+    return all(char in "-—–_ \t" for char in cleaned)
+
+COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
+    "scenario_id": (
+        "scenario_id",
+        "scenario id",
+        "scenario",
+        "id",
+    ),
+    "plant_unit": (
+        "plant/unit",
+        "plant / unit",
+        "plant / process",
+        "plant/process",
+        "plant",
+        "unit",
+        "area",
+        "section",
+        "node",
+    ),
+    "equipment": (
+        "node/equipment",
+        "node / equipment",
+        "equipment",
+        "equipment / node",
+        "equipment/node",
+        "item",
+        "tag",
+        "node",
+    ),
+    "design_intent": (
+        "design_intent",
+        "design intent",
+        "intent",
+    ),
+    "guideword": (
+        "guideword",
+        "guide_word",
+        "guide word",
+    ),
+    "parameter": (
+        "parameter",
+        "process_parameter",
+        "process parameter",
+        "variable",
+    ),
+    "deviation": (
+        "deviation",
+        "deviations",
+    ),
+    "causes": (
+        "possible_causes",
+        "possible_cause",
+        "possible causes",
+        "possible cause",
+        "causes",
+        "cause",
+        "initiating_event",
+        "initiating event",
+    ),
+    "effects": (
+        "simulated_or_inferred_effect",
+        "simulated or inferred effect",
+        "simulated_effect",
+        "simulated effect",
+        "inferred_effect",
+        "inferred effect",
+        "effects",
+        "effect",
+        "intermediate_effect",
+        "intermediate_effects",
+        "intermediate effect",
+        "intermediate effects",
+        "intermediate_state",
+        "intermediate_states",
+        "intermediate state",
+        "intermediate states",
+    ),
+    "consequences": (
+        "possible_consequences",
+        "possible_consequence",
+        "possible consequences",
+        "possible consequence",
+        "consequences",
+        "consequence",
+        "hazard",
+        "hazards",
+    ),
+    "safeguards": (
+        "existing_safeguards",
+        "existing_safeguard",
+        "existing safeguards",
+        "existing safeguard",
+        "existing controls / safeguards",
+        "existing controls/safeguards",
+        "safeguards",
+        "safeguard",
+        "controls",
+        "existing_controls",
+        "existing controls",
+    ),
+    "recommendations": (
+        "recommendations",
+        "recommendation",
+        "recommendations / candidate safeguards",
+        "candidate_safeguard",
+        "candidate_safeguards",
+        "candidate safeguard",
+        "candidate safeguards",
+        "actions",
+        "action_items",
+    ),
+    "risk_ranking": (
+        "risk_ranking",
+        "risk ranking",
+        "risk_rank",
+        "risk rank",
+        "risk",
+        "severity",
+    ),
+    "record_type": (
+        "record_type",
+        "record type",
+        "evidence source",
+        "evidence_source",
+        "source_type",
+        "source type",
+    ),
+    "provenance": (
+        "provenance",
+        "evidence_and_limitation",
+        "evidence and limitation",
+        "remarks / evidence",
+        "remarks/evidence",
+        "remarks",
+        "evidence source",
+        "source_type",
+        "source",
+        "notes",
+        "comments",
+    ),
+    "validation_status": (
+        "validation_status",
+        "validation status",
+        "validation",
+        "status",
+    ),
+}
+
+
 def _pick(row: dict[str, str | None], *names: str, default: str = "") -> str:
-    normalized = {key.strip().casefold(): value for key, value in row.items()}
+    normalized = {
+        key.strip().lstrip("\ufeff").casefold(): value
+        for key, value in row.items()
+        if isinstance(key, str)
+    }
     for name in names:
-        value = normalized.get(name.casefold())
+        value = normalized.get(name.strip().casefold())
         if isinstance(value, str) and value.strip():
-            return value.strip()
+            cleaned = value.strip()
+            if not _is_empty(cleaned):
+                return cleaned
     return default
 
 
 def _split_items(value: str) -> tuple[str, ...]:
     cleaned_value = value.strip()
     folded = cleaned_value.casefold()
-    if folded in _EMPTY or folded.startswith(_NOT_PROVIDED_PREFIXES):
+    if (
+        not cleaned_value
+        or _is_empty(cleaned_value)
+        or folded.startswith(_NOT_PROVIDED_PREFIXES)
+    ):
         return ()
+
+    raw_parts: list[str] = []
+    current: list[str] = []
+    depth = 0
+    for char in cleaned_value:
+        if char in "([":
+            depth += 1
+            current.append(char)
+        elif char in ")]":
+            depth = max(0, depth - 1)
+            current.append(char)
+        elif depth == 0 and char in ";|\n,":
+            part = "".join(current).strip().strip("\"'").strip()
+            if part:
+                raw_parts.append(part)
+            current = []
+        else:
+            current.append(char)
+
+    if current:
+        part = "".join(current).strip().strip("\"'").strip()
+        if part:
+            raw_parts.append(part)
 
     items: list[str] = []
     seen: set[str] = set()
-    for raw in re.split(r"\s*[;|]\s*", cleaned_value):
-        # The reconstructed T-301 CSV sometimes combines comma-separated
-        # ontology concepts with semicolon-separated alternatives. DWSIM
-        # prose is not split on commas, so complete phrases remain intact.
-        parts = (
-            re.split(r"\s*,\s*", raw)
-            if ";" in cleaned_value or "|" in cleaned_value
-            else [raw]
-        )
-        for part in parts:
-            cleaned = part.strip().strip('"').strip()
-            key = cleaned.casefold()
-            if cleaned and key not in _EMPTY and not key.startswith(
-                _NOT_PROVIDED_PREFIXES
-            ) and key not in seen:
-                items.append(cleaned)
-                seen.add(key)
+    for raw in raw_parts:
+        cleaned = raw.strip().strip("\"'").strip()
+        key = cleaned.casefold()
+        if (
+            cleaned
+            and key not in _EMPTY
+            and not key.startswith(_NOT_PROVIDED_PREFIXES)
+            and key not in seen
+        ):
+            items.append(cleaned)
+            seen.add(key)
     return tuple(items)
 
 
@@ -70,17 +254,23 @@ def _origin_and_type(
     dataset_id: str,
 ) -> tuple[RecordType, RelationshipOrigin]:
     text = record_type_text.casefold()
-    if "paper_reported_reconstruction" in text:
+    if "paper_reported_reconstruction" in text or "reconstruct" in text:
         return (
             RecordType.SOURCE_RECONSTRUCTED,
             RelationshipOrigin.RECONSTRUCTED,
         )
-    if "synthetic" in text or "dwsim" in dataset_id.casefold():
+    if "synthetic" in text:
         return RecordType.SYNTHETIC, RelationshipOrigin.SYNTHETIC
-    if "expert" in text:
-        return RecordType.EXPERT_VALIDATED, RelationshipOrigin.EXPERT
-    if "source_verified" in text:
+    if "source_verified" in text or "verified" in text:
         return RecordType.SOURCE_VERIFIED, RelationshipOrigin.SOURCE
+    if "expert" in text and "valid" in text:
+        return RecordType.EXPERT_VALIDATED, RelationshipOrigin.EXPERT
+
+    ds_folded = dataset_id.casefold()
+    if "dwsim" in ds_folded or "synthetic" in ds_folded:
+        return RecordType.SYNTHETIC, RelationshipOrigin.SYNTHETIC
+    if "reconstruct" in ds_folded:
+        return RecordType.SOURCE_RECONSTRUCTED, RelationshipOrigin.RECONSTRUCTED
     return RecordType.UNSPECIFIED, RelationshipOrigin.SYNTHETIC
 
 
@@ -89,6 +279,7 @@ def _source_reference(
     scenario_id: str,
     provenance: str,
     origin: RelationshipOrigin,
+    row_number: int | None = None,
 ) -> SourceReference:
     if origin == RelationshipOrigin.RECONSTRUCTED:
         title = "Single et al. (2020), T-301 hexane case reconstruction"
@@ -105,7 +296,7 @@ def _source_reference(
     return SourceReference(
         title=title,
         document_id=document_id,
-        location=scenario_id,
+        location=f"row {row_number}: {scenario_id}" if row_number else scenario_id,
         provenance_note=provenance,
     )
 
@@ -144,16 +335,27 @@ class HazopCsvLoader:
         if not reader.fieldnames:
             raise ValueError("CSV file must contain a header row")
 
+        if reader.fieldnames and reader.fieldnames[0]:
+            reader.fieldnames[0] = reader.fieldnames[0].lstrip("\ufeff")
+
         records: list[HazopRecord] = []
-        for row in reader:
-            # DictReader uses None for columns whose cells are absent in a
-            # malformed short row. Treat those cells as empty strings.
+        for row_index, row in enumerate(reader, start=2):
             normalized_row = {
+                key.lstrip("\ufeff"): value if isinstance(value, str) else ""
+                for key, value in row.items()
+                if isinstance(key, str)
+            }
+            raw_row = {
                 key: value if isinstance(value, str) else ""
                 for key, value in row.items()
                 if isinstance(key, str)
             }
-            record = self._record_from_row(normalized_row, dataset_id)
+            record = self._record_from_row(
+                normalized_row,
+                dataset_id,
+                row_number=row_index,
+                raw_row=raw_row,
+            )
             if record is not None:
                 records.append(record)
         return tuple(records)
@@ -162,67 +364,38 @@ class HazopCsvLoader:
         self,
         row: dict[str, str],
         dataset_id: str,
+        row_number: int | None = None,
+        raw_row: dict[str, str] | None = None,
     ) -> HazopRecord | None:
-        scenario_id = _pick(row, "Scenario_ID", "Scenario ID")
+        scenario_id = _pick(row, *COLUMN_ALIASES["scenario_id"])
         if not scenario_id:
             return None
 
-        record_type_text = _pick(
-            row, "Record_Type", "Evidence Source", "Source_Type"
-        )
+        record_type_text = _pick(row, *COLUMN_ALIASES["record_type"])
         record_type, origin = _origin_and_type(
             record_type_text, dataset_id
         )
-        deviation = _pick(row, "Deviation", default="Unspecified deviation")
-        causes = _split_items(
-            _pick(row, "Possible_Causes", "Possible_Cause", "Causes")
+        deviation = _pick(
+            row, *COLUMN_ALIASES["deviation"], default="Unspecified deviation"
         )
+        causes = _split_items(_pick(row, *COLUMN_ALIASES["causes"]))
+        effects = _split_items(_pick(row, *COLUMN_ALIASES["effects"]))
         consequences = _split_items(
-            _pick(
-                row,
-                "Possible_Consequences",
-                "Possible_Consequence",
-                "Consequences",
-            )
+            _pick(row, *COLUMN_ALIASES["consequences"])
         )
-        effects = _split_items(
-            _pick(
-                row,
-                "Simulated_or_Inferred_Effect",
-                "Simulated or Inferred Effect",
-            )
-        )
-        safeguards = _split_items(
-            _pick(
-                row,
-                "Existing_Safeguards",
-                "Existing Controls / Safeguards",
-            )
-        )
+        safeguards = _split_items(_pick(row, *COLUMN_ALIASES["safeguards"]))
         recommendations = _split_items(
-            _pick(
-                row,
-                "Recommendations",
-                "Recommendations / Candidate Safeguards",
-                "Candidate_Safeguard",
-                "Candidate Safeguard",
-            )
+            _pick(row, *COLUMN_ALIASES["recommendations"])
         )
 
         provenance = _pick(
             row,
-            "Provenance",
-            "Evidence_and_Limitation",
-            "Remarks / Evidence",
-            "Remarks",
-            "Evidence Source",
-            "Source_Type",
+            *COLUMN_ALIASES["provenance"],
             default=f"Imported from {dataset_id}",
         )
         validation_note = _pick(
             row,
-            "Validation_Status",
-            "Validation Status",
+            *COLUMN_ALIASES["validation_status"],
             default="not specified",
         )
 
@@ -263,8 +436,10 @@ class HazopCsvLoader:
                         source_id=f"{scenario_id}:effect:{effect_index}",
                     )
                 )
-                for consequence_index, consequence in enumerate(
-                    consequences, start=1
+
+            if len(effects) > 1 and len(effects) == len(consequences):
+                for pair_index, (effect, consequence) in enumerate(
+                    zip(effects, consequences, strict=False), start=1
                 ):
                     relations.append(
                         CausalRelation(
@@ -281,11 +456,36 @@ class HazopCsvLoader:
                                 "independently expert-validated causal assertion."
                             ),
                             source_id=(
-                                f"{scenario_id}:effect:{effect_index}:"
-                                f"consequence:{consequence_index}"
+                                f"{scenario_id}:effect:{pair_index}:"
+                                f"consequence:{pair_index}"
                             ),
                         )
                     )
+            else:
+                for effect_index, effect in enumerate(effects, start=1):
+                    for consequence_index, consequence in enumerate(
+                        consequences, start=1
+                    ):
+                        relations.append(
+                            CausalRelation(
+                                subject=effect,
+                                predicate="leads_to_consequence",
+                                object=consequence,
+                                origin=origin,
+                                evidence=(
+                                    f"Row-level association in scenario "
+                                    f"{scenario_id}: effect {effect!r} and "
+                                    f"consequence {consequence!r} are co-listed. "
+                                    f"Record origin: {origin.value}. "
+                                    f"Provenance: {provenance}. This is not an "
+                                    "independently expert-validated causal assertion."
+                                ),
+                                source_id=(
+                                    f"{scenario_id}:effect:{effect_index}:"
+                                    f"consequence:{consequence_index}"
+                                ),
+                            )
+                        )
         else:
             for consequence_index, consequence in enumerate(
                 consequences, start=1
@@ -310,15 +510,29 @@ class HazopCsvLoader:
                     )
                 )
 
-        # The supplied files identify no expert-validated rows. A validation
-        # status string such as "Review required" is not positive validation.
+        # Do not convert synthetic or reconstructed records into expert-validated records.
         validation_status = ValidationStatus.UNREVIEWED
+        if (
+            record_type == RecordType.EXPERT_VALIDATED
+            and validation_note.casefold() in {
+                "validated",
+                "expert validated",
+                "expert_validated",
+            }
+        ):
+            validation_status = ValidationStatus.VALIDATED
+
         remarks = _pick(
-            row, "Remarks", "Remarks / Evidence", "Evidence_and_Limitation"
+            row,
+            "Remarks",
+            "Remarks / Evidence",
+            "Evidence_and_Limitation",
         )
         if validation_note and validation_note.casefold() not in {
             "validated",
             "expert validated",
+            "expert_validated",
+            "not specified",
         }:
             remarks = (
                 f"{remarks} | Validation note: {validation_note}"
@@ -329,28 +543,22 @@ class HazopCsvLoader:
             scenario_id,
             provenance,
             origin,
+            row_number=row_number,
         )
         return HazopRecord(
             scenario_id=scenario_id,
-            plant_unit=_pick(
-                row,
-                "Plant/Unit",
-                "Plant / Process",
-                "Node",
-            ),
+            plant_unit=_pick(row, *COLUMN_ALIASES["plant_unit"]),
             equipment=_pick(
                 row,
-                "Node/Equipment",
-                "Node / Equipment",
-                "Equipment",
-                "Node",
+                *COLUMN_ALIASES["equipment"],
                 default="Unspecified equipment",
             ),
-            design_intent=_pick(row, "Design_Intent", "Design Intent"),
-            guideword=_pick(row, "Guideword"),
-            parameter=_pick(row, "Parameter"),
+            design_intent=_pick(row, *COLUMN_ALIASES["design_intent"]),
+            guideword=_pick(row, *COLUMN_ALIASES["guideword"]),
+            parameter=_pick(row, *COLUMN_ALIASES["parameter"]),
             deviation=deviation,
             causes=causes,
+            effects=effects,
             consequences=consequences,
             safeguards=safeguards,
             recommendations=recommendations,
@@ -358,6 +566,8 @@ class HazopCsvLoader:
             validation_status=validation_status,
             source=source,
             causal_relations=tuple(relations),
-            risk_ranking=_pick(row, "Risk_Ranking", "Risk Ranking") or None,
+            risk_ranking=_pick(row, *COLUMN_ALIASES["risk_ranking"]) or None,
             remarks=remarks,
+            row_number=row_number,
+            raw_row=raw_row if raw_row is not None else dict(row),
         )

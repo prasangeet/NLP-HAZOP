@@ -138,6 +138,7 @@ def strip_target_labels(record: HazopRecord) -> HazopRecord:
     return replace(
         record,
         causes=(),
+        effects=(),
         consequences=(),
         safeguards=(),
         recommendations=(),

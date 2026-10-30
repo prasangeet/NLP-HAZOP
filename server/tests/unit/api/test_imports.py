@@ -122,3 +122,110 @@ def test_csv_preview_rejects_empty_csv() -> None:
     )
 
     assert response.status_code == 400
+
+
+def test_csv_preview_reports_unrecognized_non_empty_columns() -> None:
+    content = (
+        b"Scenario_ID,Deviation,Possible_Causes,Custom_Notes,Empty_Extra\n"
+        b"S001,High pressure,Overfill,Plant operator note,\n"
+    )
+
+    response = client.post(
+        "/api/v1/datasets/preview",
+        files={"file": ("sample.csv", content, "text/csv")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["unrecognized_columns"] == ["Custom_Notes"]
+    assert any("Unrecognized non-empty column(s)" in item for item in payload["warnings"])
+    assert "Custom_Notes" in payload["summary"]["unrecognized_columns"]
+
+
+def test_csv_preview_reports_missing_expected_columns() -> None:
+    content = (
+        b"Scenario_ID,Deviation,Possible_Causes\n"
+        b"S001,Low flow,Pump failure\n"
+    )
+
+    response = client.post(
+        "/api/v1/datasets/preview",
+        files={"file": ("sample.csv", content, "text/csv")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    expected_missing = {"consequences", "safeguards", "equipment"}
+    assert expected_missing.issubset(set(payload["missing_expected_columns"]))
+    assert any("Expected HAZOP column(s) not found" in item for item in payload["warnings"])
+
+
+def test_csv_preview_exposes_breakdowns_and_not_persisted() -> None:
+    response = client.post(
+        "/api/v1/datasets/preview",
+        files={"file": ("sample.csv", VALID_CSV.encode(), "text/csv")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["persisted"] is False
+    assert payload["summary"]["persisted"] is False
+    assert "relationships_by_origin" in payload["summary"]
+    assert "relationships_by_predicate" in payload["summary"]
+    assert payload["summary"]["relationships_by_predicate"]["causes_deviation"] == 1
+    assert payload["summary"]["relationships_by_predicate"]["leads_to_consequence"] == 1
+
+
+def test_csv_preview_preserves_raw_row_and_row_number() -> None:
+    response = client.post(
+        "/api/v1/datasets/preview",
+        files={"file": ("sample.csv", VALID_CSV.encode(), "text/csv")},
+    )
+
+    assert response.status_code == 200
+    first_record = response.json()["records"][0]
+    assert first_record["row_number"] == 2
+    assert isinstance(first_record["raw_row"], dict)
+    assert first_record["raw_row"]["Scenario_ID"] == "S001"
+    assert first_record["raw_row"]["Plant/Unit"] == "Feed section"
+    assert first_record["raw_row"]["Deviation"] == "No flow"
+
+
+def test_csv_preview_safeguards_with_parentheses_commas() -> None:
+    content = (
+        b"Scenario_ID,Equipment,Deviation,Possible_Causes,Possible_Consequences,Existing_Safeguards\n"
+        b"S001,T-301,High level,Inflow,Overflow,\"CollectingBasin, OverfillProtection "
+        b"(reported/ontology safeguard concepts, actual installation status requires source interpretation)\"\n"
+    )
+
+    response = client.post(
+        "/api/v1/datasets/preview",
+        files={"file": ("sample.csv", content, "text/csv")},
+    )
+
+    assert response.status_code == 200
+    record = response.json()["records"][0]
+    assert len(record["safeguards"]) == 2
+    assert record["safeguards"][0] == "CollectingBasin"
+    assert "(reported/ontology safeguard concepts, actual installation status requires source interpretation)" in record["safeguards"][1]
+
+
+def test_csv_preview_with_effects_column_aliases() -> None:
+    content = (
+        b"Scenario_ID,Equipment,Deviation,Causes,Intermediate Effect,Consequences\n"
+        b"S001,R-101,High temperature,Cooling loss,Exothermic runaway,Reactor rupture\n"
+    )
+
+    response = client.post(
+        "/api/v1/datasets/preview",
+        files={"file": ("sample.csv", content, "text/csv")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["recognized_columns"]["effects"] == "Intermediate Effect"
+    record = payload["records"][0]
+    assert record["effects"] == ["Exothermic runaway"]
+    assert payload["summary"]["relationships_by_predicate"]["leads_to"] == 1
+    assert payload["summary"]["relationships_by_predicate"]["leads_to_consequence"] == 1
+
