@@ -171,6 +171,7 @@ def test_csv_preview_exposes_breakdowns_and_not_persisted() -> None:
     assert payload["persisted"] is False
     assert payload["summary"]["persisted"] is False
     assert "relationships_by_origin" in payload["summary"]
+    assert payload["summary"]["relationships_by_origin"] == {"unspecified": 2}
     assert "relationships_by_predicate" in payload["summary"]
     assert payload["summary"]["relationships_by_predicate"]["causes_deviation"] == 1
     assert payload["summary"]["relationships_by_predicate"]["leads_to_consequence"] == 1
@@ -228,4 +229,50 @@ def test_csv_preview_with_effects_column_aliases() -> None:
     assert record["effects"] == ["Exothermic runaway"]
     assert payload["summary"]["relationships_by_predicate"]["leads_to"] == 1
     assert payload["summary"]["relationships_by_predicate"]["leads_to_consequence"] == 1
+
+
+def test_csv_preview_handles_malformed_rows_and_summarizes() -> None:
+    content = (
+        b"Scenario_ID,Deviation,Possible_Causes\n"
+        b"S001,No flow,Pump trip,Extra Cell\n"
+        b"S002,High temp\n"
+    )
+
+    response = client.post(
+        "/api/v1/datasets/preview",
+        files={"file": ("sample.csv", content, "text/csv")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["summary"]["malformed_rows"] == 2
+    assert payload["summary"]["records_loaded"] == 2
+    assert any("2 row(s) have a different number of cells" in item for item in payload["warnings"])
+    assert any("Raw rows preserve missing-cell (null) and extra-cell (_extra_cells) data" in item for item in payload["warnings"])
+
+    first_record = payload["records"][0]
+    assert first_record["raw_row"]["_extra_cells"] == ["Extra Cell"]
+
+    second_record = payload["records"][1]
+    assert second_record["raw_row"]["Possible_Causes"] is None
+    assert second_record["raw_row"]["_missing_columns"] == ["Possible_Causes"]
+
+
+def test_csv_preview_multiple_effects_and_multiple_consequences() -> None:
+    content = (
+        b"Scenario_ID,Deviation,Effects,Consequences\n"
+        b"S001,High temp,Overheating; Pressure rise,Thermal damage; Flange leak\n"
+    )
+
+    response = client.post(
+        "/api/v1/datasets/preview",
+        files={"file": ("sample.csv", content, "text/csv")},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    preds = payload["summary"]["relationships_by_predicate"]
+    assert preds["leads_to"] == 2
+    assert preds["co_occurs_with_consequence"] == 2
+    assert "leads_to_consequence" not in preds
 

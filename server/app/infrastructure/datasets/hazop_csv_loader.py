@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
-from typing import TextIO
+from typing import Any, TextIO
 
 from app.domain.entities.hazop_record import (
     CausalRelation,
@@ -37,6 +37,7 @@ def _is_empty(value: str) -> bool:
         return True
     return all(char in "-—–_ \t" for char in cleaned)
 
+
 COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
     "scenario_id": (
         "scenario_id",
@@ -63,7 +64,6 @@ COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
         "equipment/node",
         "item",
         "tag",
-        "node",
     ),
     "design_intent": (
         "design_intent",
@@ -158,10 +158,10 @@ COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
     "record_type": (
         "record_type",
         "record type",
-        "evidence source",
-        "evidence_source",
         "source_type",
         "source type",
+        "evidence source",
+        "evidence_source",
     ),
     "provenance": (
         "provenance",
@@ -170,8 +170,6 @@ COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
         "remarks / evidence",
         "remarks/evidence",
         "remarks",
-        "evidence source",
-        "source_type",
         "source",
         "notes",
         "comments",
@@ -271,7 +269,7 @@ def _origin_and_type(
         return RecordType.SYNTHETIC, RelationshipOrigin.SYNTHETIC
     if "reconstruct" in ds_folded:
         return RecordType.SOURCE_RECONSTRUCTED, RelationshipOrigin.RECONSTRUCTED
-    return RecordType.UNSPECIFIED, RelationshipOrigin.SYNTHETIC
+    return RecordType.UNSPECIFIED, RelationshipOrigin.UNSPECIFIED
 
 
 def _source_reference(
@@ -289,6 +287,9 @@ def _source_reference(
         document_id = f"synthetic-{dataset_id}"
     elif origin == RelationshipOrigin.EXPERT:
         title = f"Expert-validated HAZOP dataset: {dataset_id}"
+        document_id = dataset_id
+    elif origin == RelationshipOrigin.SOURCE:
+        title = f"Source-verified HAZOP dataset: {dataset_id}"
         document_id = dataset_id
     else:
         title = f"HAZOP dataset: {dataset_id}"
@@ -340,16 +341,32 @@ class HazopCsvLoader:
 
         records: list[HazopRecord] = []
         for row_index, row in enumerate(reader, start=2):
-            normalized_row = {
-                key.lstrip("\ufeff"): value if isinstance(value, str) else ""
-                for key, value in row.items()
-                if isinstance(key, str)
-            }
-            raw_row = {
-                key: value if isinstance(value, str) else ""
-                for key, value in row.items()
-                if isinstance(key, str)
-            }
+            normalized_row: dict[str, str] = {}
+            raw_row: dict[str, Any] = {}
+            extra_cells: list[str] = []
+            missing_columns: list[str] = []
+
+            for key, value in row.items():
+                if key is None:
+                    if isinstance(value, list):
+                        extra_cells.extend(str(item) for item in value)
+                    elif value is not None:
+                        extra_cells.append(str(value))
+                else:
+                    clean_key = key.lstrip("\ufeff")
+                    if value is None:
+                        missing_columns.append(clean_key)
+                        raw_row[clean_key] = None
+                        normalized_row[clean_key] = ""
+                    else:
+                        raw_row[clean_key] = value
+                        normalized_row[clean_key] = value if isinstance(value, str) else ""
+
+            if extra_cells:
+                raw_row["_extra_cells"] = extra_cells
+            if missing_columns:
+                raw_row["_missing_columns"] = missing_columns
+
             record = self._record_from_row(
                 normalized_row,
                 dataset_id,
@@ -365,7 +382,7 @@ class HazopCsvLoader:
         row: dict[str, str],
         dataset_id: str,
         row_number: int | None = None,
-        raw_row: dict[str, str] | None = None,
+        raw_row: dict[str, Any] | None = None,
     ) -> HazopRecord | None:
         scenario_id = _pick(row, *COLUMN_ALIASES["scenario_id"])
         if not scenario_id:
@@ -398,6 +415,30 @@ class HazopCsvLoader:
             *COLUMN_ALIASES["validation_status"],
             default="not specified",
         )
+        validation_note_folded = validation_note.casefold()
+
+        # Validate whether validation evidence supports expert validation
+        has_positive_expert_validation = (
+            validation_note_folded in {"validated", "expert validated", "expert_validated"}
+            and record_type not in (RecordType.SYNTHETIC, RecordType.SOURCE_RECONSTRUCTED)
+        )
+
+        if has_positive_expert_validation:
+            validation_status = ValidationStatus.VALIDATED
+            is_verified = (origin == RelationshipOrigin.EXPERT)
+        elif validation_note_folded in {"rejected", "failed"}:
+            validation_status = ValidationStatus.REJECTED
+            is_verified = False
+        else:
+            validation_status = ValidationStatus.UNREVIEWED
+            is_verified = False
+
+        # If a record is marked UNREVIEWED, relationships must not be marked expert-verified.
+        # Demote conflicting expert claims to unspecified.
+        if origin == RelationshipOrigin.EXPERT and validation_status != ValidationStatus.VALIDATED:
+            origin = RelationshipOrigin.UNSPECIFIED
+            if record_type == RecordType.EXPERT_VALIDATED:
+                record_type = RecordType.UNSPECIFIED
 
         relations: list[CausalRelation] = []
         for cause_index, cause in enumerate(causes, start=1):
@@ -415,6 +456,7 @@ class HazopCsvLoader:
                         "independently expert-validated causal assertion."
                     ),
                     source_id=f"{scenario_id}:cause:{cause_index}",
+                    is_expert_verified=is_verified,
                 )
             )
 
@@ -434,58 +476,60 @@ class HazopCsvLoader:
                             f"validation. Provenance: {provenance}"
                         ),
                         source_id=f"{scenario_id}:effect:{effect_index}",
+                        is_expert_verified=is_verified,
                     )
                 )
 
-            if len(effects) > 1 and len(effects) == len(consequences):
-                for pair_index, (effect, consequence) in enumerate(
-                    zip(effects, consequences, strict=False), start=1
+            # Effect-to-consequence causal relationship:
+            # ONLY generate a causal relationship when the source explicitly provides
+            # enough information to establish that pairing (e.g. single intermediate effect).
+            # When multiple effects exist, pairings to consequences are ambiguous in a flat row;
+            # do NOT infer positional pairings (zip) or Cartesian products.
+            if len(effects) == 1:
+                single_effect = effects[0]
+                for consequence_index, consequence in enumerate(
+                    consequences, start=1
                 ):
                     relations.append(
                         CausalRelation(
-                            subject=effect,
+                            subject=single_effect,
                             predicate="leads_to_consequence",
                             object=consequence,
                             origin=origin,
                             evidence=(
-                                f"Row-level association in scenario "
-                                f"{scenario_id}: effect {effect!r} and "
+                                f"Row-level association in scenario {scenario_id}: "
+                                f"single intermediate effect {single_effect!r} and "
                                 f"consequence {consequence!r} are co-listed. "
                                 f"Record origin: {origin.value}. "
                                 f"Provenance: {provenance}. This is not an "
                                 "independently expert-validated causal assertion."
                             ),
-                            source_id=(
-                                f"{scenario_id}:effect:{pair_index}:"
-                                f"consequence:{pair_index}"
-                            ),
+                            source_id=f"{scenario_id}:effect:1:consequence:{consequence_index}",
+                            is_expert_verified=is_verified,
                         )
                     )
             else:
-                for effect_index, effect in enumerate(effects, start=1):
-                    for consequence_index, consequence in enumerate(
-                        consequences, start=1
-                    ):
-                        relations.append(
-                            CausalRelation(
-                                subject=effect,
-                                predicate="leads_to_consequence",
-                                object=consequence,
-                                origin=origin,
-                                evidence=(
-                                    f"Row-level association in scenario "
-                                    f"{scenario_id}: effect {effect!r} and "
-                                    f"consequence {consequence!r} are co-listed. "
-                                    f"Record origin: {origin.value}. "
-                                    f"Provenance: {provenance}. This is not an "
-                                    "independently expert-validated causal assertion."
-                                ),
-                                source_id=(
-                                    f"{scenario_id}:effect:{effect_index}:"
-                                    f"consequence:{consequence_index}"
-                                ),
-                            )
+                # Multiple effects: represent consequence co-occurrence without making
+                # an unsupported causal assertion.
+                for consequence_index, consequence in enumerate(
+                    consequences, start=1
+                ):
+                    relations.append(
+                        CausalRelation(
+                            subject=deviation,
+                            predicate="co_occurs_with_consequence",
+                            object=consequence,
+                            origin=origin,
+                            evidence=(
+                                f"Scenario {scenario_id} co-lists consequence {consequence!r} "
+                                f"with multiple intermediate effects ({', '.join(effects)}). "
+                                "Explicit causal pairing between intermediate effects and "
+                                "consequences is not provided in the source row."
+                            ),
+                            source_id=f"{scenario_id}:consequence:{consequence_index}",
+                            is_expert_verified=False,
                         )
+                    )
         else:
             for consequence_index, consequence in enumerate(
                 consequences, start=1
@@ -504,23 +548,10 @@ class HazopCsvLoader:
                             "This is not an independently expert-validated "
                             "causal assertion."
                         ),
-                        source_id=(
-                            f"{scenario_id}:consequence:{consequence_index}"
-                        ),
+                        source_id=f"{scenario_id}:consequence:{consequence_index}",
+                        is_expert_verified=is_verified,
                     )
                 )
-
-        # Do not convert synthetic or reconstructed records into expert-validated records.
-        validation_status = ValidationStatus.UNREVIEWED
-        if (
-            record_type == RecordType.EXPERT_VALIDATED
-            and validation_note.casefold() in {
-                "validated",
-                "expert validated",
-                "expert_validated",
-            }
-        ):
-            validation_status = ValidationStatus.VALIDATED
 
         remarks = _pick(
             row,
@@ -528,7 +559,7 @@ class HazopCsvLoader:
             "Remarks / Evidence",
             "Evidence_and_Limitation",
         )
-        if validation_note and validation_note.casefold() not in {
+        if validation_note and validation_note_folded not in {
             "validated",
             "expert validated",
             "expert_validated",
@@ -537,6 +568,21 @@ class HazopCsvLoader:
             remarks = (
                 f"{remarks} | Validation note: {validation_note}"
             ).strip(" |")
+
+        if raw_row:
+            malformed_parts = []
+            if "_extra_cells" in raw_row:
+                malformed_parts.append(
+                    f"{len(raw_row['_extra_cells'])} extra cell(s)"
+                )
+            if "_missing_columns" in raw_row:
+                malformed_parts.append(
+                    f"missing {len(raw_row['_missing_columns'])} cell(s)"
+                )
+            if malformed_parts:
+                remarks = (
+                    f"{remarks} | Malformed row: {'; '.join(malformed_parts)}"
+                ).strip(" |")
 
         source = _source_reference(
             dataset_id,

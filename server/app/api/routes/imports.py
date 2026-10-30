@@ -264,7 +264,8 @@ async def preview_csv(
         suffix = " ..." if len(malformed_rows) > 20 else ""
         warnings.append(
             f"{len(malformed_rows)} row(s) have a different number of cells "
-            f"than the header (CSV line(s): {shown}{suffix})."
+            f"than the header (CSV line(s): {shown}{suffix}). "
+            "Raw rows preserve missing-cell (null) and extra-cell (_extra_cells) data."
         )
     if duplicate_count:
         warnings.append(
@@ -296,6 +297,7 @@ async def preview_csv(
             "rows_read": len(rows),
             "records_loaded": len(records),
             "rows_skipped": len(skipped_rows),
+            "malformed_rows": len(malformed_rows),
             "relationships_generated": relationship_count,
             "relationships_by_origin": dict(origin_counts),
             "relationships_by_predicate": dict(predicate_counts),

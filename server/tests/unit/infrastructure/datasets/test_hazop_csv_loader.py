@@ -221,13 +221,107 @@ def test_relationship_provenance_and_unverified_status(tmp_path: Path) -> None:
     )
 
     record = HazopCsvLoader().load(path, "unverified-test")[0]
+    assert record.record_type == RecordType.UNSPECIFIED
     assert record.validation_status == ValidationStatus.UNREVIEWED
     assert "Review required" in record.remarks
 
     for rel in record.causal_relations:
-        assert rel.origin == RelationshipOrigin.SYNTHETIC
+        assert rel.origin == RelationshipOrigin.UNSPECIFIED
         assert not rel.is_expert_verified
         assert "not an independently expert-validated causal assertion" in rel.evidence
+
+
+def test_multiple_effects_with_one_consequence(tmp_path: Path) -> None:
+    path = tmp_path / "multi_effect_single_cons.csv"
+    path.write_text(
+        "Scenario_ID,Equipment,Deviation,Effects,Consequences\n"
+        "S1,E-1,High pressure,Pressure surge; Temperature rise,Vessel burst\n",
+        encoding="utf-8",
+    )
+
+    record = HazopCsvLoader().load(path, "multi-effect-test")[0]
+    assert record.effects == ("Pressure surge", "Temperature rise")
+    assert record.consequences == ("Vessel burst",)
+
+    predicates = [rel.predicate for rel in record.causal_relations]
+    assert "leads_to" in predicates
+    # When multiple effects exist, no ungrounded leads_to_consequence edges are created
+    assert "leads_to_consequence" not in predicates
+    assert "co_occurs_with_consequence" in predicates
+
+    co_rel = next(rel for rel in record.causal_relations if rel.predicate == "co_occurs_with_consequence")
+    assert co_rel.subject == "High pressure"
+    assert co_rel.object == "Vessel burst"
+    assert not co_rel.is_expert_verified
+
+
+def test_multiple_effects_with_multiple_consequences_no_cartesian_or_zip(tmp_path: Path) -> None:
+    path = tmp_path / "multi_effect_multi_cons.csv"
+    path.write_text(
+        "Scenario_ID,Equipment,Deviation,Effects,Consequences\n"
+        "S1,E-1,High pressure,Effect 1; Effect 2,Consequence A; Consequence B\n",
+        encoding="utf-8",
+    )
+
+    record = HazopCsvLoader().load(path, "test-dataset")[0]
+    assert record.effects == ("Effect 1", "Effect 2")
+    assert record.consequences == ("Consequence A", "Consequence B")
+
+    predicates = [rel.predicate for rel in record.causal_relations]
+    assert "leads_to_consequence" not in predicates
+    assert predicates.count("co_occurs_with_consequence") == 2
+    assert predicates.count("leads_to") == 2
+
+
+def test_malformed_rows_preserves_extra_and_missing_cells(tmp_path: Path) -> None:
+    path = tmp_path / "malformed.csv"
+    path.write_text(
+        "Scenario_ID,Equipment,Deviation,Causes,Consequences\n"
+        "S1,T-1,High level,Pump trip\n"
+        "S2,T-2,High pressure,Surge,Burst,Extra Cell Value,Another Extra\n",
+        encoding="utf-8",
+    )
+
+    records = HazopCsvLoader().load(path, "malformed-test")
+    assert len(records) == 2
+
+    # Row 1 has missing cell for Consequences
+    assert records[0].row_number == 2
+    assert records[0].raw_row["Consequences"] is None
+    assert "_missing_columns" in records[0].raw_row
+    assert "Consequences" in records[0].raw_row["_missing_columns"]
+
+    # Row 2 has extra cells
+    assert records[1].row_number == 3
+    assert "_extra_cells" in records[1].raw_row
+    assert records[1].raw_row["_extra_cells"] == ["Extra Cell Value", "Another Extra"]
+
+
+def test_conflicting_expert_record_type_and_validation_status(tmp_path: Path) -> None:
+    path = tmp_path / "conflicting_expert.csv"
+    path.write_text(
+        "Scenario_ID,Equipment,Deviation,Record_Type,Validation_Status,Causes,Consequences\n"
+        "S1,T-1,High level,expert_validated,Review required,Cause 1,Consequence 1\n"
+        "S2,T-2,Low flow,expert_validated,validated,Cause 2,Consequence 2\n",
+        encoding="utf-8",
+    )
+
+    records = HazopCsvLoader().load(path, "expert-test")
+    assert len(records) == 2
+
+    unreviewed_record = records[0]
+    assert unreviewed_record.validation_status == ValidationStatus.UNREVIEWED
+    assert unreviewed_record.record_type == RecordType.UNSPECIFIED
+    for rel in unreviewed_record.causal_relations:
+        assert not rel.is_expert_verified
+        assert rel.origin == RelationshipOrigin.UNSPECIFIED
+
+    validated_record = records[1]
+    assert validated_record.validation_status == ValidationStatus.VALIDATED
+    assert validated_record.record_type == RecordType.EXPERT_VALIDATED
+    for rel in validated_record.causal_relations:
+        assert rel.is_expert_verified
+        assert rel.origin == RelationshipOrigin.EXPERT
 
 
 def test_delimiters_support_pipes_and_newlines(tmp_path: Path) -> None:

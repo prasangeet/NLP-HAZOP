@@ -35,5 +35,12 @@ Thumbs.db
 .venv/
 .env
 
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+
 # Local experiment outputs (published as CI artifacts)
 /results/

@@ -35,6 +35,7 @@ class RelationshipOrigin(StrEnum):
     RECONSTRUCTED = "reconstructed"
     SYNTHETIC = "synthetic"
     EXPERT = "expert"
+    UNSPECIFIED = "unspecified"
     MODEL_INFERRED = "model_inferred"
     GRAPH_INFERRED = "graph_inferred"
     RETRIEVAL_INFERRED = "retrieval_inferred"
@@ -84,6 +85,7 @@ class CausalRelation:
     evidence: str = ""
     confidence: float | None = None
     source_id: str | None = None
+    is_expert_verified: bool = False
 
     def __post_init__(self) -> None:
         for name in ("subject", "predicate", "object"):
@@ -110,10 +112,8 @@ class CausalRelation:
                 "CausalRelation.confidence must be between 0.0 and 1.0."
             )
 
-    @property
-    def is_expert_verified(self) -> bool:
-        """Return whether this relationship has been verified by an expert."""
-        return self.origin == RelationshipOrigin.EXPERT
+        if self.is_expert_verified and self.origin != RelationshipOrigin.EXPERT:
+            object.__setattr__(self, "is_expert_verified", False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -146,7 +146,7 @@ class HazopRecord:
     risk_ranking: str | None = None
     remarks: str = ""
     row_number: int | None = None
-    raw_row: dict[str, str] = field(default_factory=dict)
+    raw_row: dict[str, object] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         for name in ("scenario_id", "equipment", "deviation"):
