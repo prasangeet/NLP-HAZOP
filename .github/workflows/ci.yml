@@ -39,6 +39,13 @@ jobs:
           cache-dependency-glob: server/uv.lock
       - name: Install locked dependencies
         run: uv sync
+      - name: Upload resolved lockfile for dependency review
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: resolved-uv-lock
+          path: server/uv.lock
+          retention-days: 1
       - name: Ruff
         run: uv run ruff check app tests scripts
       - name: Pytest
