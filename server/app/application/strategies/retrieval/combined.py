@@ -12,12 +12,7 @@ from app.application.strategies.retrieval.models import (
 
 
 class CombinedRetriever:
-    """Prefer local evidence and fall back to other scenarios when needed.
-
-    Cross-scenario retrieval is used only when local retrieval returns fewer
-    results than the requested limit. Evidence retains its original scope
-    and scenario provenance.
-    """
+    """Prefer local evidence and supplement it with cross-scenario evidence."""
 
     def __init__(
         self,
@@ -28,37 +23,27 @@ class CombinedRetriever:
         self._cross_scenario_retriever = cross_scenario_retriever
 
     def retrieve(self, request: RetrievalRequest) -> RetrievalResult:
-        """Retrieve local evidence first, then supplement it if necessary."""
-
         local_result = self._local_retriever.retrieve(request)
-
-        # Do not search other scenarios if the target scenario doesn't exist.
         if not local_result.scenario_exists:
             return RetrievalResult(
                 scenario_id=request.scenario_id,
                 scope=RetrievalScope.SCENARIO_LOCAL,
                 evidence=(),
                 scenario_exists=False,
+                graph_context=(),
             )
 
         local_evidence = list(local_result.evidence)
-
-        # Local retrieval has already satisfied the requested limit.
         if len(local_evidence) >= request.limit:
             return RetrievalResult(
                 scenario_id=request.scenario_id,
                 scope=RetrievalScope.SCENARIO_LOCAL,
                 evidence=tuple(local_evidence[: request.limit]),
-                scenario_exists=True,
+                graph_context=local_result.graph_context,
             )
 
-        remaining = request.limit - len(local_evidence)
-
         cross_result = self._cross_scenario_retriever.retrieve(request)
-
-        # Deduplicate identical relationships while retaining distinct
-        # relationships from different source scenarios.
-        combined_evidence: list[RetrievedEvidence] = []
+        combined: list[RetrievedEvidence] = []
         seen: set[tuple[str, str, str, str]] = set()
 
         for item in (*local_evidence, *cross_result.evidence):
@@ -68,21 +53,34 @@ class CombinedRetriever:
                 item.relation.predicate.strip().casefold(),
                 item.relation.object.strip().casefold(),
             )
-
             if key in seen:
                 continue
-
             seen.add(key)
-            combined_evidence.append(item)
-
-            if len(combined_evidence) >= request.limit:
+            combined.append(item)
+            if len(combined) >= request.limit:
                 break
 
-        # Local evidence is prioritized, so cross-scenario evidence fills
-        # only the remaining capacity.
+        graph_context: list[RetrievedEvidence] = []
+        graph_seen: set[tuple[str, str, str, str]] = set()
+        for item in (*local_result.graph_context, *cross_result.graph_context):
+            key = (
+                item.scenario_id.casefold(),
+                item.relation.subject.strip().casefold(),
+                item.relation.predicate.strip().casefold(),
+                item.relation.object.strip().casefold(),
+            )
+            if key not in graph_seen:
+                graph_seen.add(key)
+                graph_context.append(item)
+
         return RetrievalResult(
             scenario_id=request.scenario_id,
-            scope=RetrievalScope.CROSS_SCENARIO,
-            evidence=tuple(combined_evidence),
+            scope=(
+                RetrievalScope.HYBRID
+                if cross_result.evidence
+                else RetrievalScope.SCENARIO_LOCAL
+            ),
+            evidence=tuple(combined),
             scenario_exists=True,
+            graph_context=tuple(graph_context),
         )
