@@ -156,7 +156,10 @@ class GraphReasoner:
     ) -> list[EvidenceItemProtocol]:
         predicate = context.predicate.strip().casefold()
         known = context.known_endpoint.strip().casefold()
-        unique: dict[tuple[str, str, str], EvidenceItemProtocol] = {}
+        unique: dict[
+            tuple[str, str, str, str, str | None],
+            EvidenceItemProtocol,
+        ] = {}
 
         for item in context.evidence_items:
             if item.origin not in self._DIRECT_ORIGINS:
@@ -178,6 +181,8 @@ class GraphReasoner:
                 item.subject.strip().casefold(),
                 item.predicate.strip().casefold(),
                 item.object.strip().casefold(),
+                item.evidence.strip(),
+                item.source_id,
             )
             unique.setdefault(key, item)
 
