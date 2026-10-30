@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
+from typing import ClassVar
 from urllib.parse import quote
 
 import httpx
@@ -35,7 +36,7 @@ class Neo4jGraphRepository:
     storage_type = "neo4j"
     is_persistent = True
 
-    _SCHEMA_STATEMENTS = [
+    _SCHEMA_STATEMENTS: ClassVar[list[dict[str, object]]] = [
         {
             "statement": (
                 "CREATE CONSTRAINT hazop_dataset_id IF NOT EXISTS "

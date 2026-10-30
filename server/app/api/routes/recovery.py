@@ -11,7 +11,9 @@ from app.api.dependencies import get_graph_repository
 from app.application.strategies.graph_reasoner import GraphReasoner
 from app.application.strategies.retrieval.combined import CombinedRetriever
 from app.application.strategies.retrieval.cross_scenario import CrossScenarioRetriever
-from app.application.strategies.retrieval.graph_neighborhood import GraphNeighborhoodRetriever
+from app.application.strategies.retrieval.graph_neighborhood import (
+    GraphNeighborhoodRetriever,
+)
 from app.application.strategies.retrieval.scenario_local import ScenarioLocalRetriever
 from app.application.use_cases.build_evidence_context import BuildEvidenceContext
 from app.application.use_cases.recover_missing_link import (

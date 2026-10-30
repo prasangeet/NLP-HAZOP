@@ -220,7 +220,7 @@ async def import_dataset(
 
 @router.get("/datasets", summary="List persisted HAZOP datasets")
 def list_datasets(
-    repository: Annotated[GraphRepository, Depends(get_graph_repository)],
+    repository: Annotated[DatasetRepository, Depends(get_graph_repository)],
     limit: int = Query(100, ge=1, le=500),
 ) -> dict[str, object]:
     datasets = repository.find_datasets(limit=limit)
@@ -234,7 +234,7 @@ def list_datasets(
 @router.get("/datasets/{dataset_id}", summary="Get persisted dataset metadata")
 def get_dataset(
     dataset_id: str,
-    repository: Annotated[GraphRepository, Depends(get_graph_repository)],
+    repository: Annotated[DatasetRepository, Depends(get_graph_repository)],
 ) -> dict[str, object]:
     dataset = repository.get_dataset(dataset_id)
     if dataset is None:
@@ -248,7 +248,7 @@ def get_dataset(
 )
 def list_scenarios(
     dataset_id: str,
-    repository: Annotated[GraphRepository, Depends(get_graph_repository)],
+    repository: Annotated[DatasetRepository, Depends(get_graph_repository)],
     equipment: str | None = None,
     deviation: str | None = None,
     limit: int = Query(100, ge=1, le=500),
@@ -275,7 +275,7 @@ def list_scenarios(
 def get_scenario(
     dataset_id: str,
     scenario_id: str,
-    repository: Annotated[GraphRepository, Depends(get_graph_repository)],
+    repository: Annotated[DatasetRepository, Depends(get_graph_repository)],
 ) -> dict[str, object]:
     if repository.get_dataset(dataset_id) is None:
         raise HTTPException(status_code=404, detail="Dataset not found.")
@@ -291,7 +291,7 @@ def get_scenario(
 )
 def list_relationships(
     dataset_id: str,
-    repository: Annotated[GraphRepository, Depends(get_graph_repository)],
+    repository: Annotated[DatasetRepository, Depends(get_graph_repository)],
     subject: str | None = None,
     predicate: str | None = None,
     object: str | None = None,
@@ -332,7 +332,7 @@ def list_relationships(
 )
 def get_graph(
     dataset_id: str,
-    repository: Annotated[GraphRepository, Depends(get_graph_repository)],
+    repository: Annotated[DatasetRepository, Depends(get_graph_repository)],
     limit: int = Query(1000, ge=1, le=5000),
 ) -> dict[str, object]:
     if repository.get_dataset(dataset_id) is None:
