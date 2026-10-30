@@ -27,7 +27,10 @@ def get_ai_provider_factory():
     from pathlib import Path
     from dotenv import load_dotenv
 
-    load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+    server_root = Path(__file__).resolve().parents[2]
+    repository_root = server_root.parent
+    load_dotenv(server_root / ".env")
+    load_dotenv(repository_root / ".env")
     if not os.getenv("GROQ_API_KEY"):
         return None
     from app.infrastructure.factories.groq_ai_provider_factory import (
