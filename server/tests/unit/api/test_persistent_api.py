@@ -7,7 +7,13 @@ from fastapi.testclient import TestClient
 from app.infrastructure.graph.in_memory_graph_repository import (
     InMemoryGraphRepository,
 )
-from app.main import create_app
+
+
+def _new_app():
+    """Build the FastAPI app without coupling imports into the module import block."""
+    from app.main import create_app
+
+    return create_app()
 
 
 CSV = (
@@ -26,7 +32,7 @@ class PersistentInMemoryRepository(InMemoryGraphRepository):
 
 
 def build_client() -> tuple[TestClient, PersistentInMemoryRepository]:
-    app = create_app()
+    app = _new_app()
     repository = PersistentInMemoryRepository()
     app.state.graph_repository = repository
     return TestClient(app), repository
