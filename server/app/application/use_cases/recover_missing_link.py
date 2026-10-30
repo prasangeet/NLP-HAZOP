@@ -65,6 +65,7 @@ class RecoveryCandidate:
     relation: CausalRelation
     scenario_id: str = ""
     scope: RetrievalScope = RetrievalScope.SCENARIO_LOCAL
+    relevance_score: float | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.missing_value, str) or not self.missing_value.strip():
@@ -110,6 +111,7 @@ class RecoveryCandidate:
             "confidence": self.confidence,
             "source_id": self.source_id,
             "scope": self.scope.value,
+            "relevance_score": self.relevance_score,
         }
 
 
@@ -120,6 +122,7 @@ class RecoveryResult:
     candidates: tuple[RecoveryCandidate, ...] = ()
     retrieval_scope: RetrievalScope = RetrievalScope.SCENARIO_LOCAL
     graph_context: tuple[RetrievedEvidence, ...] = ()
+    scenario_context: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "candidates", tuple(self.candidates))
@@ -136,6 +139,7 @@ class RecoveryResult:
             "retrieval_scope": self.retrieval_scope.value,
             "is_empty": self.is_empty,
             "candidates": [candidate.to_dict() for candidate in self.candidates],
+            "scenario_context": self.scenario_context,
             "graph_context": [
                 {
                     "scenario_id": item.scenario_id,
@@ -195,6 +199,7 @@ class RecoverMissingLink:
                     relation=relation,
                     scenario_id=item.scenario_id,
                     scope=item.scope,
+                    relevance_score=item.relevance_score,
                 )
             )
             if len(candidates) >= request.limit:
@@ -210,4 +215,5 @@ class RecoverMissingLink:
             candidates=tuple(candidates),
             retrieval_scope=retrieval_result.scope,
             graph_context=retrieval_result.graph_context,
+            scenario_context=retrieval_result.scenario_context,
         )
