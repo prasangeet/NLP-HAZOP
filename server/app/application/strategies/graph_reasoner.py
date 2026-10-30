@@ -5,7 +5,12 @@ from __future__ import annotations
 from collections import defaultdict, deque
 from dataclasses import dataclass
 
-from app.domain.ontology.schema import EntityType, infer_entity_types
+from app.domain.ontology.schema import (
+    EntityType,
+    RELATION_SCHEMA,
+    infer_entity_types,
+    validate_relation_types,
+)
 from app.domain.entities.hazop_record import (
     CausalRelation,
     RelationshipOrigin,
@@ -23,12 +28,12 @@ from app.domain.reasoning.models import (
 class _Path:
     """A directed path through graph evidence."""
 
-    nodes: tuple[str, ...]
+    nodes: tuple[tuple[EntityType, str], ...]
     display_nodes: tuple[str, ...]
     edges: tuple[EvidenceItemProtocol, ...]
 
     @property
-    def endpoint(self) -> str:
+    def endpoint(self) -> tuple[EntityType, str]:
         """Normalized terminal node for matching and deduplication."""
         return self.nodes[-1]
 
@@ -110,7 +115,7 @@ class GraphReasoner:
 
         by_endpoint: dict[str, list[_Path]] = defaultdict(list)
         for path in paths:
-            by_endpoint[path.endpoint.strip().casefold()].append(path)
+            by_endpoint[path.endpoint].append(path)
 
         if len(by_endpoint) > 1:
             return ReasoningResult(
@@ -129,11 +134,29 @@ class GraphReasoner:
         selected = min(selected_paths, key=lambda path: len(path.edges))
         known = context.known_endpoint.strip()
         endpoint = selected.display_endpoint
+        known_type = selected.nodes[0][0]
+        endpoint_type = selected.nodes[-1][0]
         subject, object_ = (
             (endpoint, known)
             if direction == "subject"
             else (known, endpoint)
         )
+        subject_type, object_type = (
+            (endpoint_type, known_type)
+            if direction == "subject"
+            else (known_type, endpoint_type)
+        )
+        requested_spec = RELATION_SCHEMA.get(context.predicate.strip().casefold())
+        if (
+            requested_spec is None
+            or subject_type not in requested_spec.subject_types
+            or object_type not in requested_spec.object_types
+        ):
+            return self._abstain(
+                context.scenario_id,
+                AbstentionReason.INSUFFICIENT_SUPPORT,
+                dataset_id,
+            )
         path_evidence = self._format_path(selected)
         path_source_ids = [
             edge.source_id for edge in selected.edges if edge.source_id
@@ -155,8 +178,8 @@ class GraphReasoner:
                 else None
             ),
             dataset_id=dataset_id,
-            subject_type=infer_entity_types(context.predicate, subject, object_)[0],
-            object_type=infer_entity_types(context.predicate, subject, object_)[1],
+            subject_type=subject_type,
+            object_type=object_type,
         )
         return ReasoningResult(
             status=ReasoningStatus.PROPOSED,
@@ -276,10 +299,12 @@ class GraphReasoner:
         direction: str,
     ) -> list[_Path]:
         known = context.known_endpoint.strip().casefold()
+        NodeKey = tuple[EntityType, str]
         adjacency: dict[
-            str,
-            list[tuple[str, EvidenceItemProtocol, str]],
+            NodeKey,
+            list[tuple[NodeKey, EvidenceItemProtocol, str]],
         ] = defaultdict(list)
+        start_nodes: list[NodeKey] = []
 
         dataset_id = getattr(context, "dataset_id", "default")
         for edge in context.graph_context:
@@ -296,22 +321,29 @@ class GraphReasoner:
                 continue
             if edge.predicate.strip().casefold() not in self._CAUSAL_PREDICATES:
                 continue
+            subject_type = EntityType(getattr(edge, "subject_type", EntityType.CONCEPT))
+            object_type = EntityType(getattr(edge, "object_type", EntityType.CONCEPT))
+            if validate_relation_types(edge.predicate, subject_type, object_type):
+                continue
 
-            subject = edge.subject.strip().casefold()
-            object_ = edge.object.strip().casefold()
+            subject: NodeKey = (subject_type, edge.subject.strip().casefold())
+            object_: NodeKey = (object_type, edge.object.strip().casefold())
             if direction == "object":
                 adjacency[subject].append((object_, edge, edge.object))
+                if subject[1] == known:
+                    start_nodes.append(subject)
             else:
                 adjacency[object_].append((subject, edge, edge.subject))
+                if object_[1] == known:
+                    start_nodes.append(object_)
 
         queue: deque[_Path] = deque(
-            [
-                _Path(
-                    nodes=(known,),
-                    display_nodes=(context.known_endpoint.strip(),),
-                    edges=(),
-                )
-            ]
+            _Path(
+                nodes=(node,),
+                display_nodes=(context.known_endpoint.strip(),),
+                edges=(),
+            )
+            for node in dict.fromkeys(start_nodes)
         )
         candidates: list[_Path] = []
 
