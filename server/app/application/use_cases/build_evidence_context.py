@@ -94,8 +94,8 @@ class EvidenceItem:
                 "This individual relationship has explicit expert validation."
                 if is_expert_verified
                 else (
-                    "Expert validation is attributed at the record level, "
-                    "but this individual relationship is not independently "
+                    "The record carries expert validation provenance, but "
+                    "this individual relationship is not independently "
                     "expert-validated."
                 )
             ),
