@@ -81,6 +81,10 @@ class EvidenceItem:
             RelationshipOrigin.MODEL_INFERRED: (
                 "Model-inferred; not established evidence."
             ),
+            RelationshipOrigin.RETRIEVAL_INFERRED: (
+                "Vector-retrieval candidate derived from row-level "
+                "co-occurrence; not a direct source-verified causal edge."
+            ),
             RelationshipOrigin.GRAPH_INFERRED: (
                 "Derived by graph composition; underlying path is shown."
             ),
