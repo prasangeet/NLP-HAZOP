@@ -531,9 +531,9 @@ class HazopCsvLoader:
 
         relations: list[CausalRelation] = []
         validation_phrase = (
-            "This individual relationship was explicitly expert-validated."
+            "This causal relationship has explicit relationship-level expert validation."
             if is_verified
-            else "This individual relationship is not independently expert-validated."
+            else "This is not an independently expert-validated causal assertion at the relationship level."
         )
         for cause_index, cause in enumerate(causes, start=1):
             relations.append(

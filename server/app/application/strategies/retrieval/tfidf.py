@@ -294,7 +294,7 @@ class TfidfRetriever:
                         ),
                         source_id=(
                             f"{record.dataset_id}:{record.source.document_id}:"
-                            f"{record.scenario_id}:row-{record.row_number or 0}"
+                            f"{record.scenario_id}"
                             if record.source is not None
                             else f"{record.dataset_id}:{record.scenario_id}:row-{record.row_number or 0}"
                         ),

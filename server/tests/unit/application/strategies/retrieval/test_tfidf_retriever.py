@@ -108,7 +108,7 @@ def test_retrieves_candidate_and_marks_it_retrieval_inferred() -> None:
     assert first.relevance_score is not None
     assert first.relevance_score > 0.0
     assert "co-occurrence-based retrieval" in first.relation.evidence
-    assert first.relation.source_id == "single-2020-t301:TRAIN-001"
+    assert first.relation.source_id == "default:single-2020-t301:TRAIN-001"
 
 
 def test_does_not_return_unrelated_rows_from_metadata_overlap() -> None:
