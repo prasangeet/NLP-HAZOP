@@ -166,6 +166,7 @@ class Neo4jGraphRepository:
                 dataset_id=item.get("dataset_id", data.get("dataset_id", "default")),
                 subject_type=EntityType(item.get("subject_type", infer_entity_types(item["predicate"], item["subject"], item["object"], deviation=data.get("deviation", ""))[0].value)),
                 object_type=EntityType(item.get("object_type", infer_entity_types(item["predicate"], item["subject"], item["object"], deviation=data.get("deviation", ""))[1].value)),
+                source_location=item.get("source_location"),
             )
             for item in data.get("causal_relations", [])
         )
@@ -235,6 +236,7 @@ class Neo4jGraphRepository:
             dataset_id=str(data.get("dataset_id", "default")),
             subject_type=EntityType(str(data.get("subject_type", infer_entity_types(str(data["predicate"]), subject, object_value)[0].value))),
             object_type=EntityType(str(data.get("object_type", infer_entity_types(str(data["predicate"]), subject, object_value)[1].value))),
+            source_location=(str(data["source_location"]) if data.get("source_location") is not None else None),
         )
 
     @staticmethod
@@ -280,6 +282,8 @@ class Neo4jGraphRepository:
                         "confidence": relation.confidence,
                         "source_id": relation.source_id,
                         "is_expert_verified": relation.is_expert_verified,
+                    "source_location": relation.source_location,
+                        "source_location": relation.source_location,
                     }
                 )
         return rows
@@ -350,7 +354,8 @@ class Neo4jGraphRepository:
             "edge.predicate = row.predicate, edge.subject_type = row.subject_type, "
             "edge.object_type = row.object_type, edge.origin = row.origin, "
             "edge.evidence = row.evidence, edge.confidence = row.confidence, "
-            "edge.source_id = row.source_id, edge.is_expert_verified = row.is_expert_verified "
+            "edge.source_id = row.source_id, edge.is_expert_verified = row.is_expert_verified, "
+                        "edge.source_location = row.source_location "
             "RETURN count(edge) AS relationships_created "
             "} "
             "RETURN d.dataset_id AS dataset_id, records_created, relationships_created"
