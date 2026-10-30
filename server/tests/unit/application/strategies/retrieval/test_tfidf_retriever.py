@@ -153,7 +153,7 @@ def test_missing_target_scenario_is_reported() -> None:
 
 def test_index_can_be_refreshed_after_repository_updates() -> None:
     repository = InMemoryGraphRepository()
-    repository.save_record(
+    repository.save_context_record(
         HazopRecord(
             scenario_id="HELD-OUT-001",
             plant_unit="Storage",
