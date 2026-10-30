@@ -14,7 +14,6 @@ import httpx
 from fastapi.testclient import TestClient
 from pytest import mark
 
-
 NEO4J_CONFIGURED = all(
     environ.get(key)
     for key in ("NEO4J_HTTP_URI", "NEO4J_USERNAME", "NEO4J_PASSWORD")
