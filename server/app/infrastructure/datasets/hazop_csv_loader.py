@@ -17,6 +17,15 @@ from app.domain.entities.hazop_record import (
 
 
 _EMPTY = {"", "-", "—", "–", "n/a", "na", "none", "not stated"}
+_NOT_PROVIDED_PREFIXES = (
+    "not_stated",
+    "not stated",
+    "not established",
+    "not mapped",
+    "no existing",
+    "no safeguard",
+    "none provided",
+)
 
 
 def _pick(row: dict[str, str], *names: str, default: str = "") -> str:
@@ -29,19 +38,28 @@ def _pick(row: dict[str, str], *names: str, default: str = "") -> str:
 
 
 def _split_items(value: str) -> tuple[str, ...]:
-    if value.strip().casefold() in _EMPTY:
+    cleaned_value = value.strip()
+    folded = cleaned_value.casefold()
+    if folded in _EMPTY or folded.startswith(_NOT_PROVIDED_PREFIXES):
         return ()
+
     items: list[str] = []
     seen: set[str] = set()
-    for raw in re.split(r"\s*[;|]\\s*", value):
-        # T-301 reconstruction occasionally uses commas as secondary list
-        # separators. DWSIM prose remains intact because its sentences do
-        # not use comma-delimited enumerations in cause/consequence fields.
-        parts = re.split(r"\s*,\\s*", raw) if ";" in value else [raw]
+    for raw in re.split(r"\s*[;|]\s*", cleaned_value):
+        # The reconstructed T-301 CSV sometimes combines comma-separated
+        # ontology concepts with semicolon-separated alternatives. DWSIM
+        # prose is not split on commas, so complete phrases remain intact.
+        parts = (
+            re.split(r"\s*,\s*", raw)
+            if ";" in cleaned_value or "|" in cleaned_value
+            else [raw]
+        )
         for part in parts:
             cleaned = part.strip().strip('"').strip()
             key = cleaned.casefold()
-            if cleaned and key not in _EMPTY and key not in seen:
+            if cleaned and key not in _EMPTY and not key.startswith(
+                _NOT_PROVIDED_PREFIXES
+            ) and key not in seen:
                 items.append(cleaned)
                 seen.add(key)
     return tuple(items)
@@ -93,12 +111,12 @@ def _source_reference(
 
 
 class HazopCsvLoader:
-    """Map the repository's T-301 and DWSIM CSV formats into HAZOP records.
+    """Map T-301 and DWSIM CSV formats into provenance-aware records.
 
-    Cause/deviation and deviation/consequence relations are derived from
-    fields in the same worksheet row. Their evidence text explicitly states
-    that they are row associations and not independently validated causal
-    propositions.
+    Cause-to-deviation, deviation-to-effect, and effect-to-consequence edges
+    are derived from fields co-listed in one worksheet row. Their evidence
+    explicitly identifies them as row associations, not independently
+    expert-validated causal propositions.
     """
 
     def load(self, path: str | Path, dataset_id: str) -> tuple[HazopRecord, ...]:
@@ -108,7 +126,7 @@ class HazopCsvLoader:
 
         records: list[HazopRecord] = []
         with source_path.open("r", encoding="utf-8-sig", newline="") as handle:
-            for index, row in enumerate(csv.DictReader(handle), start=1):
+            for row in csv.DictReader(handle):
                 record = self._record_from_row(row, dataset_id)
                 if record is not None:
                     records.append(record)
@@ -123,14 +141,30 @@ class HazopCsvLoader:
         if not scenario_id:
             return None
 
-        record_type_text = _pick(row, "Record_Type", "Evidence Source", "Source_Type")
-        record_type, origin = _origin_and_type(record_type_text, dataset_id)
+        record_type_text = _pick(
+            row, "Record_Type", "Evidence Source", "Source_Type"
+        )
+        record_type, origin = _origin_and_type(
+            record_type_text, dataset_id
+        )
         deviation = _pick(row, "Deviation", default="Unspecified deviation")
         causes = _split_items(
             _pick(row, "Possible_Causes", "Possible_Cause", "Causes")
         )
         consequences = _split_items(
-            _pick(row, "Possible_Consequences", "Possible_Consequence", "Consequences")
+            _pick(
+                row,
+                "Possible_Consequences",
+                "Possible_Consequence",
+                "Consequences",
+            )
+        )
+        effects = _split_items(
+            _pick(
+                row,
+                "Simulated_or_Inferred_Effect",
+                "Simulated or Inferred Effect",
+            )
         )
         safeguards = _split_items(
             _pick(
@@ -157,7 +191,7 @@ class HazopCsvLoader:
             "Remarks",
             "Evidence Source",
             "Source_Type",
-            default=f"Imported from {source_path_name(dataset_id)}",
+            default=f"Imported from {dataset_id}",
         )
         validation_note = _pick(
             row,
@@ -165,8 +199,8 @@ class HazopCsvLoader:
             "Validation Status",
             default="not specified",
         )
-        relations: list[CausalRelation] = []
 
+        relations: list[CausalRelation] = []
         for cause_index, cause in enumerate(causes, start=1):
             relations.append(
                 CausalRelation(
@@ -176,40 +210,93 @@ class HazopCsvLoader:
                     origin=origin,
                     evidence=(
                         f"Row-level association in scenario {scenario_id}: "
-                        f"cause '{cause}' is listed with deviation "
-                        f"'{deviation}'. Provenance: {provenance}. "
-                        "This is a structured worksheet association, not "
-                        "an independently expert-validated causal assertion."
+                        f"cause {cause!r} is listed with deviation "
+                        f"{deviation!r}. Record origin: {origin.value}. "
+                        f"Provenance: {provenance}. This is not an "
+                        "independently expert-validated causal assertion."
                     ),
                     source_id=f"{scenario_id}:cause:{cause_index}",
                 )
             )
 
-        for consequence_index, consequence in enumerate(consequences, start=1):
-            relations.append(
-                CausalRelation(
-                    subject=deviation,
-                    predicate="leads_to_consequence",
-                    object=consequence,
-                    origin=origin,
-                    evidence=(
-                        f"Row-level association in scenario {scenario_id}: "
-                        f"deviation '{deviation}' is listed with consequence "
-                        f"'{consequence}'. Provenance: {provenance}. "
-                        "This is a structured worksheet association, not "
-                        "an independently expert-validated causal assertion."
-                    ),
-                    source_id=f"{scenario_id}:consequence:{consequence_index}",
+        if effects:
+            for effect_index, effect in enumerate(effects, start=1):
+                relations.append(
+                    CausalRelation(
+                        subject=deviation,
+                        predicate="leads_to",
+                        object=effect,
+                        origin=origin,
+                        evidence=(
+                            f"Scenario {scenario_id} lists simulated or "
+                            f"inferred effect {effect!r} for deviation "
+                            f"{deviation!r}. This effect retains the row's "
+                            f"origin ({origin.value}); it is not expert "
+                            f"validation. Provenance: {provenance}"
+                        ),
+                        source_id=f"{scenario_id}:effect:{effect_index}",
+                    )
                 )
-            )
+                for consequence_index, consequence in enumerate(
+                    consequences, start=1
+                ):
+                    relations.append(
+                        CausalRelation(
+                            subject=effect,
+                            predicate="leads_to_consequence",
+                            object=consequence,
+                            origin=origin,
+                            evidence=(
+                                f"Row-level association in scenario "
+                                f"{scenario_id}: effect {effect!r} and "
+                                f"consequence {consequence!r} are co-listed. "
+                                f"Record origin: {origin.value}. "
+                                f"Provenance: {provenance}. This is not an "
+                                "independently expert-validated causal assertion."
+                            ),
+                            source_id=(
+                                f"{scenario_id}:effect:{effect_index}:"
+                                f"consequence:{consequence_index}"
+                            ),
+                        )
+                    )
+        else:
+            for consequence_index, consequence in enumerate(
+                consequences, start=1
+            ):
+                relations.append(
+                    CausalRelation(
+                        subject=deviation,
+                        predicate="leads_to_consequence",
+                        object=consequence,
+                        origin=origin,
+                        evidence=(
+                            f"Row-level association in scenario {scenario_id}: "
+                            f"deviation {deviation!r} is listed with "
+                            f"consequence {consequence!r}. Record origin: "
+                            f"{origin.value}. Provenance: {provenance}. "
+                            "This is not an independently expert-validated "
+                            "causal assertion."
+                        ),
+                        source_id=(
+                            f"{scenario_id}:consequence:{consequence_index}"
+                        ),
+                    )
+                )
 
-        # Source-specific records are never promoted to expert-validated.
+        # The supplied files identify no expert-validated rows. A validation
+        # status string such as "Review required" is not positive validation.
         validation_status = ValidationStatus.UNREVIEWED
-        remarks = _pick(row, "Remarks", "Remarks / Evidence", "Evidence_and_Limitation")
+        remarks = _pick(
+            row, "Remarks", "Remarks / Evidence", "Evidence_and_Limitation"
+        )
         if validation_note and validation_note.casefold() not in {
-            "validated", "expert validated"
+            "validated",
+            "expert validated",
         }:
-            remarks = f"{remarks} | Validation note: {validation_note}".strip(" |")
+            remarks = (
+                f"{remarks} | Validation note: {validation_note}"
+            ).strip(" |")
 
         source = _source_reference(
             dataset_id,
@@ -217,7 +304,6 @@ class HazopCsvLoader:
             provenance,
             origin,
         )
-
         return HazopRecord(
             scenario_id=scenario_id,
             plant_unit=_pick(row, "Plant/Unit", "Plant / Process"),
@@ -244,8 +330,3 @@ class HazopCsvLoader:
             risk_ranking=_pick(row, "Risk_Ranking", "Risk Ranking") or None,
             remarks=remarks,
         )
-
-
-def source_path_name(dataset_id: str) -> str:
-    """Return a stable display name when only a dataset identifier is known."""
-    return dataset_id
