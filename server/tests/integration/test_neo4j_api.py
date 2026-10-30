@@ -10,10 +10,9 @@ from os import environ
 from time import sleep
 from uuid import uuid4
 
+import httpx
 from fastapi.testclient import TestClient
 from pytest import mark
-
-import httpx
 
 
 NEO4J_CONFIGURED = all(
