@@ -24,6 +24,7 @@ class RetrievedEvidence:
     scenario_id: str
     relation: CausalRelation
     scope: RetrievalScope
+    relevance_score: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +70,7 @@ class RetrievalResult:
     evidence: tuple[RetrievedEvidence, ...] = ()
     scenario_exists: bool = True
     graph_context: tuple[RetrievedEvidence, ...] = ()
+    scenario_context: str = ""
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence", tuple(self.evidence))
