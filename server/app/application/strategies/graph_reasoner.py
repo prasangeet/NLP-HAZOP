@@ -279,22 +279,37 @@ class GraphReasoner:
                         item.predicate.strip().casefold()
                         for item in next_path.edges
                     ]
-                    has_initiating_edge = predicates[0] in {
-                        "causes",
-                        "causes_deviation",
-                    }
+                    if direction == "object":
+                        has_initiating_edge = predicates[0] in {
+                            "causes",
+                            "causes_deviation",
+                        }
+                        propagation_predicates = predicates[1:]
+                        terminal_edge = predicates[-1] in {
+                            "leads_to_consequence",
+                            "results_in",
+                        }
+                    else:
+                        # Traversal is reversed for a missing subject:
+                        # consequence -> deviation -> cause.
+                        has_initiating_edge = predicates[-1] in {
+                            "causes",
+                            "causes_deviation",
+                        }
+                        propagation_predicates = predicates[:-1]
+                        terminal_edge = predicates[0] in {
+                            "leads_to_consequence",
+                            "results_in",
+                        }
+
                     has_propagation_edge = any(
                         predicate in {
                             "leads_to",
                             "leads_to_consequence",
                             "results_in",
                         }
-                        for predicate in predicates[1:]
+                        for predicate in propagation_predicates
                     )
-                    terminal_edge = predicates[-1] in {
-                        "leads_to_consequence",
-                        "results_in",
-                    }
                     dead_end = not adjacency.get(next_path.endpoint)
                     if (
                         has_initiating_edge
