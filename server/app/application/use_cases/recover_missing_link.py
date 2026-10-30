@@ -1,0 +1,223 @@
+"""Recover missing links from retrieved HAZOP evidence."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import StrEnum
+
+from app.application.strategies.retrieval.models import (
+    RetrievalRequest,
+    RetrievalScope,
+    RetrievalStrategy,
+)
+from app.domain.entities.hazop_record import CausalRelation
+
+
+class MissingEndpoint(StrEnum):
+    SUBJECT = "subject"
+    OBJECT = "object"
+
+
+class RecoveryStatus(StrEnum):
+    CANDIDATES_FOUND = "candidates_found"
+    NO_CANDIDATES = "no_candidates"
+    SCENARIO_NOT_FOUND = "scenario_not_found"
+
+
+@dataclass(frozen=True, slots=True)
+class RecoveryRequest:
+    scenario_id: str
+    predicate: str
+    known_endpoint: str
+    missing_endpoint: MissingEndpoint
+    limit: int = 20
+
+    def __post_init__(self) -> None:
+        for field_name in (
+            "scenario_id",
+            "predicate",
+            "known_endpoint",
+        ):
+            value = getattr(self, field_name)
+
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(
+                    f"{field_name} must be a non-empty string"
+                )
+
+        if not isinstance(self.missing_endpoint, MissingEndpoint):
+            try:
+                object.__setattr__(
+                    self,
+                    "missing_endpoint",
+                    MissingEndpoint(self.missing_endpoint),
+                )
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "MissingEndpoint must be either 'subject' or 'object'"
+                ) from exc
+
+        if isinstance(self.limit, bool) or not isinstance(self.limit, int):
+            raise ValueError("limit must be an integer")
+
+        if self.limit < 1:
+            raise ValueError("limit must be at least 1")
+
+
+@dataclass(frozen=True, slots=True)
+class RecoveryCandidate:
+    """A recovered candidate preserving the original relation object."""
+
+    missing_value: str
+    relation: CausalRelation
+    scenario_id: str = ""
+    scope: RetrievalScope = RetrievalScope.SCENARIO_LOCAL
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.missing_value, str) or not (
+            self.missing_value.strip()
+        ):
+            raise ValueError("missing_value must be a non-empty string")
+
+    @property
+    def subject(self) -> str:
+        return self.relation.subject
+
+    @property
+    def predicate(self) -> str:
+        return self.relation.predicate
+
+    @property
+    def object(self) -> str:
+        return self.relation.object
+
+    @property
+    def origin(self) -> str:
+        return self.relation.origin.value
+
+    @property
+    def evidence(self) -> str | None:
+        return self.relation.evidence
+
+    @property
+    def confidence(self) -> float | None:
+        return self.relation.confidence
+
+    @property
+    def source_id(self) -> str | None:
+        return self.relation.source_id
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "missing_value": self.missing_value,
+            "scenario_id": self.scenario_id,
+            "subject": self.subject,
+            "predicate": self.predicate,
+            "object": self.object,
+            "origin": self.origin,
+            "evidence": self.evidence,
+            "confidence": self.confidence,
+            "source_id": self.source_id,
+            "scope": self.scope.value,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class RecoveryResult:
+    scenario_id: str
+    status: RecoveryStatus
+    candidates: tuple[RecoveryCandidate, ...] = ()
+    retrieval_scope: RetrievalScope = RetrievalScope.SCENARIO_LOCAL
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "candidates", tuple(self.candidates))
+
+    @property
+    def is_empty(self) -> bool:
+        return not self.candidates
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "scenario_id": self.scenario_id,
+            "status": self.status.value,
+            "retrieval_scope": self.retrieval_scope.value,
+            "is_empty": self.is_empty,
+            "candidates": [
+                candidate.to_dict()
+                for candidate in self.candidates
+            ],
+        }
+
+
+class RecoverMissingLink:
+    """Recover candidate links using an injected retrieval strategy."""
+
+    def __init__(self, retriever: RetrievalStrategy) -> None:
+        self._retriever = retriever
+
+    def execute(self, request: RecoveryRequest) -> RecoveryResult:
+        retrieval_request = RetrievalRequest(
+            scenario_id=request.scenario_id,
+            predicate=request.predicate.strip(),
+            known_endpoint=request.known_endpoint.strip(),
+            missing_endpoint=request.missing_endpoint.value,
+            limit=request.limit,
+        )
+
+        retrieval_result = self._retriever.retrieve(retrieval_request)
+
+        if not retrieval_result.scenario_exists:
+            return RecoveryResult(
+                scenario_id=request.scenario_id,
+                status=RecoveryStatus.SCENARIO_NOT_FOUND,
+                retrieval_scope=retrieval_result.scope,
+            )
+
+        candidates: list[RecoveryCandidate] = []
+        seen: set[str] = set()
+
+        for item in retrieval_result.evidence:
+            relation = item.relation
+
+            # Never use a model's own inference as independent supporting
+            # evidence for another inference.
+            if relation.origin.value == "model_inferred":
+                continue
+
+            missing_value = (
+                relation.subject
+                if request.missing_endpoint == MissingEndpoint.SUBJECT
+                else relation.object
+            )
+
+            normalized_value = missing_value.strip().casefold()
+
+            if not normalized_value or normalized_value in seen:
+                continue
+
+            seen.add(normalized_value)
+
+            candidates.append(
+                RecoveryCandidate(
+                    missing_value=missing_value,
+                    relation=relation,
+                    scenario_id=item.scenario_id,
+                    scope=item.scope,
+                )
+            )
+
+            if len(candidates) >= request.limit:
+                break
+
+        status = (
+            RecoveryStatus.CANDIDATES_FOUND
+            if candidates
+            else RecoveryStatus.NO_CANDIDATES
+        )
+
+        return RecoveryResult(
+            scenario_id=request.scenario_id,
+            status=status,
+            candidates=tuple(candidates),
+            retrieval_scope=retrieval_result.scope,
+        )
