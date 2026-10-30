@@ -192,6 +192,11 @@ class TfidfRetriever:
                 if anchor.strip().casefold() == request.known_endpoint.strip().casefold():
                     anchor_score = 1.0
 
+                # Anchor similarity is mandatory; a match on equipment or
+                # deviation metadata alone must not return unrelated cause/
+                # consequence pairs from the same row.
+                if anchor_score < self._min_score:
+                    continue
                 score = 0.75 * anchor_score + 0.25 * record_score
                 if score < self._min_score:
                     continue
