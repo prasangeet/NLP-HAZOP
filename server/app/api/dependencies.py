@@ -19,3 +19,16 @@ def get_graph_repository(request: Request) -> DatasetRepository:
             ),
         )
     return repository
+
+
+def get_ai_provider_factory():
+    """Return the configured AI Abstract Factory, or None when no key is set."""
+    import os
+
+    if not os.getenv("GROQ_API_KEY"):
+        return None
+    from app.infrastructure.factories.groq_ai_provider_factory import (
+        GroqAIProviderFactory,
+    )
+
+    return GroqAIProviderFactory()
