@@ -31,6 +31,7 @@ class CombinedRetriever:
                 evidence=(),
                 scenario_exists=False,
                 graph_context=(),
+                scenario_context=local_result.scenario_context,
             )
 
         local_evidence = list(local_result.evidence)
@@ -40,6 +41,7 @@ class CombinedRetriever:
                 scope=RetrievalScope.SCENARIO_LOCAL,
                 evidence=tuple(local_evidence[: request.limit]),
                 graph_context=local_result.graph_context,
+                scenario_context=local_result.scenario_context,
             )
 
         cross_result = self._cross_scenario_retriever.retrieve(request)
@@ -83,4 +85,5 @@ class CombinedRetriever:
             evidence=tuple(combined),
             scenario_exists=True,
             graph_context=tuple(graph_context),
+            scenario_context=local_result.scenario_context,
         )
