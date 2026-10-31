@@ -111,6 +111,7 @@ export default function Experiments() {
   const [benchmarkResult, setBenchmarkResult] = useState<BenchmarkRun | null>(null);
   const [suiteDatasets, setSuiteDatasets] = useState<Array<"t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic">>(["t301-reconstructed", "t301-synthetic", "dwsim-synthetic"]);
   const [suiteSeeds, setSuiteSeeds] = useState("42, 7, 21");
+  const [suiteGraphHops, setSuiteGraphHops] = useState("2, 4");
   const [suiteRunning, setSuiteRunning] = useState(false);
   const [suiteError, setSuiteError] = useState<string | null>(null);
   const [suiteResult, setSuiteResult] = useState<BenchmarkSuiteRun | null>(null);
@@ -141,8 +142,9 @@ export default function Experiments() {
   const runBenchmarkSuite = async () => {
     if (suiteRunning) return;
     const seeds = suiteSeeds.split(",").map((value) => Number(value.trim()));
-    if (!suiteDatasets.length || !seeds.length || seeds.some((seed) => !Number.isInteger(seed) || seed < 0 || seed > 1000000) || new Set(seeds).size !== seeds.length) {
-      setSuiteError("Select at least one dataset and enter unique integer seeds between 0 and 1000000.");
+    const graphHops = suiteGraphHops.split(",").map((value) => Number(value.trim()));
+    if (!suiteDatasets.length || !seeds.length || seeds.some((seed) => !Number.isInteger(seed) || seed < 0 || seed > 1000000) || new Set(seeds).size !== seeds.length || !graphHops.length || graphHops.some((hops) => !Number.isInteger(hops) || hops < 2 || hops > 8) || new Set(graphHops).size !== graphHops.length || suiteDatasets.length * seeds.length * graphHops.length > 18) {
+      setSuiteError("Use unique seeds (0–1000000), unique graph-hop values (2–8), and no more than 18 total runs.");
       return;
     }
     setSuiteRunning(true); setSuiteError(null); setSuiteResult(null);
@@ -566,20 +568,40 @@ export default function Experiments() {
           <label className="block space-y-1 text-xs"><span className="text-muted-foreground">Random seeds (comma-separated; up to 10)</span>
             <input value={suiteSeeds} onChange={(event) => setSuiteSeeds(event.target.value)} disabled={suiteRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
           </label>
+          <label className="block space-y-1 text-xs"><span className="text-muted-foreground">Graph hop settings for ablation (comma-separated; 2–8)</span>
+            <input value={suiteGraphHops} onChange={(event) => setSuiteGraphHops(event.target.value)} disabled={suiteRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" placeholder="2, 4" />
+          </label>
           <div className="flex flex-wrap items-center gap-3">
             <Button onClick={() => void runBenchmarkSuite()} disabled={suiteRunning || !suiteDatasets.length}>
               {suiteRunning ? <LoaderCircle className="size-4 animate-spin" /> : <Play className="size-4" />}
               {suiteRunning ? "Running suite…" : "Run benchmark suite"}
             </Button>
-            <span className="text-xs text-muted-foreground">{suiteDatasets.length * suiteSeeds.split(",").filter((item) => item.trim()).length} planned runs</span>
+            <span className="text-xs text-muted-foreground">{suiteDatasets.length * suiteSeeds.split(",").filter((item) => item.trim()).length * suiteGraphHops.split(",").filter((item) => item.trim()).length} planned runs</span>
           </div>
           {suiteError && <p role="alert" className="text-sm text-destructive">{suiteError}</p>}
           {suiteResult && <>
             <div className="rounded-md border border-border p-3 text-xs"><p className="font-medium">Run {suiteResult.run_id}</p><p className="mt-1 text-muted-foreground">{suiteResult.runs.length} completed · {suiteResult.failures.length} failed</p><p className="mt-2 text-muted-foreground">{suiteResult.label_warning}</p></div>
             <div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[680px] text-left text-xs">
-              <thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-2">Dataset</th><th className="p-2">Seed</th><th className="p-2">Cases</th><th className="p-2">Method</th><th className="p-2">Micro F1</th><th className="p-2">Coverage</th></tr></thead>
-              <tbody>{suiteResult.runs.flatMap((run) => Object.entries(run.method_summary).map(([method, metrics]) => <tr key={run.dataset + run.seed + method} className="border-t border-border"><td className="p-2">{run.dataset}</td><td className="p-2">{run.seed}</td><td className="p-2">{run.case_count}</td><td className="p-2">{method} · {metrics.status ?? "unknown"}</td><td className="p-2">{formatBenchmarkMetric(metrics.micro_f1)}</td><td className="p-2">{formatBenchmarkMetric(metrics.coverage)}</td></tr>))}</tbody>
+              <thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-2">Dataset</th><th className="p-2">Seed</th><th className="p-2">Hops</th><th className="p-2">Cases</th><th className="p-2">Method</th><th className="p-2">Micro F1</th><th className="p-2">Coverage</th></tr></thead>
+              <tbody>{suiteResult.runs.flatMap((run) => Object.entries(run.method_summary).map(([method, metrics]) => <tr key={run.dataset + run.seed + method} className="border-t border-border"><td className="p-2">{run.dataset}</td><td className="p-2">{run.seed}</td><td className="p-2">{run.max_hops}</td><td className="p-2">{run.case_count}</td><td className="p-2">{method} · {metrics.status ?? "unknown"}</td><td className="p-2">{formatBenchmarkMetric(metrics.micro_f1)}</td><td className="p-2">{formatBenchmarkMetric(metrics.coverage)}</td></tr>))}</tbody>
             </table></div>
+            <div className="space-y-2 border-t border-border pt-3">
+              <h3 className="text-sm font-semibold">Across-seed summary · mean and 95% confidence interval</h3>
+              <p className="text-xs text-muted-foreground">Intervals summarize variation across seed-level splits for each dataset, graph-hop setting, and method. A single seed cannot estimate an interval. This is not evidence of causal validity.</p>
+              <div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[760px] text-left text-xs">
+                <thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-2">Dataset</th><th className="p-2">Hops</th><th className="p-2">Method</th><th className="p-2">Seeds</th><th className="p-2">Mean F1</th><th className="p-2">95% CI</th><th className="p-2">Mean coverage</th></tr></thead>
+                <tbody>{Object.values(suiteResult.aggregate_summary).map((item) => {
+                  const f1 = item.metrics.micro_f1;
+                  const coverage = item.metrics.coverage;
+                  return <tr key={item.dataset + item.max_hops + item.method} className="border-t border-border">
+                    <td className="p-2">{item.dataset}</td><td className="p-2">{item.max_hops}</td><td className="p-2">{item.method}</td><td className="p-2">{f1?.n_seeds ?? 0}</td>
+                    <td className="p-2">{f1 ? formatBenchmarkMetric(f1.mean) : "—"}</td>
+                    <td className="p-2">{f1?.ci95_low == null || f1.ci95_high == null ? "Not estimable" : formatBenchmarkMetric(f1.ci95_low) + "–" + formatBenchmarkMetric(f1.ci95_high)}</td>
+                    <td className="p-2">{coverage ? formatBenchmarkMetric(coverage.mean) : "—"}</td>
+                  </tr>;
+                })}</tbody>
+              </table></div>
+            </div>
             {suiteResult.failures.map((failure) => <p key={failure.dataset + failure.seed} className="text-xs text-destructive">{failure.dataset} · seed {failure.seed}: {failure.error}</p>)}
           </>}
           {savedRuns.length > 0 && <div className="space-y-1 border-t border-border pt-3"><h3 className="text-sm font-medium">Saved suite runs</h3>{savedRuns.slice(0, 5).map((run) => <p key={run.run_id} className="text-xs text-muted-foreground">{run.run_id} · {run.runs.length} completed · {run.failures.length} failed</p>)}</div>}
