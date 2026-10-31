@@ -766,7 +766,7 @@ def write_outputs(
         "- See results.json for metadata and per-case outputs, and predictions.csv for prediction-level rows.",
         "",
     ])
-    report_path.write_text("\\n".join(lines), encoding="utf-8")
+    report_path.write_text(chr(10).join(lines), encoding="utf-8")
 
     predictions_path = output_dir / "predictions.csv"
     with predictions_path.open("w", encoding="utf-8", newline="") as handle:
