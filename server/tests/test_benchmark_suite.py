@@ -20,6 +20,13 @@ def _run(seed: int, f1: float, *, hops: int = 2) -> dict[str, object]:
                 "coverage": 0.5,
                 "status": "evaluated",
             },
+            "matched_case_summary": {
+                "graph_reasoning": {
+                    "micro_f1": f1 / 2,
+                    "coverage": 0.25,
+                    "status": "evaluated",
+                },
+            },
             "prompt_only_llm": {
                 "status": "skipped_missing_groq_api_key",
                 "n_evaluated": 0,
@@ -30,7 +37,7 @@ def _run(seed: int, f1: float, *, hops: int = 2) -> dict[str, object]:
 
 def test_aggregate_suite_metrics_reports_mean_and_student_t_interval() -> None:
     result = aggregate_suite_metrics([_run(1, 0.2), _run(2, 0.4)])
-    metric = result["t301-reconstructed|hops=2|graph_reasoning"]["metrics"]["micro_f1"]
+    metric = result["full_test|t301-reconstructed|hops=2|graph_reasoning"]["metrics"]["micro_f1"]
 
     assert metric["n_seeds"] == 2
     assert metric["mean"] == pytest.approx(0.3)
@@ -41,7 +48,7 @@ def test_aggregate_suite_metrics_reports_mean_and_student_t_interval() -> None:
 
 def test_aggregate_suite_metrics_marks_single_seed_interval_not_estimable() -> None:
     result = aggregate_suite_metrics([_run(42, 0.25)])
-    metric = result["t301-reconstructed|hops=2|graph_reasoning"]["metrics"]["micro_f1"]
+    metric = result["full_test|t301-reconstructed|hops=2|graph_reasoning"]["metrics"]["micro_f1"]
 
     assert metric["n_seeds"] == 1
     assert metric["mean"] == 0.25
@@ -54,8 +61,8 @@ def test_aggregate_suite_metrics_marks_single_seed_interval_not_estimable() -> N
 def test_aggregate_suite_metrics_keeps_hop_settings_separate() -> None:
     result = aggregate_suite_metrics([_run(1, 0.2, hops=2), _run(1, 0.8, hops=4)])
 
-    assert result["t301-reconstructed|hops=2|graph_reasoning"]["metrics"]["micro_f1"]["mean"] == 0.2
-    assert result["t301-reconstructed|hops=4|graph_reasoning"]["metrics"]["micro_f1"]["mean"] == 0.8
+    assert result["full_test|t301-reconstructed|hops=2|graph_reasoning"]["metrics"]["micro_f1"]["mean"] == 0.2
+    assert result["full_test|t301-reconstructed|hops=4|graph_reasoning"]["metrics"]["micro_f1"]["mean"] == 0.8
 
 
 def test_aggregate_suite_metrics_does_not_turn_skipped_methods_into_zero_scores() -> None:
