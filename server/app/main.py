@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.datasets import router as datasets_router
+from app.api.routes.experiments import router as experiments_router
 from app.api.routes.imports import router as imports_router
 from app.api.routes.recovery import router as recovery_router
 from app.api.routes.report_extraction import router as report_extraction_router
@@ -93,6 +94,7 @@ def create_app() -> FastAPI:
         return {"status": "ok", "service": "nlp-hazop-api"}
 
     app.include_router(imports_router, prefix="/api/v1")
+    app.include_router(experiments_router, prefix="/api/v1")
     app.include_router(datasets_router, prefix="/api/v1")
     app.include_router(recovery_router, prefix="/api/v1")
     app.include_router(report_extraction_router, prefix="/api/v1")
