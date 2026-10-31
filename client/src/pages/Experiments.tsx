@@ -281,17 +281,21 @@ export default function Experiments() {
       return;
     }
 
+    // The relationships endpoint may omit scenario_id on relationship rows.
+    // Select the relationship by its actual endpoints, then resolve the scenario
+    // independently from the dataset's scenario records.
     const relationship = data.relationships.find(
-      (item) => item.subject && item.predicate && item.scenario_id,
+      (item) => item.subject?.trim() && item.predicate?.trim(),
     );
     const scenarioId =
-      relationship?.scenario_id ?? data.scenarios.find((item) => item.scenario_id)?.scenario_id;
-    const knownEndpoint = relationship?.subject;
-    const predicate = relationship?.predicate;
+      relationship?.scenario_id?.trim() ||
+      data.scenarios.find((item) => item.scenario_id?.trim())?.scenario_id?.trim();
+    const knownEndpoint = relationship?.subject?.trim();
+    const predicate = relationship?.predicate?.trim();
 
     if (!scenarioId || !knownEndpoint || !predicate) {
       setRunError(
-        "No usable relationship with scenario ID, subject, and predicate was found. Check that the imported dataset contains mapped relationships.",
+        "Recovery comparison needs at least one relationship with a subject and predicate, plus at least one scenario with an ID. Check the imported dataset mappings.",
       );
       return;
     }
