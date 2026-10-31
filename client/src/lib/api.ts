@@ -171,6 +171,10 @@ export const api = {
     }),
   listBenchmarkRuns: () =>
     request<{ count: number; runs: BenchmarkSuiteRun[] }>("/api/v1/experiments/benchmark-runs"),
+  getBenchmarkArtifact: (runId: string, dataset: string, seed: number, maxHops: number, artifact: string) =>
+    request<{ filename: string; content: string }>(
+      `/api/v1/experiments/benchmark-runs/${encodeURIComponent(runId)}/${encodeURIComponent(dataset)}/${seed}/${maxHops}/${encodeURIComponent(artifact)}`,
+    ),
   runBenchmark: (payload: {
     dataset: "t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic";
     seed: number;
