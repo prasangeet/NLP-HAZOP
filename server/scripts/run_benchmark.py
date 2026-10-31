@@ -377,6 +377,21 @@ def score_predictions(
     }
 
 
+def merge_candidate_predictions(
+    graph_predictions: list[dict[str, Any]],
+    retrieval_predictions: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Union graph and retrieval candidates without changing their provenance."""
+    merged = list(graph_predictions)
+    seen = {normalize(item["value"]) for item in merged}
+    for item in retrieval_predictions:
+        normalized = normalize(item["value"])
+        if normalized and normalized not in seen:
+            merged.append(item)
+            seen.add(normalized)
+    return merged
+
+
 def _run_recovery(
     use_case: RecoverMissingLink,
     builder: BuildEvidenceContext,
@@ -532,15 +547,10 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         # proposal with TF-IDF candidates. Retrieval-inferred candidates are
         # deliberately not re-labelled as graph facts or passed through the
         # graph path validator.
-        graph_vector_predictions = list(graph_predictions)
-        seen_graph_vector = {
-            normalize(item["value"]) for item in graph_vector_predictions
-        }
-        for item in vector_predictions:
-            normalized = normalize(item["value"])
-            if normalized and normalized not in seen_graph_vector:
-                graph_vector_predictions.append(item)
-                seen_graph_vector.add(normalized)
+        graph_vector_predictions = merge_candidate_predictions(
+            graph_predictions,
+            vector_predictions,
+        )
         graph_vector_case = {
             "case_id": case.case_id,
             "gold_values": list(case.gold_values),
