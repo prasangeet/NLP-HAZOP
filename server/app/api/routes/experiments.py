@@ -142,6 +142,7 @@ def _execute_benchmark(
         "dataset": dataset, "seed": seed, "max_hops": max_hops, "status": "completed",
         "metadata": results.get("metadata", {}),
         "method_summary": results.get("method_summary", {}),
+        "matched_case_summary": results.get("matched_case_summary", {}),
         "case_count": len(results.get("cases", [])),
         "artifacts": {
             "results_json": "results.json",
