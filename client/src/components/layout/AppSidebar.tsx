@@ -55,7 +55,7 @@ export default function AppSidebar({
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="h-16 justify-center overflow-hidden group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0">
         <div className="flex w-full min-w-0 items-center gap-3 px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-          <div className="flex size-9 shrink-0 items-center justify-center border border-sidebar-border bg-sidebar-primary text-sidebar-primary-foreground">
+          <div className="flex size-9 shrink-0 items-center justify-center border border-sidebar-border bg-sidebar text-sidebar-foreground">
             <GitBranch className="size-4 shrink-0" />
           </div>
 
