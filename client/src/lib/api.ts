@@ -159,6 +159,7 @@ export const api = {
   runBenchmarkSuite: (payload: {
     datasets: Array<"t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic">;
     seeds: number[];
+    graph_hops: number[];
     test_fraction: number;
     with_llm: boolean;
     max_llm_cases: number;
@@ -252,11 +253,14 @@ export interface BenchmarkSuiteRun {
   label_warning: string;
   datasets: string[];
   seeds: number[];
+  graph_hops: number[];
   test_fraction: number;
   with_llm: boolean;
+  aggregate_summary: Record<string, { dataset: string; max_hops: number; method: string; metrics: Record<string, { n_seeds: number; mean: number; sample_sd: number | null; ci95_low: number | null; ci95_high: number | null; interval_method: string }> }>;
   runs: Array<{
     dataset: string;
     seed: number;
+    max_hops: number;
     status: string;
     metadata: Record<string, unknown>;
     method_summary: Record<string, BenchmarkMethodMetrics>;
