@@ -741,7 +741,7 @@ def write_outputs(
         "|---|---|---:|---:|---:|---:|---:|",
     ]
     def format_metric(value: Any) -> str:
-        return "{:.4f}".format(value) if isinstance(value, (int, float)) else "not reported"
+        return f"{value:.4f}" if isinstance(value, (int, float)) else "not reported"
 
     for method, metrics in result["method_summary"].items():
         lines.append(
