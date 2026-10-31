@@ -122,7 +122,31 @@ Required controls:
 - Mark silver-label and expert-adjudicated evaluations distinctly.
 - Never display a metric as causal validity or safety certification.
 
-## 8. Stop/go criteria
+## 8.1 Automated frontend execution and persisted runs
+
+The Experiments workbench exposes a multi-dataset, multi-seed suite through
+`POST /api/v1/experiments/benchmark-suite`. The frontend submits selected
+dataset tracks, unique random seeds, test fraction, and the optional LLM flag.
+Each dataset/seed pair invokes the same benchmark CLI used by the single-run
+endpoint. A failed pair is recorded in the suite manifest and does not silently
+disappear from the run matrix.
+
+Completed run artifacts are persisted under
+`server/data/experiments/runs/<run_id>/<dataset>/seed-<seed>/`. The suite
+manifest records the selected matrix, protocol version, label caveat, completed
+runs, and failures. The frontend displays the returned per-method summaries
+and refreshes the saved-run listing. Artifact retrieval is exposed through the
+benchmark artifact API; generated run data is local to the API server and
+should be backed up with the project data directory.
+
+This automation currently covers repeated-seed execution of the existing
+TF-IDF, graph, and optional LLM/hybrid benchmark implementations. It does
+**not** yet implement the planned ablation matrix, confidence intervals,
+grouped cross-validation, expert-adjudication workflow, or a formal audit of
+all possible feature/ontology leakage. A suite button does not establish
+experimental validity by itself. Those remain explicit follow-up work.
+
+## 9. Stop/go criteria
 
 Do not claim that graph or hybrid reasoning is superior until:
 1. E0 baseline reproduction is complete.
