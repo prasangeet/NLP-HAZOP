@@ -608,7 +608,7 @@ export default function Experiments() {
             <div className="rounded-md border border-border p-3 text-xs"><p className="font-medium">Run {suiteResult.run_id}</p><p className="mt-1 text-muted-foreground">{suiteResult.runs.length} completed · {suiteResult.failures.length} failed</p><p className="mt-2 text-muted-foreground">{suiteResult.label_warning}</p></div>
             <div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[680px] text-left text-xs">
               <thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-2">Dataset</th><th className="p-2">Seed</th><th className="p-2">Hops</th><th className="p-2">Cases</th><th className="p-2">Method</th><th className="p-2">Micro F1</th><th className="p-2">Coverage</th></tr></thead>
-              <tbody>{suiteResult.runs.flatMap((run) => Object.entries(run.method_summary).map(([method, metrics]) => <tr key={run.dataset + run.seed + method} className="border-t border-border"><td className="p-2">{run.dataset}</td><td className="p-2">{run.seed}</td><td className="p-2">{run.max_hops}</td><td className="p-2">{run.case_count}</td><td className="p-2">{method} · {metrics.status ?? "unknown"}</td><td className="p-2">{formatBenchmarkMetric(metrics.micro_f1)}</td><td className="p-2">{formatBenchmarkMetric(metrics.coverage)}</td></tr>))}</tbody>
+              <tbody>{suiteResult.runs.flatMap((run) => Object.entries(run.method_summary).map(([method, metrics]) => <tr key={run.dataset + run.seed + run.max_hops + method} className="border-t border-border"><td className="p-2">{run.dataset}</td><td className="p-2">{run.seed}</td><td className="p-2">{run.max_hops}</td><td className="p-2">{run.case_count}</td><td className="p-2">{method} · {metrics.status ?? "unknown"}</td><td className="p-2">{formatBenchmarkMetric(metrics.micro_f1)}</td><td className="p-2">{formatBenchmarkMetric(metrics.coverage)}</td></tr>))}</tbody>
             </table></div>
             <div className="space-y-2 border-t border-border pt-3">
               <h3 className="text-sm font-semibold">Across-seed summary · mean and 95% confidence interval</h3>
@@ -638,7 +638,7 @@ export default function Experiments() {
                 </div>
               </div>)}
             </div>
-            {suiteResult.failures.map((failure) => <p key={failure.dataset + failure.seed} className="text-xs text-destructive">{failure.dataset} · seed {failure.seed}: {failure.error}</p>)}
+            {suiteResult.failures.map((failure) => <p key={failure.dataset + failure.seed + failure.max_hops} className="text-xs text-destructive">{failure.dataset} · seed {failure.seed} · {failure.max_hops} hops: {failure.error}</p>)}
           </>}
           {savedRuns.length > 0 && <div className="space-y-1 border-t border-border pt-3"><h3 className="text-sm font-medium">Saved suite runs</h3>{savedRuns.slice(0, 5).map((run) => <p key={run.run_id} className="text-xs text-muted-foreground">{run.run_id} · {run.runs.length} completed · {run.failures.length} failed</p>)}</div>}
         </CardContent>
