@@ -162,10 +162,12 @@ should be backed up with the project data directory.
 
 This automation currently covers repeated-seed execution of the TF-IDF,
 graph, deterministic graph-plus-TF-IDF, and optional prompt-only / hybrid LLM
-benchmark implementations. The deterministic graph-plus-TF-IDF condition
-runs the same graph reasoner over the combined graph-neighbourhood and TF-IDF
-retrieval context, isolating the addition of vector-ranked candidates without
-LLM adjudication.
+benchmark implementations. The deterministic graph-plus-TF-IDF condition (`graph_tfidf_union`)
+unions the graph reasoner's proposal with TF-IDF-ranked retrieval candidates,
+deduplicating normalized endpoint strings. Retrieval-inferred candidates are
+not re-labelled as graph facts or passed through graph-path validation. This
+tests complementary candidate-source coverage without LLM adjudication; it is
+not a learned fusion or reranking method.
 
 The LLM conditions retain the existing evidence constraints: proposals must
 select exactly one supplied evidence item, satisfy the query direction and
