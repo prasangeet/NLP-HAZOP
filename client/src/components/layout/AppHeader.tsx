@@ -25,16 +25,18 @@ function ThemeToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Change appearance"
-          title="Change appearance"
-        >
-          <ThemeIcon className="size-4" />
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Change appearance"
+            title="Change appearance"
+          >
+            <ThemeIcon className="size-4" />
+          </Button>
+        }
+      />
 
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setTheme("light")}>
