@@ -87,7 +87,7 @@ function buildEdges(sourceEdges: GraphEdge[], selectedEdgeId: string | null): Ed
   });
 }
 
-function GraphCanvas({
+function GraphCanvasInner({
   nodes,
   edges,
   selectedEdgeId,
@@ -137,6 +137,21 @@ function GraphCanvas({
         className="!border !border-border !bg-card"
       />
     </ReactFlow>
+  );
+}
+
+function GraphCanvas(props: {
+  nodes: Node[];
+  edges: Edge[];
+  selectedEdgeId: string | null;
+  onNodeSelect: (node: Node) => void;
+  onEdgeSelect: (edge: Edge) => void;
+  fullscreen: boolean;
+}) {
+  return (
+    <ReactFlowProvider>
+      <GraphCanvasInner {...props} />
+    </ReactFlowProvider>
   );
 }
 
