@@ -1,15 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Background,
-  Controls,
-  MiniMap,
-  ReactFlow,
-  ReactFlowProvider,
-  type Edge,
-  type Node,
-  useReactFlow,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Graph from "graphology";
+import Sigma from "sigma";
 import {
   Database,
   Expand,
@@ -17,15 +8,20 @@ import {
   LoaderCircle,
   Minimize,
   RefreshCw,
+  Search,
   Workflow,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import PageHeader from "@/components/layout/PageHeader";
 import { api, type GraphEdge, type GraphNode } from "@/lib/api";
 import { useWorkspaceStore } from "@/lib/workspace-store";
+
+const MAX_VISIBLE_NODES = 600;
+const MAX_VISIBLE_EDGES = 1500;
 
 type GraphPayload = {
   nodes: GraphNode[];
@@ -35,150 +31,91 @@ type GraphPayload = {
   truncated: boolean;
 };
 
-function arrangeNodes(sourceNodes: GraphNode[]): Node[] {
-  // Use a spacious staggered layout rather than packing every entity into a tight grid.
-  const columns = Math.max(3, Math.ceil(Math.sqrt(sourceNodes.length * 0.8)));
-  return sourceNodes.map((node, index) => {
-    const column = index % columns;
-    const row = Math.floor(index / columns);
-    return {
-      id: node.id,
-      position: {
-        x: column * 270 + (row % 2) * 90,
-        y: row * 155,
-      },
-      data: { label: node.label },
-      type: "default",
-      style: {
-        width: 190,
-        minHeight: 56,
-        padding: "12px 14px",
-        borderRadius: "8px",
-        border: "1px solid var(--border)",
-        background: "var(--card)",
-        color: "var(--card-foreground)",
-        fontSize: "12px",
-        lineHeight: 1.5,
-        boxShadow: "0 2px 8px oklch(0 0 0 / 8%)",
-      },
-    };
+type SelectedItem =
+  | { kind: "node"; value: GraphNode }
+  | { kind: "edge"; value: GraphEdge }
+  | null;
+
+function cssColor(variable: string, fallback: string): string {
+  const probe = document.createElement("span");
+  probe.style.color = `var(${variable})`;
+  document.body.appendChild(probe);
+  const color = getComputedStyle(probe).color;
+  probe.remove();
+  return color && color !== "rgba(0, 0, 0, 0)" ? color : fallback;
+}
+
+function createGraph(payload: GraphPayload) {
+  const graph = new Graph({ multi: true, type: "directed" });
+  const visibleNodes = payload.nodes.slice(0, MAX_VISIBLE_NODES);
+  const nodeIds = new Set(visibleNodes.map((node) => node.id));
+  const rootStyles = getComputedStyle(document.documentElement);
+  const primary = cssColor("--primary", "rgb(180, 120, 80)");
+  const muted = cssColor("--muted-foreground", "rgb(130, 130, 130)");
+  const palette = [
+    primary,
+    cssColor("--chart-2", primary),
+    cssColor("--chart-3", primary),
+    cssColor("--chart-4", primary),
+    cssColor("--chart-5", primary),
+  ];
+  void rootStyles;
+
+  const columns = Math.max(1, Math.ceil(Math.sqrt(visibleNodes.length)));
+  visibleNodes.forEach((node, index) => {
+    const typeIndex = Math.abs([...node.entity_type].reduce((sum, char) => sum + char.charCodeAt(0), 0)) % palette.length;
+    graph.addNode(node.id, {
+      label: node.label || node.id,
+      x: (index % columns) * 2.4 + ((Math.floor(index / columns) % 2) * 0.6),
+      y: -Math.floor(index / columns) * 2.2,
+      size: 5,
+      color: palette[typeIndex],
+      entityType: node.entity_type,
+      datasetId: node.dataset_id,
+      original: node,
+    });
   });
-}
 
-function buildEdges(sourceEdges: GraphEdge[], selectedEdgeId: string | null): Edge[] {
-  return sourceEdges.map((edge) => {
-    const selected = edge.id === selectedEdgeId;
-    return {
-      id: edge.id,
-      source: edge.source,
-      target: edge.target,
-      type: "smoothstep",
-      label: selected ? edge.label : undefined,
-      labelStyle: { fill: "var(--foreground)", fontSize: 10 },
-      labelBgStyle: { fill: "var(--background)", fillOpacity: 0.96 },
-      style: {
-        stroke: selected ? "var(--primary)" : "var(--muted-foreground)",
-        strokeWidth: selected ? 2 : 1,
-        opacity: selected ? 1 : 0.28,
-      },
-      markerEnd: { type: "arrowclosed" as const, color: selected ? "var(--primary)" : "var(--muted-foreground)" },
-      data: { ...edge },
-    };
+  const visibleEdges = payload.edges
+    .filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target))
+    .slice(0, MAX_VISIBLE_EDGES);
+
+  visibleEdges.forEach((edge, index) => {
+    if (!graph.hasNode(edge.source) || !graph.hasNode(edge.target)) return;
+    const edgeKey = graph.hasEdge(edge.source, edge.target)
+      ? `${edge.id}::${index}`
+      : edge.id;
+    graph.addEdgeWithKey(edgeKey, edge.source, edge.target, {
+      label: edge.label || edge.predicate,
+      color: muted,
+      size: 1,
+      original: edge,
+    });
   });
-}
 
-function GraphCanvasInner({
-  nodes,
-  edges,
-  selectedEdgeId,
-  onNodeSelect,
-  onEdgeSelect,
-  fullscreen,
-}: {
-  nodes: Node[];
-  edges: Edge[];
-  selectedEdgeId: string | null;
-  onNodeSelect: (node: Node) => void;
-  onEdgeSelect: (edge: Edge) => void;
-  fullscreen: boolean;
-}) {
-  const { fitView } = useReactFlow();
-
-  useEffect(() => {
-    if (nodes.length) {
-      const timer = window.setTimeout(() => void fitView({ padding: 0.18, duration: 250 }), 80);
-      return () => window.clearTimeout(timer);
-    }
-  }, [nodes, fullscreen, fitView]);
-
-  return (
-    <ReactFlow
-      nodes={nodes}
-      edges={edges.map((edge) => ({
-        ...edge,
-        label: edge.id === selectedEdgeId ? (edge.data as GraphEdge | undefined)?.label : undefined,
-      }))}
-      fitView
-      minZoom={0.08}
-      maxZoom={1.8}
-      onNodeClick={(_, node) => onNodeSelect(node)}
-      onEdgeClick={(_, edge) => onEdgeSelect(edge)}
-      onPaneClick={() => onEdgeSelect({ id: "", data: undefined } as Edge)}
-      proOptions={{ hideAttribution: true }}
-      defaultEdgeOptions={{ type: "smoothstep" }}
-    >
-      <Background color="var(--border)" gap={22} size={1} />
-      <Controls showInteractive={false} />
-      <MiniMap
-        pannable
-        zoomable
-        nodeColor={() => "var(--muted-foreground)"}
-        maskColor="var(--background)"
-        className="!border !border-border !bg-card"
-      />
-    </ReactFlow>
-  );
-}
-
-function GraphCanvas(props: {
-  nodes: Node[];
-  edges: Edge[];
-  selectedEdgeId: string | null;
-  onNodeSelect: (node: Node) => void;
-  onEdgeSelect: (edge: Edge) => void;
-  fullscreen: boolean;
-}) {
-  return (
-    <ReactFlowProvider>
-      <GraphCanvasInner {...props} />
-    </ReactFlowProvider>
-  );
+  return graph;
 }
 
 export default function KnowledgeGraph() {
   const activeDatasetId = useWorkspaceStore((state) => state.activeDatasetId);
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [rawEdges, setRawEdges] = useState<GraphEdge[]>([]);
-  const [selectedItem, setSelectedItem] = useState<GraphNode | GraphEdge | null>(null);
-  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rendererRef = useRef<Sigma | null>(null);
+  const [payload, setPayload] = useState<GraphPayload | null>(null);
+  const [selectedItem, setSelectedItem] = useState<SelectedItem>(null);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [counts, setCounts] = useState({ nodes: 0, edges: 0, truncated: false });
-
-  const edges = useMemo(() => buildEdges(rawEdges, selectedEdgeId), [rawEdges, selectedEdgeId]);
 
   const loadGraph = useCallback(async () => {
     if (!activeDatasetId) return;
     setLoading(true);
     setError(null);
     try {
-      const graph: GraphPayload = await api.graph(activeDatasetId);
-      setNodes(arrangeNodes(graph.nodes));
-      setRawEdges(graph.edges);
+      const result = await api.graph(activeDatasetId);
+      setPayload(result);
       setSelectedItem(null);
-      setSelectedEdgeId(null);
-      setCounts({ nodes: graph.node_count, edges: graph.edge_count, truncated: graph.truncated });
+      setSearch("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load graph.");
     } finally {
@@ -188,14 +125,87 @@ export default function KnowledgeGraph() {
 
   useEffect(() => {
     if (!activeDatasetId) {
-      setNodes([]);
-      setRawEdges([]);
-      setCounts({ nodes: 0, edges: 0, truncated: false });
+      setPayload(null);
       setSelectedItem(null);
       return;
     }
     void loadGraph();
   }, [activeDatasetId, loadGraph]);
+
+  const graph = useMemo(() => {
+    if (!payload) return null;
+    try {
+      return createGraph(payload);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not prepare graph data.");
+      return null;
+    }
+  }, [payload]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !graph) return;
+
+    const renderer = new Sigma(graph, container, {
+      renderLabels: true,
+      renderEdgeLabels: false,
+      labelDensity: 0.07,
+      labelGridCellSize: 90,
+      labelRenderedSizeThreshold: 9,
+      zIndex: true,
+      allowInvalidContainer: false,
+      defaultNodeColor: cssColor("--primary", "rgb(180, 120, 80)"),
+      defaultEdgeColor: cssColor("--muted-foreground", "rgb(130, 130, 130)"),
+      stagePadding: 32,
+      minCameraRatio: 0.04,
+      maxCameraRatio: 12,
+    });
+
+    renderer.on("clickNode", ({ node }) => {
+      const original = graph.getNodeAttribute(node, "original") as GraphNode;
+      setSelectedItem({ kind: "node", value: original });
+    });
+    renderer.on("clickEdge", ({ edge }) => {
+      const original = graph.getEdgeAttribute(edge, "original") as GraphEdge;
+      setSelectedItem({ kind: "edge", value: original });
+    });
+    renderer.on("clickStage", () => setSelectedItem(null));
+
+    rendererRef.current = renderer;
+    renderer.getCamera().animatedReset({ duration: 250 });
+
+    return () => {
+      renderer.kill();
+      if (rendererRef.current === renderer) rendererRef.current = null;
+    };
+  }, [graph, fullscreen]);
+
+  useEffect(() => {
+    const renderer = rendererRef.current;
+    if (!renderer || !graph) return;
+
+    const query = search.trim().toLowerCase();
+    graph.forEachNode((node) => {
+      const label = String(graph.getNodeAttribute(node, "label")).toLowerCase();
+      const matches = !query || label.includes(query);
+      graph.setNodeAttribute(node, "highlighted", Boolean(query && matches));
+      graph.setNodeAttribute(node, "color", matches
+        ? (graph.getNodeAttribute(node, "color") as string)
+        : cssColor("--muted", "rgb(120, 120, 120)"));
+      graph.setNodeAttribute(node, "size", query && matches ? 8 : 5);
+    });
+    graph.forEachEdge((edge) => {
+      const source = graph.source(edge);
+      const target = graph.target(edge);
+      const sourceMatch = Boolean(graph.getNodeAttribute(source, "highlighted"));
+      const targetMatch = Boolean(graph.getNodeAttribute(target, "highlighted"));
+      graph.setEdgeAttribute(edge, "color", query && (sourceMatch || targetMatch)
+        ? cssColor("--primary", "rgb(180, 120, 80)")
+        : cssColor("--muted-foreground", "rgb(130, 130, 130)"));
+      graph.setEdgeAttribute(edge, "size", query && (sourceMatch || targetMatch) ? 1.8 : 0.7);
+    });
+    renderer.refresh();
+  }, [search, graph]);
 
   useEffect(() => {
     if (!fullscreen) return;
@@ -206,37 +216,21 @@ export default function KnowledgeGraph() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [fullscreen]);
 
-  const selectNode = (node: Node) => {
-    setSelectedEdgeId(null);
-    setSelectedItem({
-      id: node.id,
-      label: String(node.data.label),
-      entity_type: "Entity",
-      dataset_id: activeDatasetId ?? "",
-    } as GraphNode);
-  };
-
-  const selectEdge = (edge: Edge) => {
-    if (!edge.id) {
-      setSelectedEdgeId(null);
-      setSelectedItem(null);
-      return;
-    }
-    setSelectedEdgeId(edge.id);
-    setSelectedItem((edge.data ?? null) as GraphEdge | null);
-  };
+  const selectItemDetails = selectedItem
+    ? selectedItem.value
+    : null;
 
   const graphPanel = (
     <Card className={fullscreen ? "flex h-full min-h-0 flex-col rounded-none border-0" : "min-w-0"}>
-      <CardHeader className="shrink-0 space-y-0 pb-3">
+      <CardHeader className="shrink-0 space-y-3 pb-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <CardTitle>Graph explorer</CardTitle>
             <CardDescription className="mt-1 truncate">{activeDatasetId}</CardDescription>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Badge variant="outline">{counts.nodes} nodes</Badge>
-            <Badge variant="outline">{counts.edges} edges</Badge>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Badge variant="outline">{payload?.node_count ?? 0} nodes</Badge>
+            <Badge variant="outline">{payload?.edge_count ?? 0} edges</Badge>
             <Button variant="outline" size="sm" disabled={loading} onClick={() => void loadGraph()}>
               {loading ? <LoaderCircle className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
               Refresh
@@ -247,42 +241,64 @@ export default function KnowledgeGraph() {
             </Button>
           </div>
         </div>
+        <div className="relative max-w-sm">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Find an entity…"
+            aria-label="Search graph entities"
+            className="pl-8"
+          />
+        </div>
       </CardHeader>
       <CardContent className={fullscreen ? "flex min-h-0 flex-1 flex-col p-0" : ""}>
         {error && <p className="mb-3 text-xs text-destructive" role="alert">{error}</p>}
-        {loading ? (
-          <div className={fullscreen ? "flex min-h-0 flex-1 items-center justify-center gap-2 text-xs text-muted-foreground" : "flex min-h-[420px] items-center justify-center gap-2 text-xs text-muted-foreground"}>
+        {loading && !payload ? (
+          <div className="flex min-h-80 items-center justify-center gap-2 text-xs text-muted-foreground">
             <LoaderCircle className="size-4 animate-spin" />Loading graph…
           </div>
-        ) : nodes.length === 0 ? (
+        ) : !payload || payload.nodes.length === 0 ? (
           <div className="flex min-h-80 flex-col items-center justify-center gap-3 border border-dashed border-border text-center">
             <GitBranch className="size-7 text-muted-foreground" />
             <p className="text-xs font-medium">No relationships found</p>
-            <p className="max-w-sm text-[11px] text-muted-foreground">The selected dataset may contain no mapped causal relationships.</p>
+            <p className="max-w-sm text-[11px] text-muted-foreground">The selected dataset may not contain mapped causal relationships.</p>
           </div>
         ) : (
-          <div className={fullscreen ? "min-h-0 flex-1" : "h-[560px]"} style={{ background: "var(--background)" }}>
-            <GraphCanvas
-              nodes={nodes}
-              edges={edges}
-              selectedEdgeId={selectedEdgeId}
-              onNodeSelect={selectNode}
-              onEdgeSelect={selectEdge}
-              fullscreen={fullscreen}
-            />
-          </div>
+          <div
+            ref={containerRef}
+            className={fullscreen ? "min-h-0 flex-1" : "h-[560px]"}
+            style={{ background: "var(--background)", position: "relative" }}
+            aria-label="Interactive causal graph. Select nodes or edges to inspect details."
+          />
         )}
-        {counts.truncated && !fullscreen && <p className="mt-2 text-[10px] text-muted-foreground">The API limited this graph response. Use the graph filters or increase the backend limit to inspect more entities.</p>}
-        {!fullscreen && nodes.length > 0 && <p className="mt-2 text-[10px] text-muted-foreground">Relationship labels are hidden to reduce clutter. Select an edge to highlight it and show its predicate. Use scroll to zoom and drag to pan.</p>}
+        {payload && (payload.truncated || payload.nodes.length > MAX_VISIBLE_NODES || payload.edges.length > MAX_VISIBLE_EDGES) && (
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            Showing up to {MAX_VISIBLE_NODES} nodes and {MAX_VISIBLE_EDGES} edges to protect memory. Narrow the graph or inspect a focused causal chain for larger datasets.
+          </p>
+        )}
       </CardContent>
     </Card>
   );
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
-      {!fullscreen && <PageHeader eyebrow="Structural exploration / 03" title="Knowledge graph" description="Explore typed HAZOP entities and relationships returned by the graph API." actions={<Badge variant="outline">{activeDatasetId ?? "No dataset selected"}</Badge>} />}
+      {!fullscreen && (
+        <PageHeader
+          eyebrow="Structural exploration / 03"
+          title="Knowledge graph"
+          description="Explore HAZOP entities and causal relationships. Search to highlight entities; select a node or edge to inspect its evidence."
+          actions={<Badge variant="outline">{activeDatasetId ?? "No dataset selected"}</Badge>}
+        />
+      )}
       {!activeDatasetId ? (
-        <Card><CardContent className="flex min-h-72 flex-col items-center justify-center gap-3 text-center"><Database className="size-7 text-muted-foreground" /><p className="text-sm font-medium">Select a dataset first</p><p className="max-w-sm text-xs text-muted-foreground">Open Datasets and select an imported dataset. The graph is loaded from the configured backend.</p></CardContent></Card>
+        <Card>
+          <CardContent className="flex min-h-72 flex-col items-center justify-center gap-3 text-center">
+            <Database className="size-7 text-muted-foreground" />
+            <p className="text-sm font-medium">Select a dataset first</p>
+            <p className="max-w-sm text-xs text-muted-foreground">Open Datasets and select an imported dataset. The graph loads from the configured backend.</p>
+          </CardContent>
+        </Card>
       ) : fullscreen ? (
         <div className="fixed inset-0 z-50 bg-background p-3 sm:p-5">
           <div className="h-full w-full overflow-hidden">{graphPanel}</div>
@@ -292,12 +308,31 @@ export default function KnowledgeGraph() {
           {graphPanel}
           <div className="space-y-4">
             <Card>
-              <CardHeader><div className="flex items-center gap-2"><Workflow className="size-4 text-muted-foreground" /><CardTitle>Graph contents</CardTitle></div><CardDescription>Counts from the selected dataset.</CardDescription></CardHeader>
-              <CardContent className="space-y-3">{[["Nodes", counts.nodes], ["Edges", counts.edges]].map(([label, value]) => <div key={label} className="flex items-center justify-between border-b border-border pb-2 last:border-0"><span className="text-xs text-muted-foreground">{label}</span><span className="text-sm font-semibold tabular-nums">{value}</span></div>)}</CardContent>
+              <CardHeader>
+                <div className="flex items-center gap-2"><Workflow className="size-4 text-muted-foreground" /><CardTitle>Graph contents</CardTitle></div>
+                <CardDescription>Returned by the selected dataset.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[["Nodes", payload?.node_count ?? 0], ["Edges", payload?.edge_count ?? 0]].map(([label, value]) => (
+                  <div key={label} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
+                    <span className="text-xs text-muted-foreground">{label}</span>
+                    <span className="text-sm font-semibold tabular-nums">{value}</span>
+                  </div>
+                ))}
+              </CardContent>
             </Card>
             <Card>
-              <CardHeader><div className="flex items-center gap-2"><Database className="size-4 text-muted-foreground" /><CardTitle>Selection details</CardTitle></div></CardHeader>
-              <CardContent>{selectedItem ? <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-5">{JSON.stringify(selectedItem, null, 2)}</pre> : <p className="text-[11px] leading-5 text-muted-foreground">Select a node or edge to inspect its attributes and evidence.</p>}</CardContent>
+              <CardHeader>
+                <div className="flex items-center gap-2"><Database className="size-4 text-muted-foreground" /><CardTitle>Selection details</CardTitle></div>
+                <CardDescription>{selectedItem?.kind === "node" ? "Entity" : selectedItem?.kind === "edge" ? "Relationship" : "Nothing selected"}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectItemDetails ? (
+                  <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-5">{JSON.stringify(selectItemDetails, null, 2)}</pre>
+                ) : (
+                  <p className="text-[11px] leading-5 text-muted-foreground">Select a node or relationship in the graph to inspect its properties and evidence.</p>
+                )}
+              </CardContent>
             </Card>
           </div>
         </div>
