@@ -160,12 +160,25 @@ and refreshes the saved-run listing. Artifact retrieval is exposed through the
 benchmark artifact API; generated run data is local to the API server and
 should be backed up with the project data directory.
 
-This automation currently covers repeated-seed execution of the existing
-TF-IDF, graph, and optional LLM/hybrid benchmark implementations. It does
-**not** yet implement the planned ablation matrix, confidence intervals,
-grouped cross-validation, expert-adjudication workflow, or a formal audit of
-all possible feature/ontology leakage. A suite button does not establish
-experimental validity by itself. Those remain explicit follow-up work.
+This automation currently covers repeated-seed execution of the TF-IDF,
+graph, deterministic graph-plus-TF-IDF, and optional prompt-only / hybrid LLM
+benchmark implementations. The deterministic graph-plus-TF-IDF condition
+runs the same graph reasoner over the combined graph-neighbourhood and TF-IDF
+retrieval context, isolating the addition of vector-ranked candidates without
+LLM adjudication.
+
+The LLM conditions retain the existing evidence constraints: proposals must
+select exactly one supplied evidence item, satisfy the query direction and
+predicate, and preserve provenance distinctions. These constraints are held
+fixed as safety/validity guardrails; an unconstrained hallucination-prone LLM
+variant is intentionally not included as an ablation condition. Prompt-only
+LLM remains a separate scenario-context control, not a component of the
+retrieval pipeline.
+
+This is a first component comparison, not a complete factorial ablation.
+Grouped cross-validation, expert-adjudication workflow, and a formal audit of
+all possible feature/ontology leakage remain pending. A suite button does not
+establish experimental validity by itself.
 
 ## 9. Stop/go criteria
 
