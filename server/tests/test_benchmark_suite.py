@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from app.api.routes.experiments import aggregate_suite_metrics
+from scripts.run_benchmark import merge_candidate_predictions
 
 
 def _run(seed: int, f1: float, *, hops: int = 2) -> dict[str, object]:
@@ -58,3 +59,22 @@ def test_aggregate_suite_metrics_does_not_turn_skipped_methods_into_zero_scores(
     result = aggregate_suite_metrics([_run(1, 0.2)])
 
     assert "t301-reconstructed|hops=2|prompt_only_llm" not in result
+
+
+def test_graph_tfidf_union_deduplicates_without_relabelling_provenance() -> None:
+    graph = [
+        {"value": "High pressure", "origin": "graph_inferred", "evidence": "path"},
+    ]
+    retrieval = [
+        {"value": " high   pressure ", "origin": "retrieval_inferred", "evidence": "tfidf"},
+        {"value": "Valve failure", "origin": "retrieval_inferred", "evidence": "similar row"},
+    ]
+
+    merged = merge_candidate_predictions(graph, retrieval)
+
+    assert [item["value"] for item in merged] == [
+        "High pressure",
+        "Valve failure",
+    ]
+    assert merged[0]["origin"] == "graph_inferred"
+    assert merged[1]["origin"] == "retrieval_inferred"
