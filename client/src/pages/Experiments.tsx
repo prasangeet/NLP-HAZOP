@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import PageHeader from "@/components/layout/PageHeader";
+import MetricCard from "@/components/dashboard/MetricCard";
 
 const metrics = [
   {
@@ -97,31 +98,15 @@ export default function Experiments() {
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
-          {metrics.map((metric) => {
-            const Icon = metric.icon;
-
-            return (
-              <Card key={metric.title}>
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <Icon className="size-4 text-muted-foreground" />
-                      <CardTitle>{metric.title}</CardTitle>
-                    </div>
-                    <span className="font-heading text-sm text-muted-foreground">
-                      {metric.symbol}
-                    </span>
-                  </div>
-                  <CardDescription>{metric.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="border border-border bg-muted/20 px-3 py-2">
-                    <p className="font-heading text-[11px]">{metric.formula}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {metrics.map((metric) => (
+              <MetricCard
+                title={metric.title}
+                symbol={metric.symbol}
+                description={metric.description}
+                formula={metric.formula}
+                icon={metric.icon}
+              />
+          ))}
         </div>
       </section>
 
