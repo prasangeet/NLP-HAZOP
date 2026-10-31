@@ -613,14 +613,14 @@ export default function Experiments() {
             </table></div>
             <div className="space-y-2 border-t border-border pt-3">
               <h3 className="text-sm font-semibold">Across-seed summary · mean and 95% confidence interval</h3>
-              <p className="text-xs text-muted-foreground">Intervals summarize variation across seed-level splits for each dataset, graph-hop setting, and method. A single seed cannot estimate an interval. This is not evidence of causal validity.</p>
+              <p className="text-xs text-muted-foreground">Full-test and matched-case intervals are reported separately. Matched cases use the same deterministic capped IDs across methods within each seed. A single seed cannot estimate an interval. These metrics are not evidence of causal validity.</p>
               <div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[760px] text-left text-xs">
-                <thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-2">Dataset</th><th className="p-2">Hops</th><th className="p-2">Method</th><th className="p-2">Seeds</th><th className="p-2">Mean F1</th><th className="p-2">95% CI</th><th className="p-2">Mean coverage</th></tr></thead>
+                <thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-2">Scope</th><th className="p-2">Dataset</th><th className="p-2">Hops</th><th className="p-2">Method</th><th className="p-2">Seeds</th><th className="p-2">Mean F1</th><th className="p-2">95% CI</th><th className="p-2">Mean coverage</th></tr></thead>
                 <tbody>{Object.values(suiteResult.aggregate_summary).map((item) => {
                   const f1 = item.metrics.micro_f1;
                   const coverage = item.metrics.coverage;
-                  return <tr key={item.dataset + item.max_hops + item.method} className="border-t border-border">
-                    <td className="p-2">{item.dataset}</td><td className="p-2">{item.max_hops}</td><td className="p-2">{item.method}</td><td className="p-2">{f1?.n_seeds ?? 0}</td>
+                  return <tr key={item.scope + item.dataset + item.max_hops + item.method} className="border-t border-border">
+                    <td className="p-2">{item.scope === "matched_cases" ? "Matched cases" : "Full test"}</td><td className="p-2">{item.dataset}</td><td className="p-2">{item.max_hops}</td><td className="p-2">{item.method}</td><td className="p-2">{f1?.n_seeds ?? 0}</td>
                     <td className="p-2">{f1 ? formatBenchmarkMetric(f1.mean) : "—"}</td>
                     <td className="p-2">{f1?.ci95_low == null || f1.ci95_high == null ? "Not estimable" : formatBenchmarkMetric(f1.ci95_low) + "–" + formatBenchmarkMetric(f1.ci95_high)}</td>
                     <td className="p-2">{coverage ? formatBenchmarkMetric(coverage.mean) : "—"}</td>
