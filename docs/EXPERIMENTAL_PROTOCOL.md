@@ -78,7 +78,7 @@ Run the existing benchmark at seed 42 and verify outputs match the checked-in ba
 ### E1 — Controlled strategy comparison
 Compare TF-IDF retrieval, graph reasoning, the deterministic graph/TF-IDF candidate union, prompt-only LLM, and graph/retrieval + LLM reasoning on the same split and same case IDs. Run LLM methods only when credentials and model configuration are available. Log failures and cost.
 
-**Acceptance:** a result row per method and dataset, with denominators, coverage, abstentions, latency, metrics, model/version, and output artifact locations.
+**Acceptance:** a result row per method and dataset, with denominators, coverage, abstentions, latency, metrics, model/version, and output artifact locations. When LLM calls are capped, also report every method on the same deterministic capped case-ID subset; full-test metrics and matched-subset metrics must remain visibly separate.
 
 ### E2 — Graph coverage diagnosis
 Partition test cases into exact-node match, normalized-node match, supported path, ambiguous path, and no-supported-path groups. This is diagnostic, not a performance improvement by itself.
