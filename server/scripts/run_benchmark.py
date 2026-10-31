@@ -763,6 +763,7 @@ def write_outputs(
     summary_path = output_dir / "summary.csv"
     with summary_path.open("w", encoding="utf-8", newline="") as handle:
         fieldnames = [
+            "scope",
             "method",
             "status",
             "n_evaluated",
@@ -784,17 +785,22 @@ def write_outputs(
         ]
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
-        for method, metrics in result["method_summary"].items():
-            writer.writerow(
-                {
-                    "method": method,
-                    **{
-                        field: metrics.get(field)
-                        for field in fieldnames
-                        if field != "method"
-                    },
-                }
-            )
+        for scope, summaries in (
+            ("full_test", result["method_summary"]),
+            ("matched_cases", result.get("matched_case_summary", {})),
+        ):
+            for method, metrics in summaries.items():
+                writer.writerow(
+                    {
+                        "scope": scope,
+                        "method": method,
+                        **{
+                            field: metrics.get(field)
+                            for field in fieldnames
+                            if field not in {"scope", "method"}
+                        },
+                    }
+                )
 
     report_path = output_dir / "report.md"
     metadata = result["metadata"]
