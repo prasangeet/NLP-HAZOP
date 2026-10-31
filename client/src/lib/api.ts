@@ -240,6 +240,7 @@ export interface BenchmarkRun {
   test_fraction: number;
   metadata: Record<string, unknown>;
   method_summary: Record<string, BenchmarkMethodMetrics>;
+  matched_case_summary: Record<string, BenchmarkMethodMetrics>;
   cases: BenchmarkCaseResult[];
   artifacts: {
     summary_csv: string;
@@ -268,6 +269,7 @@ export interface BenchmarkSuiteRun {
     status: string;
     metadata: Record<string, unknown>;
     method_summary: Record<string, BenchmarkMethodMetrics>;
+    matched_case_summary: Record<string, BenchmarkMethodMetrics>;
     case_count: number;
     artifacts: Record<string, string>;
   }>;
