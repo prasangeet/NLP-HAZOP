@@ -20,16 +20,16 @@ def _run(seed: int, f1: float, *, hops: int = 2) -> dict[str, object]:
                 "coverage": 0.5,
                 "status": "evaluated",
             },
-            "matched_case_summary": {
-                "graph_reasoning": {
-                    "micro_f1": f1 / 2,
-                    "coverage": 0.25,
-                    "status": "evaluated",
-                },
-            },
             "prompt_only_llm": {
                 "status": "skipped_missing_groq_api_key",
                 "n_evaluated": 0,
+            },
+        },
+        "matched_case_summary": {
+            "graph_reasoning": {
+                "micro_f1": f1 / 2,
+                "coverage": 0.25,
+                "status": "evaluated",
             },
         },
     }
