@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
   CheckCircle2,
@@ -116,6 +116,21 @@ export default function Experiments() {
   const [suiteError, setSuiteError] = useState<string | null>(null);
   const [suiteResult, setSuiteResult] = useState<BenchmarkSuiteRun | null>(null);
   const [savedRuns, setSavedRuns] = useState<BenchmarkSuiteRun[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    api.listBenchmarkRuns()
+      .then((response) => {
+        if (active) setSavedRuns(response.runs);
+      })
+      .catch(() => {
+        // History is optional; the workbench remains usable when no runs exist.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
 
 
   const runResearchBenchmark = async () => {
