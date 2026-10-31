@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.api.routes.experiments import aggregate_suite_metrics
+import pytest\n\nfrom app.api.routes.experiments import aggregate_suite_metrics
 
 
 def _run(seed: int, f1: float, *, hops: int = 2) -> dict[str, object]:
@@ -27,7 +27,7 @@ def test_aggregate_suite_metrics_reports_mean_and_student_t_interval() -> None:
     metric = result["t301-reconstructed|hops=2|graph_reasoning"]["metrics"]["micro_f1"]
 
     assert metric["n_seeds"] == 2
-    assert metric["mean"] == 0.3
+    assert metric["mean"] == pytest.approx(0.3)
     assert metric["sample_sd"] > 0
     assert metric["ci95_low"] < metric["mean"] < metric["ci95_high"]
     assert metric["interval_method"] == "Student-t 95% CI"
