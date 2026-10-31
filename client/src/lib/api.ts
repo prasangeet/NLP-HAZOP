@@ -261,7 +261,7 @@ export interface BenchmarkSuiteRun {
   graph_hops: number[];
   test_fraction: number;
   with_llm: boolean;
-  aggregate_summary: Record<string, { dataset: string; max_hops: number; method: string; metrics: Record<string, { n_seeds: number; mean: number; sample_sd: number | null; ci95_low: number | null; ci95_high: number | null; interval_method: string }> }>;
+  aggregate_summary: Record<string, { scope: "full_test" | "matched_cases"; dataset: string; max_hops: number; method: string; metrics: Record<string, { n_seeds: number; mean: number; sample_sd: number | null; ci95_low: number | null; ci95_high: number | null; interval_method: string }> }>;
   runs: Array<{
     dataset: string;
     seed: number;
