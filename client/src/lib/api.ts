@@ -156,6 +156,20 @@ export const api = {
     request<GraphResponse>(`/api/v1/datasets/${encodeURIComponent(datasetId)}/graph?limit=1000`),
   extractReport: (file: File, datasetId: string, name?: string) =>
     request<Record<string, unknown>>("/api/v1/reports/extract", { method: "POST", body: formData(file, { dataset_id: datasetId, ...(name ? { name } : {}) }) }),
+  runBenchmarkSuite: (payload: {
+    datasets: Array<"t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic">;
+    seeds: number[];
+    test_fraction: number;
+    with_llm: boolean;
+    max_llm_cases: number;
+  }) =>
+    request<BenchmarkSuiteRun>("/api/v1/experiments/benchmark-suite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  listBenchmarkRuns: () =>
+    request<{ count: number; runs: BenchmarkSuiteRun[] }>("/api/v1/experiments/benchmark-runs"),
   runBenchmark: (payload: {
     dataset: "t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic";
     seed: number;
@@ -227,4 +241,27 @@ export interface BenchmarkRun {
     predictions_csv: string;
     report_md: string;
   };
+}
+
+
+export interface BenchmarkSuiteRun {
+  run_id: string;
+  created_at: string;
+  protocol_version: string;
+  label_status: string;
+  label_warning: string;
+  datasets: string[];
+  seeds: number[];
+  test_fraction: number;
+  with_llm: boolean;
+  runs: Array<{
+    dataset: string;
+    seed: number;
+    status: string;
+    metadata: Record<string, unknown>;
+    method_summary: Record<string, BenchmarkMethodMetrics>;
+    case_count: number;
+    artifacts: Record<string, string>;
+  }>;
+  failures: Array<{ dataset: string; seed: number; error: string }>;
 }
