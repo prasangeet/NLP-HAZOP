@@ -9,11 +9,14 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import os
+import platform
 import random
 import re
+import subprocess
 import time
 from collections import Counter
 from dataclasses import dataclass, replace
@@ -51,6 +54,7 @@ from app.infrastructure.graph.in_memory_graph_repository import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
+PROTOCOL_VERSION = "1.0"
 DATASET_PATHS = {
     "t301-reconstructed": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
     "t301-synthetic": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
@@ -607,10 +611,31 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if match:
             validation_notes[match.group(1).strip()] += 1
 
+    dataset_file = selected_path or DATASET_PATHS[args.dataset]
+    try:
+        dataset_sha256 = hashlib.sha256(dataset_file.read_bytes()).hexdigest()
+    except OSError:
+        dataset_sha256 = None
+    try:
+        repository_commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        repository_commit = None
+
     metadata = {
         "project": "NLP-HAZOP",
+        "protocol_version": PROTOCOL_VERSION,
+        "repository_commit": repository_commit,
+        "python_version": platform.python_version(),
+        "platform": platform.platform(),
         "dataset": args.dataset,
-        "dataset_path": str(selected_path or DATASET_PATHS[args.dataset]),
+        "dataset_path": str(dataset_file),
+        "dataset_sha256": dataset_sha256,
         "dataset_rows": len(records),
         "train_scenarios": len(train),
         "test_scenarios": len(test),
@@ -691,6 +716,57 @@ def write_outputs(
                     },
                 }
             )
+
+    report_path = output_dir / "report.md"
+    metadata = result["metadata"]
+    lines = [
+        "# HAZOP Recovery Benchmark Report",
+        "",
+        "> Evaluation uses silver row-association labels. It does not establish causal validity or safety certification.",
+        "",
+        "## Run metadata",
+        "",
+        "- Dataset: {}".format(metadata["dataset"]),
+        "- Dataset SHA-256: {}".format(metadata.get("dataset_sha256") or "unavailable"),
+        "- Repository commit: {}".format(metadata.get("repository_commit") or "unavailable"),
+        "- Protocol version: {}".format(metadata.get("protocol_version", "unknown")),
+        "- Seed / test fraction: {} / {}".format(metadata["seed"], metadata["test_fraction"]),
+        "- Scenarios (train/test): {} / {}".format(metadata["train_scenarios"], metadata["test_scenarios"]),
+        "- Test queries: {}".format(metadata["test_queries"]),
+        "- Created at: {}".format(metadata["created_at"]),
+        "",
+        "## Method results",
+        "",
+        "| Method | Status | Evaluated / total | Micro F1 | Coverage | Abstention | Mean latency (ms) |",
+        "|---|---|---:|---:|---:|---:|---:|",
+    ]
+    def format_metric(value: Any) -> str:
+        return "{:.4f}".format(value) if isinstance(value, (int, float)) else "not reported"
+
+    for method, metrics in result["method_summary"].items():
+        lines.append(
+            "| {} | {} | {} / {} | {} | {} | {} | {} |".format(
+                method,
+                metrics.get("status", "unknown"),
+                metrics.get("n_evaluated", 0),
+                metrics.get("n_total_test_cases", metadata["test_queries"]),
+                format_metric(metrics.get("micro_f1")),
+                format_metric(metrics.get("coverage")),
+                format_metric(metrics.get("abstention_rate")),
+                format_metric(metrics.get("mean_latency_ms")),
+            )
+        )
+    lines.extend([
+        "",
+        "## Interpretation notes",
+        "",
+        "- Missing or disabled methods are not scored as zero; inspect their status.",
+        "- F1 is agreement with silver row associations, not verified causal ground truth.",
+        "- Compare methods only when evaluated on identical case IDs.",
+        "- See results.json for metadata and per-case outputs, and predictions.csv for prediction-level rows.",
+        "",
+    ])
+    report_path.write_text(chr(10).join(lines), encoding="utf-8")
 
     predictions_path = output_dir / "predictions.csv"
     with predictions_path.open("w", encoding="utf-8", newline="") as handle:

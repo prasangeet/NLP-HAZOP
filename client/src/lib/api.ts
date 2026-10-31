@@ -156,6 +156,18 @@ export const api = {
     request<GraphResponse>(`/api/v1/datasets/${encodeURIComponent(datasetId)}/graph?limit=1000`),
   extractReport: (file: File, datasetId: string, name?: string) =>
     request<Record<string, unknown>>("/api/v1/reports/extract", { method: "POST", body: formData(file, { dataset_id: datasetId, ...(name ? { name } : {}) }) }),
+  runBenchmark: (payload: {
+    dataset: "t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic";
+    seed: number;
+    test_fraction: number;
+    with_llm: boolean;
+    max_llm_cases: number;
+  }) =>
+    request<BenchmarkRun>("/api/v1/experiments/benchmark", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
   recover: (datasetId: string, payload: {
     scenario_id: string;
     predicate: string;
@@ -170,3 +182,49 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 };
+
+export interface BenchmarkMethodMetrics {
+  status?: string;
+  n_evaluated?: number;
+  n_total_test_cases?: number;
+  micro_precision?: number | null;
+  micro_recall?: number | null;
+  micro_f1?: number | null;
+  macro_f1?: number | null;
+  hit_at_1?: number | null;
+  mrr?: number | null;
+  coverage?: number | null;
+  abstention_rate?: number | null;
+  mean_latency_ms?: number | null;
+  cost_usd?: number | null;
+  [key: string]: unknown;
+}
+
+export interface BenchmarkCaseResult {
+  case_id: string;
+  scenario_id: string;
+  record_type: string;
+  known_endpoint: string;
+  gold_values: string[];
+  methods: Record<string, {
+    status?: string;
+    predictions?: Array<{ value: string; origin?: string; evidence?: string | null }>;
+    latency_ms?: number;
+    [key: string]: unknown;
+  }>;
+}
+
+export interface BenchmarkRun {
+  status: string;
+  dataset: string;
+  seed: number;
+  test_fraction: number;
+  metadata: Record<string, unknown>;
+  method_summary: Record<string, BenchmarkMethodMetrics>;
+  cases: BenchmarkCaseResult[];
+  artifacts: {
+    summary_csv: string;
+    predictions_csv: string;
+    report_md: string;
+  };
+}
