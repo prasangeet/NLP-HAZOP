@@ -40,9 +40,40 @@ function cssColor(variable: string, fallback: string): string {
   const probe = document.createElement("span");
   probe.style.color = `var(${variable})`;
   document.body.appendChild(probe);
-  const color = getComputedStyle(probe).color;
+  const value = getComputedStyle(probe).color.trim();
   probe.remove();
-  return color && color !== "rgba(0, 0, 0, 0)" ? color : fallback;
+
+  // CSS theme tokens use OKLCH. Convert OKLCH to sRGB because Sigma's
+  // WebGL color parser expects hex/rgb colors, not OKLCH strings.
+  const match = value.match(/^oklch\\(\\s*([\\d.]+)%?\\s+([\\d.]+)\\s+([\\d.]+)(?:deg)?(?:\\s*\\/\\s*([\\d.]+)%?)?\\s*\\)$/i);
+  if (match) {
+    let L = Number(match[1]);
+    if (value.match(/^oklch\\(\\s*[\\d.]+%/i)) L /= 100;
+    const C = Number(match[2]);
+    const h = (Number(match[3]) * Math.PI) / 180;
+    const a = C * Math.cos(h);
+    const b = C * Math.sin(h);
+    const l1 = L + 0.3963377774 * a + 0.2158037573 * b;
+    const m1 = L - 0.1055613458 * a - 0.0638541728 * b;
+    const s1 = L - 0.0894841775 * a - 1.291485548 * b;
+    const linearToSrgb = (v: number) => {
+      const v3 = v * v * v;
+      return 255 * (v3 <= 0.0031308 ? 12.92 * v3 : 1.055 * Math.pow(v3, 1 / 2.4) - 0.055);
+    };
+    const rgb = [
+      linearToSrgb(4.0767416621 * l1 ** 3 - 3.3077115913 * m1 ** 3 + 0.2309699292 * s1 ** 3),
+      linearToSrgb(-1.2684380046 * l1 ** 3 + 2.6097574011 * m1 ** 3 - 0.3413193965 * s1 ** 3),
+      linearToSrgb(-0.0041960863 * l1 ** 3 - 0.7034186147 * m1 ** 3 + 1.707614701 * s1 ** 3),
+    ].map((channel) => Math.round(Math.max(0, Math.min(255, channel))));
+    return `#${rgb.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+  }
+
+  const rgbMatch = value.match(/^rgba?\\(\\s*(\\d+)\\D+(\\d+)\\D+(\\d+)/i);
+  if (rgbMatch) {
+    return `#${rgbMatch.slice(1, 4).map((channel) => Number(channel).toString(16).padStart(2, "0")).join("")}`;
+  }
+  if (/^#[\\da-f]{3}(?:[\\da-f]{3})?$/i.test(value)) return value;
+  return fallback;
 }
 
 function createGraph(payload: GraphPayload) {
@@ -50,8 +81,9 @@ function createGraph(payload: GraphPayload) {
   const visibleNodes = payload.nodes.slice(0, MAX_VISIBLE_NODES);
   const nodeIds = new Set(visibleNodes.map((node) => node.id));
   const rootStyles = getComputedStyle(document.documentElement);
-  const primary = cssColor("--primary", "rgb(180, 120, 80)");
-  const muted = cssColor("--muted-foreground", "rgb(130, 130, 130)");
+  const primary = cssColor("--chart-1", "#d97706");
+  const muted = cssColor("--muted-foreground", "#a1a1aa");
+  const edgeColor = cssColor("--muted-foreground", "#a1a1aa");
   const palette = [
     primary,
     cssColor("--chart-2", primary),
@@ -87,8 +119,8 @@ function createGraph(payload: GraphPayload) {
       : edge.id;
     graph.addEdgeWithKey(edgeKey, edge.source, edge.target, {
       label: edge.label || edge.predicate,
-      color: muted,
-      size: 1,
+      color: edgeColor,
+      size: 2,
       original: edge,
     });
   });
@@ -149,13 +181,14 @@ export default function KnowledgeGraph() {
     const renderer = new Sigma(graph, container, {
       renderLabels: true,
       renderEdgeLabels: false,
+      defaultEdgeType: "arrow",
       labelDensity: 0.07,
       labelGridCellSize: 90,
       labelRenderedSizeThreshold: 9,
       zIndex: true,
       allowInvalidContainer: false,
-      defaultNodeColor: cssColor("--primary", "rgb(180, 120, 80)"),
-      defaultEdgeColor: cssColor("--muted-foreground", "rgb(130, 130, 130)"),
+      defaultNodeColor: cssColor("--chart-1", "#d97706"),
+      defaultEdgeColor: cssColor("--muted-foreground", "#a1a1aa"),
       stagePadding: 32,
       minCameraRatio: 0.04,
       maxCameraRatio: 12,
@@ -191,7 +224,7 @@ export default function KnowledgeGraph() {
       graph.setNodeAttribute(node, "highlighted", Boolean(query && matches));
       graph.setNodeAttribute(node, "color", matches
         ? (graph.getNodeAttribute(node, "color") as string)
-        : cssColor("--muted", "rgb(120, 120, 120)"));
+        : cssColor("--muted-foreground", "#a1a1aa"));
       graph.setNodeAttribute(node, "size", query && matches ? 8 : 5);
     });
     graph.forEachEdge((edge) => {
@@ -201,7 +234,7 @@ export default function KnowledgeGraph() {
       const targetMatch = Boolean(graph.getNodeAttribute(target, "highlighted"));
       graph.setEdgeAttribute(edge, "color", query && (sourceMatch || targetMatch)
         ? cssColor("--primary", "rgb(180, 120, 80)")
-        : cssColor("--muted-foreground", "rgb(130, 130, 130)"));
+        : cssColor("--border", "#71717a"));
       graph.setEdgeAttribute(edge, "size", query && (sourceMatch || targetMatch) ? 1.8 : 0.7);
     });
     renderer.refresh();
