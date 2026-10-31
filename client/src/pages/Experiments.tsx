@@ -24,7 +24,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import PageHeader from "@/components/layout/PageHeader";
-import { api, type RecoveryResponse } from "@/lib/api";
+import { api, type BenchmarkRun, type RecoveryResponse } from "@/lib/api";
 import { useWorkspaceStore } from "@/lib/workspace-store";
 
 type CheckStatus = "idle" | "running" | "passed" | "warning" | "failed";
@@ -53,7 +53,7 @@ const strategyLabels = {
   hybrid: "Hybrid",
 } as const;
 
-function StatusBadge({ status }: { status: CheckStatus }) {
+function formatBenchmarkMetric(value: number | null | undefined): string {\n  return value == null || !Number.isFinite(value) ? "—" : value.toFixed(3);\n}\n\nfunction StatusBadge({ status }: { status: CheckStatus }) {
   if (status === "passed") return <Badge variant="secondary">Passed</Badge>;
   if (status === "failed") return <Badge variant="destructive">Failed</Badge>;
   if (status === "warning") return <Badge variant="outline">Warning</Badge>;
@@ -98,6 +98,43 @@ export default function Experiments() {
   const [running, setRunning] = useState(false);
   const [lastRun, setLastRun] = useState<string | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
+  const [benchmarkDataset, setBenchmarkDataset] = useState<BenchmarkRun["dataset"]>("t301-reconstructed");
+  const [benchmarkSeed, setBenchmarkSeed] = useState(42);
+  const [benchmarkTestFraction, setBenchmarkTestFraction] = useState(0.2);
+  const [benchmarkWithLlm, setBenchmarkWithLlm] = useState(false);
+  const [benchmarkRunning, setBenchmarkRunning] = useState(false);
+  const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
+  const [benchmarkResult, setBenchmarkResult] = useState<BenchmarkRun | null>(null);
+
+  const runResearchBenchmark = async () => {
+    if (benchmarkRunning) return;
+    setBenchmarkRunning(true);
+    setBenchmarkError(null);
+    setBenchmarkResult(null);
+    try {
+      const result = await api.runBenchmark({
+        dataset: benchmarkDataset,
+        seed: benchmarkSeed,
+        test_fraction: benchmarkTestFraction,
+        with_llm: benchmarkWithLlm,
+        max_llm_cases: 15,
+      });
+      setBenchmarkResult(result);
+    } catch (error) {
+      setBenchmarkError(error instanceof Error ? error.message : "Benchmark execution failed.");
+    } finally {
+      setBenchmarkRunning(false);
+    }
+  };
+
+  const downloadBenchmarkArtifact = (filename: string, content: string, mimeType: string) => {
+    const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   const setCheck = (result: CheckResult) => {
     setChecks((current) => {
@@ -437,6 +474,47 @@ export default function Experiments() {
 
       <section className="space-y-3">
         <div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2"><FlaskConical className="size-4 text-muted-foreground" /><CardTitle>Research benchmark</CardTitle></div>
+              <CardDescription>Runs the repository benchmark against held-out scenarios and displays real metrics and per-case predictions. Scores reflect silver row associations, not expert-verified causal truth.</CardDescription>
+            </div>
+            <Button onClick={() => void runResearchBenchmark()} disabled={benchmarkRunning}>
+              {benchmarkRunning ? <LoaderCircle className="size-4 animate-spin" /> : <Play className="size-4" />}
+              {benchmarkRunning ? "Running benchmark…" : "Run benchmark"}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-4">
+            <label className="space-y-1 text-xs"><span className="text-muted-foreground">Dataset track</span>
+              <select value={benchmarkDataset} onChange={(event) => setBenchmarkDataset(event.target.value as BenchmarkRun["dataset"])} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                <option value="t301-reconstructed">T-301 reconstructed</option><option value="t301-synthetic">T-301 synthetic continuation</option><option value="dwsim-synthetic">DWSIM synthetic</option>
+              </select>
+            </label>
+            <label className="space-y-1 text-xs"><span className="text-muted-foreground">Random seed</span><input type="number" min={0} max={1000000} value={benchmarkSeed} onChange={(event) => setBenchmarkSeed(Number(event.target.value))} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>
+            <label className="space-y-1 text-xs"><span className="text-muted-foreground">Test split (%)</span><input type="number" min={5} max={50} step={5} value={Math.round(benchmarkTestFraction * 100)} onChange={(event) => setBenchmarkTestFraction(Number(event.target.value) / 100)} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>
+            <label className="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" checked={benchmarkWithLlm} onChange={(event) => setBenchmarkWithLlm(event.target.checked)} disabled={benchmarkRunning} />Include LLM methods</label>
+          </div>
+          {benchmarkError && <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">{benchmarkError}</p>}
+          {benchmarkResult && <div className="space-y-4 border-t border-border pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-medium">Run completed · {benchmarkResult.dataset}</p><p className="text-xs text-muted-foreground">Seed {benchmarkResult.seed} · {Math.round(benchmarkResult.test_fraction * 100)}% test split · {benchmarkResult.cases.length} test cases</p></div>
+              <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => downloadBenchmarkArtifact("hazop-benchmark-report.md", benchmarkResult.artifacts.report_md, "text/markdown")}>Download report</Button><Button variant="outline" size="sm" onClick={() => downloadBenchmarkArtifact("hazop-benchmark-summary.csv", benchmarkResult.artifacts.summary_csv, "text/csv")}>Download summary CSV</Button><Button variant="outline" size="sm" onClick={() => downloadBenchmarkArtifact("hazop-benchmark-predictions.csv", benchmarkResult.artifacts.predictions_csv, "text/csv")}>Download predictions CSV</Button></div>
+            </div>
+            <div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[760px] text-left text-xs"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 font-medium">Method</th><th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Evaluated</th><th className="p-3 font-medium">Micro F1</th><th className="p-3 font-medium">Precision</th><th className="p-3 font-medium">Recall</th><th className="p-3 font-medium">Coverage</th><th className="p-3 font-medium">Abstention</th><th className="p-3 font-medium">Latency</th></tr></thead>
+              <tbody>{Object.entries(benchmarkResult.method_summary).map(([method, metrics]) => <tr key={method} className="border-t border-border"><td className="p-3 font-medium">{method}</td><td className="p-3"><Badge variant={metrics.status === "completed" || metrics.status === "ok" ? "secondary" : "outline"}>{metrics.status ?? "reported"}</Badge></td><td className="p-3 tabular-nums">{metrics.n_evaluated ?? 0} / {metrics.n_total_test_cases ?? benchmarkResult.cases.length}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.micro_f1)}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.micro_precision)}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.micro_recall)}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.coverage)}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.abstention_rate)}</td><td className="p-3 tabular-nums">{metrics.mean_latency_ms == null ? "—" : metrics.mean_latency_ms.toFixed(1) + " ms"}</td></tr>)}</tbody></table></div>
+            <div className="space-y-2"><h3 className="text-sm font-semibold">Per-case predictions</h3><p className="text-xs text-muted-foreground">Expand a test case to inspect its silver target and each method’s predictions. Targets are derived from co-listed row fields.</p>
+              <div className="space-y-2">{benchmarkResult.cases.map((item) => <details key={item.case_id} className="rounded-md border border-border px-3 py-2"><summary className="cursor-pointer text-xs font-medium">{item.case_id} · {item.known_endpoint}</summary><div className="mt-3 space-y-2 text-xs"><p><span className="text-muted-foreground">Silver target:</span> {item.gold_values.join(" · ") || "None"}</p>
+                {Object.entries(item.methods).map(([method, result]) => <div key={method} className="rounded-md bg-muted/30 p-2"><p className="font-medium">{method} · {result.status ?? "unknown"} · {result.latency_ms == null ? "latency unavailable" : result.latency_ms.toFixed(1) + " ms"}</p><p className="mt-1 text-muted-foreground">Predictions: {(result.predictions ?? []).map((prediction) => prediction.value).join(" · ") || "No candidates / abstained"}</p>{(result.predictions ?? []).some((prediction) => prediction.evidence) && <ul className="mt-1 list-disc pl-4 text-muted-foreground">{(result.predictions ?? []).filter((prediction) => prediction.evidence).map((prediction, index) => <li key={method + "-" + index}>{prediction.evidence}</li>)}</ul>}</div>)}
+              </div></div></details>)}</div>
+            </div>
+          </div>}
+        </CardContent>
+      </Card>
+
           <h2 className="text-sm font-semibold">System and data checks</h2>
           <p className="mt-1 text-[11px] text-muted-foreground">Each check can run independently or as part of the full suite.</p>
         </div>
