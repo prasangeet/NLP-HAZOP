@@ -425,6 +425,32 @@ def _run_recovery(
     return predictions, latency_ms, status
 
 
+def build_matched_case_summary(
+    method_cases: dict[str, list[dict[str, Any]]],
+    comparison_case_ids: set[str],
+) -> dict[str, dict[str, Any]]:
+    """Score every available method on the same preselected case IDs."""
+    summaries: dict[str, dict[str, Any]] = {}
+    for method, evaluated_cases in method_cases.items():
+        matched = [
+            case for case in evaluated_cases
+            if case["case_id"] in comparison_case_ids
+        ]
+        if matched:
+            summaries[method] = {
+                "status": "evaluated",
+                **score_predictions(matched),
+                "n_total_comparison_cases": len(comparison_case_ids),
+            }
+        else:
+            summaries[method] = {
+                "status": "not_evaluated_on_comparison_cases",
+                "n_evaluated": 0,
+                "n_total_comparison_cases": len(comparison_case_ids),
+            }
+    return summaries
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     selected_path = Path(args.dataset_path).resolve() if args.dataset_path else None
     records = load_dataset(args.dataset, selected_path)
@@ -701,9 +727,24 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "created_at": datetime.now(UTC).isoformat(),
     }
 
+    comparison_case_ids = {
+        case.case_id for case in cases[: args.max_llm_cases]
+    }
+    matched_case_summary = build_matched_case_summary(
+        method_cases,
+        comparison_case_ids,
+    )
+    metadata["comparison_case_count"] = len(comparison_case_ids)
+    metadata["comparison_case_ids"] = sorted(comparison_case_ids)
+    metadata["comparison_case_selection"] = (
+        "first N cases in deterministic scenario/cause order; "
+        "N equals max_llm_cases"
+    )
+
     return {
         "metadata": metadata,
         "method_summary": method_summary,
+        "matched_case_summary": matched_case_summary,
         "cases": per_case,
     }
 
