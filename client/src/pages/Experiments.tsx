@@ -139,6 +139,16 @@ export default function Experiments() {
     }
   };
 
+  const downloadSuiteArtifact = async (run: BenchmarkSuiteRun["runs"][number], artifact: "report.md" | "summary.csv" | "predictions.csv") => {
+    if (!suiteResult) return;
+    try {
+      const response = await api.getBenchmarkArtifact(suiteResult.run_id, run.dataset, run.seed, run.max_hops, artifact);
+      const mimeType = artifact.endsWith(".csv") ? "text/csv" : "text/markdown";
+      downloadBenchmarkArtifact("hazop-" + run.dataset + "-seed-" + run.seed + "-hops-" + run.max_hops + "-" + artifact.replace(".", "-"), response.content, mimeType);
+    } catch (error) {
+      setSuiteError(error instanceof Error ? error.message : "Could not retrieve the saved artifact.");
+    }
+  };
   const runBenchmarkSuite = async () => {
     if (suiteRunning) return;
     const seeds = suiteSeeds.split(",").map((value) => Number(value.trim()));
@@ -601,6 +611,17 @@ export default function Experiments() {
                   </tr>;
                 })}</tbody>
               </table></div>
+            </div>
+            <div className="space-y-2 border-t border-border pt-3">
+              <h3 className="text-sm font-semibold">Run artifacts</h3>
+              {suiteResult.runs.map((run) => <div key={run.dataset + run.seed + run.max_hops} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-2 text-xs">
+                <span>{run.dataset} · seed {run.seed} · {run.max_hops} hops</span>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => void downloadSuiteArtifact(run, "report.md")}>Report</Button>
+                  <Button size="sm" variant="outline" onClick={() => void downloadSuiteArtifact(run, "summary.csv")}>Summary CSV</Button>
+                  <Button size="sm" variant="outline" onClick={() => void downloadSuiteArtifact(run, "predictions.csv")}>Predictions CSV</Button>
+                </div>
+              </div>)}
             </div>
             {suiteResult.failures.map((failure) => <p key={failure.dataset + failure.seed} className="text-xs text-destructive">{failure.dataset} · seed {failure.seed}: {failure.error}</p>)}
           </>}
