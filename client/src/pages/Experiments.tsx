@@ -515,6 +515,8 @@ export default function Experiments() {
         </CardContent>
       </Card>
 
+      <section className="space-y-3">
+        <div>
           <h2 className="text-sm font-semibold">System and data checks</h2>
           <p className="mt-1 text-[11px] text-muted-foreground">Each check can run independently or as part of the full suite.</p>
         </div>
