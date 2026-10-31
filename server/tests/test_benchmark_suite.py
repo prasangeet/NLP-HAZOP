@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-import pytest\n\nfrom app.api.routes.experiments import aggregate_suite_metrics
+import pytest
+
+from app.api.routes.experiments import aggregate_suite_metrics
 
 
 def _run(seed: int, f1: float, *, hops: int = 2) -> dict[str, object]:
