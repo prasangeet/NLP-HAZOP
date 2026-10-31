@@ -169,7 +169,7 @@ export default function ReportExtraction() {
                 <Badge variant="outline">Not connected</Badge>
               </div>
 
-              <Button className="w-full" disabled={!fileIsValid}>
+              <Button className="w-full" disabled>
                 <ScanText className="size-3.5" />
                 Extraction integration pending
               </Button>
