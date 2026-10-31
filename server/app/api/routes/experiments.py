@@ -152,35 +152,48 @@ def _execute_benchmark(
 
 
 def aggregate_suite_metrics(completed_runs: list[dict[str, object]]) -> dict[str, object]:
-# Aggregate independent seed-level results; one seed cannot estimate uncertainty.
-t_critical = {2: 12.706, 3: 4.303, 4: 3.182, 5: 2.776, 6: 2.571}
-grouped = defaultdict(lambda: defaultdict(list))
-for run in completed_runs:
-    for method, metrics in run.get("method_summary", {}).items():
-        for metric in ("micro_precision", "micro_recall", "micro_f1", "macro_f1", "coverage", "abstention_rate", "mean_latency_ms"):
-            value = metrics.get(metric)
-            if isinstance(value, (int, float)) and math.isfinite(value):
-                grouped[(str(run["dataset"]), int(run["max_hops"]), method)][metric].append(float(value))
-aggregate_summary = {}
-for (dataset, hops, method), metric_values in grouped.items():
-    key = f"{dataset}|hops={hops}|{method}"
-    aggregate_summary[key] = {"dataset": dataset, "max_hops": hops, "method": method, "metrics": {}}
-    for metric, values in metric_values.items():
-        count = len(values)
-        mean = sum(values) / count
-        sd = math.sqrt(sum((value - mean) ** 2 for value in values) / (count - 1)) if count > 1 else None
-        critical = t_critical.get(count, 1.96)
-        margin = critical * sd / math.sqrt(count) if sd is not None else None
-        lower = mean - margin if margin is not None else None
-        upper = mean + margin if margin is not None else None
-        if metric != "mean_latency_ms" and lower is not None:
-            lower = max(0.0, lower)
-            upper = min(1.0, upper)
-        aggregate_summary[key]["metrics"][metric] = {
-            "n_seeds": count, "mean": mean, "sample_sd": sd,
-            "ci95_low": lower, "ci95_high": upper,
-            "interval_method": "Student-t 95% CI" if count > 1 and count <= 6 else ("normal-approximation 95% CI" if count > 6 else "not estimable with one seed"),
+    """Summarize metrics across seed-level runs with small-sample t intervals."""
+    t_critical = {2: 12.706, 3: 4.303, 4: 3.182, 5: 2.776, 6: 2.571}
+    grouped = defaultdict(lambda: defaultdict(list))
+    for run in completed_runs:
+        for method, metrics in run.get("method_summary", {}).items():
+            for metric in (
+                "micro_precision", "micro_recall", "micro_f1", "macro_f1",
+                "coverage", "abstention_rate", "mean_latency_ms",
+            ):
+                value = metrics.get(metric)
+                if isinstance(value, (int, float)) and math.isfinite(value):
+                    grouped[(str(run["dataset"]), int(run["max_hops"]), method)][metric].append(float(value))
+
+    aggregate_summary: dict[str, object] = {}
+    for (dataset, hops, method), metric_values in grouped.items():
+        key = f"{dataset}|hops={hops}|{method}"
+        aggregate_summary[key] = {
+            "dataset": dataset, "max_hops": hops, "method": method, "metrics": {},
         }
+        for metric, values in metric_values.items():
+            count = len(values)
+            mean = sum(values) / count
+            sd = math.sqrt(sum((value - mean) ** 2 for value in values) / (count - 1)) if count > 1 else None
+            critical = t_critical.get(count, 1.96)
+            margin = critical * sd / math.sqrt(count) if sd is not None else None
+            lower = mean - margin if margin is not None else None
+            upper = mean + margin if margin is not None else None
+            if metric != "mean_latency_ms" and lower is not None:
+                lower = max(0.0, lower)
+                upper = min(1.0, upper)
+            aggregate_summary[key]["metrics"][metric] = {
+                "n_seeds": count,
+                "mean": mean,
+                "sample_sd": sd,
+                "ci95_low": lower,
+                "ci95_high": upper,
+                "interval_method": (
+                    "Student-t 95% CI" if 1 < count <= 6
+                    else "normal-approximation 95% CI" if count > 6
+                    else "not estimable with one seed"
+                ),
+            }
     return aggregate_summary
 
 
