@@ -154,24 +154,29 @@ def _execute_benchmark(
 
 
 def aggregate_suite_metrics(completed_runs: list[dict[str, object]]) -> dict[str, object]:
-    """Summarize metrics across seed-level runs with small-sample t intervals."""
+    """Aggregate full-test and matched-case metrics separately across seeds."""
     t_critical = {2: 12.706, 3: 4.303, 4: 3.182, 5: 2.776, 6: 2.571}
     grouped = defaultdict(lambda: defaultdict(list))
     for run in completed_runs:
-        for method, metrics in run.get("method_summary", {}).items():
-            for metric in (
-                "micro_precision", "micro_recall", "micro_f1", "macro_f1",
-                "coverage", "abstention_rate", "mean_latency_ms",
-            ):
-                value = metrics.get(metric)
-                if isinstance(value, (int, float)) and math.isfinite(value):
-                    grouped[(str(run["dataset"]), int(run["max_hops"]), method)][metric].append(float(value))
+        for scope, summaries in (
+            ("full_test", run.get("method_summary", {})),
+            ("matched_cases", run.get("matched_case_summary", {})),
+        ):
+            for method, metrics in summaries.items():
+                for metric in (
+                    "micro_precision", "micro_recall", "micro_f1", "macro_f1",
+                    "coverage", "abstention_rate", "mean_latency_ms",
+                ):
+                    value = metrics.get(metric)
+                    if isinstance(value, (int, float)) and math.isfinite(value):
+                        grouped[(scope, str(run["dataset"]), int(run["max_hops"]), method)][metric].append(float(value))
 
     aggregate_summary: dict[str, object] = {}
-    for (dataset, hops, method), metric_values in grouped.items():
-        key = f"{dataset}|hops={hops}|{method}"
+    for (scope, dataset, hops, method), metric_values in grouped.items():
+        key = f"{scope}|{dataset}|hops={hops}|{method}"
         aggregate_summary[key] = {
-            "dataset": dataset, "max_hops": hops, "method": method, "metrics": {},
+            "scope": scope, "dataset": dataset, "max_hops": hops,
+            "method": method, "metrics": {},
         }
         for metric, values in metric_values.items():
             count = len(values)
@@ -197,7 +202,6 @@ def aggregate_suite_metrics(completed_runs: list[dict[str, object]]) -> dict[str
                 ),
             }
     return aggregate_summary
-
 
 @router.post("/benchmark-suite", summary="Run a reproducible multi-dataset, multi-seed benchmark suite")
 def run_benchmark_suite(payload: BenchmarkSuiteRequest) -> dict[str, object]:
