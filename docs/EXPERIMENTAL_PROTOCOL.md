@@ -76,7 +76,7 @@ Run the existing benchmark at seed 42 and verify outputs match the checked-in ba
 **Acceptance:** per-case outputs, configuration, and summary artifacts are generated; tests pass; any mismatch is explained.
 
 ### E1 — Controlled strategy comparison
-Compare TF-IDF, graph reasoning, prompt-only LLM, and hybrid reasoning on the same split and same case IDs. Run LLM methods only when credentials and model configuration are available. Log failures and cost.
+Compare TF-IDF retrieval, graph reasoning, the deterministic graph/TF-IDF candidate union, prompt-only LLM, and graph/retrieval + LLM reasoning on the same split and same case IDs. Run LLM methods only when credentials and model configuration are available. Log failures and cost.
 
 **Acceptance:** a result row per method and dataset, with denominators, coverage, abstentions, latency, metrics, model/version, and output artifact locations.
 
