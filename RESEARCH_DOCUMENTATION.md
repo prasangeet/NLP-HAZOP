@@ -375,17 +375,35 @@ Implemented in [`server/scripts/run_benchmark.py`](file:///mnt/volume/Projects/B
 
 ## 9. Open Research Questions & Experimental Roadmap
 
-### 9.1 The Primary Research Questions
-1. **RQ1 (Causal Extraction Fidelity):** Can modern LLMs extract typed causal triples $(h, r, t)$ from historical narrative worksheets with precision and recall exceeding classical NLP pipelines?
-2. **RQ2 (Multi-Hop Superiority):** Does an explicit graph representation improve multi-hop hazard recovery accuracy and reduce hallucination compared to direct prompt-based LLM generation?
-3. **RQ3 (Safety-Critical Abstention):** Can a hybrid reasoner leverage graph-provenance constraints to maintain high accuracy when confident while maintaining a defensible abstention rate under ambiguous evidence?
+The formal experimental plan is maintained in [`docs/EXPERIMENTAL_PROTOCOL.md`](docs/EXPERIMENTAL_PROTOCOL.md). That protocol defines falsifiable research questions, controls against leakage, metric definitions, the experiment sequence, artifacts, and criteria for making claims.
 
-### 9.2 Immediate Experimental Roadmap
-- [ ] **Run Prompt-Only & Hybrid LLM Baselines:** Execute benchmarks across identical held-out splits with Groq API integration (Llama 3 / Mixtral), logging token consumption, costs, and latency.
-- [ ] **Ontological Concept Normalization:** Implement entity canonicalization (e.g., mapping `"Tank overfilling"` and `"Liquid overflow"` to an identical ontology node) to resolve graph sparsity without relaxing causal path constraints.
-- [ ] **Expert Adjudication of Silver Labels:** Partner with chemical engineering safety specialists to adjudicate a gold evaluation benchmark, establishing true causal ground truth.
-- [ ] **Dense Embedding Integration:** Benchmark dense vector retrievers against the current sparse TF-IDF baseline.
-- [ ] **Cross-Plant Generalization:** Evaluate whether causal rules extracted from storage units (T-301) can transfer or generalize to reaction and separation units (DWSIM).
+### 9.1 Primary Research Questions
+
+1. **RQ1 — Held-out recovery:** Can a method recover consequence labels for held-out scenarios better than simple retrieval baselines?
+2. **RQ2 — Value of graph structure:** Does graph-assisted reasoning improve recovery or evidence traceability over lexical retrieval and prompt-only LLM inference on identical cases?
+3. **RQ3 — Safety-aware abstention:** Can provenance-aware reasoning reduce errors among answered cases while retaining useful coverage under ambiguous or insufficient evidence?
+4. **RQ4 — Generalization:** Does performance transfer between reconstructed T-301 and DWSIM-derived synthetic tracks?
+
+These are open questions, not established findings. Current metrics use silver row associations and do not prove causal validity.
+
+### 9.2 Experimental sequence
+
+- [ ] **E0 — Reproduce the historical baseline** at seed 42 and investigate any discrepancy against the recorded run.
+- [ ] **E1 — Controlled strategy comparison** across TF-IDF, graph, prompt-only LLM, and hybrid methods using identical held-out case IDs. LLM results remain “not run” until credentials/model settings are available.
+- [ ] **E2 — Diagnose graph coverage** by exact-node match, normalized-node match, supported path, ambiguous path, and no-supported-path groups.
+- [ ] **E3 — Entity-normalization ablation** with normalization rules built from training data or a separately reviewed ontology, not hidden test answers.
+- [ ] **E4 — Multi-hop ablation** with declared path limits and results stratified by evidence-path length.
+- [ ] **E5 — Abstention/selective prediction** using thresholds selected on validation data and frozen before test evaluation.
+- [ ] **E6 — Cross-domain transfer** with each train/test direction reported separately.
+- [ ] **E7 — Expert-adjudicated validation** of a held-out subset before making claims about true causal correctness or safety utility.
+
+### 9.3 Evidence and reporting requirements
+
+Every run must record repository commit, dataset provenance/version, split and seed, configuration, method/model/prompt versions, per-case predictions, reference labels, provenance, abstentions, latency, failures, and metric denominators. Results must be reproducible from saved raw outputs.
+
+The frontend Experiments workbench must call the real benchmark runner/API, show only metrics actually computed, distinguish silver-label evaluation from expert-adjudicated evaluation, and expose per-case evidence. It must not be a simulated dashboard or only a service-health check.
+
+**Stop/go rule:** do not claim one reasoning method is superior until the baseline is reproduced, methods are compared on identical held-out cases, variability is assessed across repeated splits or grouped cross-validation, and coverage/abstention are reported alongside accuracy. Do not claim causal correctness based on row co-occurrence alone.
 
 ---
 
