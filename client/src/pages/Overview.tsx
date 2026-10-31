@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Activity,
   ArrowRight,
@@ -17,6 +18,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/layout/PageHeader";
+import { api } from "@/lib/api";
+import { useWorkspaceStore } from "@/lib/workspace-store";
 
 const causalStages = [
   { number: "01", label: "Deviation" },
@@ -59,6 +62,17 @@ const modules = [
 ];
 
 export default function Overview() {
+  const activeDatasetId = useWorkspaceStore((state) => state.activeDatasetId);
+  const [apiStatus, setApiStatus] = useState<"checking" | "online" | "offline">("checking");
+
+  useEffect(() => {
+    let cancelled = false;
+    api.health()
+      .then(() => { if (!cancelled) setApiStatus("online"); })
+      .catch(() => { if (!cancelled) setApiStatus("offline"); });
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
       <PageHeader
@@ -123,20 +137,22 @@ export default function Overview() {
               <div>
                 <p className="text-xs font-medium">Active dataset</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Choose a dataset to begin
+                  {activeDatasetId ?? "Choose one in Datasets"}
                 </p>
               </div>
-              <Badge variant="outline">Not selected</Badge>
+              <Badge variant={activeDatasetId ? "secondary" : "outline"}>{activeDatasetId ? "Selected" : "None"}</Badge>
             </div>
 
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-medium">API connection</p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Client integration is pending
+                  {api.baseUrl}
                 </p>
               </div>
-              <Badge variant="secondary">Not connected</Badge>
+              <Badge variant={apiStatus === "online" ? "secondary" : "outline"}>
+                {apiStatus === "checking" ? "Checking…" : apiStatus === "online" ? "Connected" : "Offline"}
+              </Badge>
             </div>
           </CardContent>
         </Card>
