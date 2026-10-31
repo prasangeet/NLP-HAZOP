@@ -40,9 +40,19 @@ function cssColor(variable: string, fallback: string): string {
   const probe = document.createElement("span");
   probe.style.color = `var(${variable})`;
   document.body.appendChild(probe);
-  const color = getComputedStyle(probe).color;
+  const computed = getComputedStyle(probe).color;
   probe.remove();
-  return color && color !== "rgba(0, 0, 0, 0)" ? color : fallback;
+
+  // Sigma's WebGL color parser does not consistently accept modern OKLCH
+  // tokens. Convert the global CSS token to an sRGB hex value via Canvas.
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context || !computed || computed === "rgba(0, 0, 0, 0)") return fallback;
+  context.fillStyle = "#010203";
+  context.fillStyle = computed;
+  context.fillRect(0, 0, 1, 1);
+  const [red, green, blue] = context.getImageData(0, 0, 1, 1).data;
+  return `#${[red, green, blue].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
 }
 
 function createGraph(payload: GraphPayload) {
@@ -50,8 +60,9 @@ function createGraph(payload: GraphPayload) {
   const visibleNodes = payload.nodes.slice(0, MAX_VISIBLE_NODES);
   const nodeIds = new Set(visibleNodes.map((node) => node.id));
   const rootStyles = getComputedStyle(document.documentElement);
-  const primary = cssColor("--primary", "rgb(180, 120, 80)");
-  const muted = cssColor("--muted-foreground", "rgb(130, 130, 130)");
+  const primary = cssColor("--chart-1", "#d97706");
+  const muted = cssColor("--muted-foreground", "#a1a1aa");
+  const edgeColor = cssColor("--border", "#71717a");
   const palette = [
     primary,
     cssColor("--chart-2", primary),
@@ -87,8 +98,8 @@ function createGraph(payload: GraphPayload) {
       : edge.id;
     graph.addEdgeWithKey(edgeKey, edge.source, edge.target, {
       label: edge.label || edge.predicate,
-      color: muted,
-      size: 1,
+      color: edgeColor,
+      size: 1.5,
       original: edge,
     });
   });
@@ -149,13 +160,14 @@ export default function KnowledgeGraph() {
     const renderer = new Sigma(graph, container, {
       renderLabels: true,
       renderEdgeLabels: false,
+      defaultEdgeType: "arrow",
       labelDensity: 0.07,
       labelGridCellSize: 90,
       labelRenderedSizeThreshold: 9,
       zIndex: true,
       allowInvalidContainer: false,
-      defaultNodeColor: cssColor("--primary", "rgb(180, 120, 80)"),
-      defaultEdgeColor: cssColor("--muted-foreground", "rgb(130, 130, 130)"),
+      defaultNodeColor: cssColor("--chart-1", "#d97706"),
+      defaultEdgeColor: cssColor("--border", "#71717a"),
       stagePadding: 32,
       minCameraRatio: 0.04,
       maxCameraRatio: 12,
@@ -191,7 +203,7 @@ export default function KnowledgeGraph() {
       graph.setNodeAttribute(node, "highlighted", Boolean(query && matches));
       graph.setNodeAttribute(node, "color", matches
         ? (graph.getNodeAttribute(node, "color") as string)
-        : cssColor("--muted", "rgb(120, 120, 120)"));
+        : cssColor("--muted-foreground", "#a1a1aa"));
       graph.setNodeAttribute(node, "size", query && matches ? 8 : 5);
     });
     graph.forEachEdge((edge) => {
@@ -201,7 +213,7 @@ export default function KnowledgeGraph() {
       const targetMatch = Boolean(graph.getNodeAttribute(target, "highlighted"));
       graph.setEdgeAttribute(edge, "color", query && (sourceMatch || targetMatch)
         ? cssColor("--primary", "rgb(180, 120, 80)")
-        : cssColor("--muted-foreground", "rgb(130, 130, 130)"));
+        : cssColor("--border", "#71717a"));
       graph.setEdgeAttribute(edge, "size", query && (sourceMatch || targetMatch) ? 1.8 : 0.7);
     });
     renderer.refresh();
