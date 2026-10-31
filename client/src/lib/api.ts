@@ -271,5 +271,5 @@ export interface BenchmarkSuiteRun {
     case_count: number;
     artifacts: Record<string, string>;
   }>;
-  failures: Array<{ dataset: string; seed: number; error: string }>;
+  failures: Array<{ dataset: string; seed: number; max_hops: number; error: string }>;
 }
