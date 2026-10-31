@@ -44,6 +44,8 @@ def test_aggregate_suite_metrics_reports_mean_and_student_t_interval() -> None:
     assert metric["sample_sd"] > 0
     assert metric["ci95_low"] < metric["mean"] < metric["ci95_high"]
     assert metric["interval_method"] == "Student-t 95% CI"
+    matched = result["matched_cases|t301-reconstructed|hops=2|graph_reasoning"]["metrics"]["micro_f1"]
+    assert matched["mean"] == pytest.approx(0.15)
 
 
 def test_aggregate_suite_metrics_marks_single_seed_interval_not_estimable() -> None:
