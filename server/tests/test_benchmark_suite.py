@@ -3,7 +3,10 @@ from __future__ import annotations
 import pytest
 
 from app.api.routes.experiments import aggregate_suite_metrics
-from scripts.run_benchmark import merge_candidate_predictions
+from scripts.run_benchmark import (
+    build_matched_case_summary,
+    merge_candidate_predictions,
+)
 
 
 def _run(seed: int, f1: float, *, hops: int = 2) -> dict[str, object]:
@@ -78,3 +81,27 @@ def test_graph_tfidf_union_deduplicates_without_relabelling_provenance() -> None
     ]
     assert merged[0]["origin"] == "graph_inferred"
     assert merged[1]["origin"] == "retrieval_inferred"
+
+
+
+def test_matched_case_summary_scores_every_method_on_identical_case_ids() -> None:
+    method_cases = {
+        "tfidf": [
+            {"case_id": "case-1", "gold_values": ["A"], "predictions": [{"value": "A"}], "latency_ms": 1.0},
+            {"case_id": "case-2", "gold_values": ["B"], "predictions": [{"value": "X"}], "latency_ms": 1.0},
+            {"case_id": "case-3", "gold_values": ["C"], "predictions": [{"value": "C"}], "latency_ms": 1.0},
+        ],
+        "llm": [
+            {"case_id": "case-1", "gold_values": ["A"], "predictions": [{"value": "A"}], "latency_ms": 3.0},
+            {"case_id": "case-2", "gold_values": ["B"], "predictions": [], "latency_ms": 3.0},
+        ],
+    }
+
+    summary = build_matched_case_summary(method_cases, {"case-1", "case-2"})
+
+    assert summary["tfidf"]["n_evaluated"] == 2
+    assert summary["llm"]["n_evaluated"] == 2
+    assert summary["tfidf"]["n_total_comparison_cases"] == 2
+    assert summary["llm"]["n_total_comparison_cases"] == 2
+    assert summary["tfidf"]["micro_f1"] == pytest.approx(0.5)
+    assert summary["llm"]["micro_f1"] == pytest.approx(0.6666667)
