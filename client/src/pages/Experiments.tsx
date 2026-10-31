@@ -174,7 +174,7 @@ export default function Experiments() {
     }
     setSuiteRunning(true); setSuiteError(null); setSuiteResult(null);
     try {
-      const result = await api.runBenchmarkSuite({ datasets: suiteDatasets, seeds, test_fraction: benchmarkTestFraction, with_llm: benchmarkWithLlm, max_llm_cases: 15 });
+      const result = await api.runBenchmarkSuite({ datasets: suiteDatasets, seeds, graph_hops: graphHops, test_fraction: benchmarkTestFraction, with_llm: benchmarkWithLlm, max_llm_cases: 15 });
       setSuiteResult(result);
       const history = await api.listBenchmarkRuns();
       setSavedRuns(history.runs);
