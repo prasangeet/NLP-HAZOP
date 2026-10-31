@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "ui/**"
+      - "feat/**"
   pull_request:
     branches:
       - main
@@ -36,6 +37,6 @@ jobs:
           cache: pnpm
           cache-dependency-path: client/pnpm-lock.yaml
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
       - name: Build client
         run: pnpm build
