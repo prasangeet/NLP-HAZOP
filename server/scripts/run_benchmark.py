@@ -467,6 +467,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "prompt_only_llm": [],
         "tfidf_vector_retrieval": [],
         "graph_reasoning": [],
+        "graph_plus_tfidf": [],
         "hybrid_graph_vector_llm": [],
     }
 
@@ -526,6 +527,27 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         }
         method_cases["graph_reasoning"].append(graph_case)
         case_result["methods"]["graph_reasoning"] = graph_case
+
+        # Deterministic component ablation: add TF-IDF-ranked candidates to
+        # the graph neighbourhood, then apply the same graph reasoner without
+        # an LLM. This isolates the contribution of vector retrieval.
+        graph_vector_predictions, graph_vector_latency, graph_vector_status = (
+            _run_recovery(
+                hybrid_use_case,
+                builder,
+                request,
+                reasoner=graph_reasoner,
+            )
+        )
+        graph_vector_case = {
+            "case_id": case.case_id,
+            "gold_values": list(case.gold_values),
+            "predictions": graph_vector_predictions,
+            "latency_ms": graph_vector_latency,
+            "status": graph_vector_status,
+        }
+        method_cases["graph_plus_tfidf"].append(graph_vector_case)
+        case_result["methods"]["graph_plus_tfidf"] = graph_vector_case
 
         # LLM methods are evaluated on the same deterministic capped subset.
         if llm_enabled and case.case_id in llm_case_ids:
