@@ -509,7 +509,7 @@ export default function Experiments() {
             <div className="space-y-2"><h3 className="text-sm font-semibold">Per-case predictions</h3><p className="text-xs text-muted-foreground">Expand a test case to inspect its silver target and each method’s predictions. Targets are derived from co-listed row fields.</p>
               <div className="space-y-2">{benchmarkResult.cases.map((item) => <details key={item.case_id} className="rounded-md border border-border px-3 py-2"><summary className="cursor-pointer text-xs font-medium">{item.case_id} · {item.known_endpoint}</summary><div className="mt-3 space-y-2 text-xs"><p><span className="text-muted-foreground">Silver target:</span> {item.gold_values.join(" · ") || "None"}</p>
                 {Object.entries(item.methods).map(([method, result]) => <div key={method} className="rounded-md bg-muted/30 p-2"><p className="font-medium">{method} · {result.status ?? "unknown"} · {result.latency_ms == null ? "latency unavailable" : result.latency_ms.toFixed(1) + " ms"}</p><p className="mt-1 text-muted-foreground">Predictions: {(result.predictions ?? []).map((prediction) => prediction.value).join(" · ") || "No candidates / abstained"}</p>{(result.predictions ?? []).some((prediction) => prediction.evidence) && <ul className="mt-1 list-disc pl-4 text-muted-foreground">{(result.predictions ?? []).filter((prediction) => prediction.evidence).map((prediction, index) => <li key={method + "-" + index}>{prediction.evidence}</li>)}</ul>}</div>)}
-              </div></div></details>)}</div>
+              </div></details>)}</div>
             </div>
           </div>}
         </CardContent>
