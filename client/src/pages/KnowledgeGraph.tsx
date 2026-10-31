@@ -43,12 +43,10 @@ function cssColor(variable: string, fallback: string): string {
   const value = getComputedStyle(probe).color.trim();
   probe.remove();
 
-  // CSS theme tokens use OKLCH. Convert OKLCH to sRGB because Sigma's
-  // WebGL color parser expects hex/rgb colors, not OKLCH strings.
-  const match = value.match(/^oklch\\(\\s*([\\d.]+)%?\\s+([\\d.]+)\\s+([\\d.]+)(?:deg)?(?:\\s*\\/\\s*([\\d.]+)%?)?\\s*\\)$/i);
+  const match = value.match(/^oklch\(\s*([\d.]+)%?\s+([\d.]+)\s+([\d.]+)(?:deg)?(?:\s*\/\s*([\d.]+)%?)?\s*\)$/i);
   if (match) {
     let L = Number(match[1]);
-    if (value.match(/^oklch\\(\\s*[\\d.]+%/i)) L /= 100;
+    if (value.match(/^oklch\(\s*[\d.]+%/i)) L /= 100;
     const C = Number(match[2]);
     const h = (Number(match[3]) * Math.PI) / 180;
     const a = C * Math.cos(h);
@@ -68,11 +66,11 @@ function cssColor(variable: string, fallback: string): string {
     return `#${rgb.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
   }
 
-  const rgbMatch = value.match(/^rgba?\\(\\s*(\\d+)\\D+(\\d+)\\D+(\\d+)/i);
+  const rgbMatch = value.match(/^rgba?\(\s*(\d+)\D+(\d+)\D+(\d+)/i);
   if (rgbMatch) {
     return `#${rgbMatch.slice(1, 4).map((channel) => Number(channel).toString(16).padStart(2, "0")).join("")}`;
   }
-  if (/^#[\\da-f]{3}(?:[\\da-f]{3})?$/i.test(value)) return value;
+  if (/^#[\da-f]{3}(?:[\da-f]{3})?$/i.test(value)) return value;
   return fallback;
 }
 
@@ -80,10 +78,8 @@ function createGraph(payload: GraphPayload) {
   const graph = new Graph({ multi: true, type: "directed" });
   const visibleNodes = payload.nodes.slice(0, MAX_VISIBLE_NODES);
   const nodeIds = new Set(visibleNodes.map((node) => node.id));
-  const rootStyles = getComputedStyle(document.documentElement);
   const primary = cssColor("--chart-1", "#d97706");
-  const muted = cssColor("--muted-foreground", "#a1a1aa");
-  const edgeColor = cssColor("--muted-foreground", "#a1a1aa");
+  const edgeColor = "#71717a"; // zinc-500 for clear visibility
   const palette = [
     primary,
     cssColor("--chart-2", primary),
@@ -91,17 +87,24 @@ function createGraph(payload: GraphPayload) {
     cssColor("--chart-4", primary),
     cssColor("--chart-5", primary),
   ];
-  void rootStyles;
 
-  const columns = Math.max(1, Math.ceil(Math.sqrt(visibleNodes.length)));
-  visibleNodes.forEach((node, index) => {
+  const labelColor = "#0f172a";
+
+  visibleNodes.forEach((node) => {
     const typeIndex = Math.abs([...node.entity_type].reduce((sum, char) => sum + char.charCodeAt(0), 0)) % palette.length;
+    const color = palette[typeIndex];
+
+    const x = Math.random() * 80 - 40;
+    const y = Math.random() * 80 - 40;
+
     graph.addNode(node.id, {
       label: node.label || node.id,
-      x: (index % columns) * 2.4 + ((Math.floor(index / columns) % 2) * 0.6),
-      y: -Math.floor(index / columns) * 2.2,
-      size: 5,
-      color: palette[typeIndex],
+      x,
+      y,
+      size: 6,
+      color: color,
+      originalColor: color,
+      labelColor: labelColor,
       entityType: node.entity_type,
       datasetId: node.dataset_id,
       original: node,
@@ -117,10 +120,13 @@ function createGraph(payload: GraphPayload) {
     const edgeKey = graph.hasEdge(edge.source, edge.target)
       ? `${edge.id}::${index}`
       : edge.id;
+
     graph.addEdgeWithKey(edgeKey, edge.source, edge.target, {
       label: edge.label || edge.predicate,
       color: edgeColor,
-      size: 2,
+      originalColor: edgeColor,
+      size: 2.5, // Thicker edges so they are clearly visible and clickable
+      zIndex: 1,
       original: edge,
     });
   });
@@ -180,15 +186,18 @@ export default function KnowledgeGraph() {
 
     const renderer = new Sigma(graph, container, {
       renderLabels: true,
-      renderEdgeLabels: false,
+      renderEdgeLabels: true, // Enabled edge labels so relationships are visible on the canvas!
       defaultEdgeType: "arrow",
+      defaultLabelColor: "#0f172a",
+      labelColor: { attribute: "labelColor" },
       labelDensity: 0.07,
       labelGridCellSize: 90,
       labelRenderedSizeThreshold: 9,
+      edgeLabelColor: { attribute: "color" },
       zIndex: true,
       allowInvalidContainer: false,
       defaultNodeColor: cssColor("--chart-1", "#d97706"),
-      defaultEdgeColor: cssColor("--muted-foreground", "#a1a1aa"),
+      defaultEdgeColor: "#71717a",
       stagePadding: 32,
       minCameraRatio: 0.04,
       maxCameraRatio: 12,
@@ -198,10 +207,12 @@ export default function KnowledgeGraph() {
       const original = graph.getNodeAttribute(node, "original") as GraphNode;
       setSelectedItem({ kind: "node", value: original });
     });
+
     renderer.on("clickEdge", ({ edge }) => {
       const original = graph.getEdgeAttribute(edge, "original") as GraphEdge;
       setSelectedItem({ kind: "edge", value: original });
     });
+
     renderer.on("clickStage", () => setSelectedItem(null));
 
     rendererRef.current = renderer;
@@ -213,32 +224,50 @@ export default function KnowledgeGraph() {
     };
   }, [graph, fullscreen]);
 
+  // Search highlighting, selection tracking, and dynamic visual updates
   useEffect(() => {
     const renderer = rendererRef.current;
     if (!renderer || !graph) return;
 
     const query = search.trim().toLowerCase();
+    const selectedNodeId = selectedItem?.kind === "node" ? selectedItem.value.id : null;
+    const selectedEdgeKey = selectedItem?.kind === "edge" ? selectedItem.value.id : null;
+
     graph.forEachNode((node) => {
-      const label = String(graph.getNodeAttribute(node, "label")).toLowerCase();
-      const matches = !query || label.includes(query);
-      graph.setNodeAttribute(node, "highlighted", Boolean(query && matches));
-      graph.setNodeAttribute(node, "color", matches
-        ? (graph.getNodeAttribute(node, "color") as string)
-        : cssColor("--muted-foreground", "#a1a1aa"));
-      graph.setNodeAttribute(node, "size", query && matches ? 8 : 5);
+      const label = String(graph.getNodeAttribute(node, "label") || "").toLowerCase();
+      const originalColor = String(graph.getNodeAttribute(node, "originalColor") || cssColor("--chart-1", "#d97706"));
+      const matchesSearch = !query || label.includes(query);
+      const isSelected = node === selectedNodeId;
+
+      graph.setNodeAttribute(node, "highlighted", Boolean((query && matchesSearch) || isSelected));
+      graph.setNodeAttribute(
+        node,
+        "color",
+        !query || matchesSearch || isSelected ? originalColor : "#d4d4d8"
+      );
+      graph.setNodeAttribute(node, "size", isSelected || (query && matchesSearch) ? 9 : 6);
     });
-    graph.forEachEdge((edge) => {
+
+    graph.forEachEdge((edge, attr) => {
       const source = graph.source(edge);
       const target = graph.target(edge);
       const sourceMatch = Boolean(graph.getNodeAttribute(source, "highlighted"));
       const targetMatch = Boolean(graph.getNodeAttribute(target, "highlighted"));
-      graph.setEdgeAttribute(edge, "color", query && (sourceMatch || targetMatch)
-        ? cssColor("--primary", "rgb(180, 120, 80)")
-        : cssColor("--border", "#71717a"));
-      graph.setEdgeAttribute(edge, "size", query && (sourceMatch || targetMatch) ? 1.8 : 0.7);
+      const isEdgeSelected = attr.original?.id === selectedEdgeKey || edge === selectedEdgeKey;
+
+      const isHighlighted = (query && (sourceMatch || targetMatch)) || isEdgeSelected || source === selectedNodeId || target === selectedNodeId;
+
+      graph.setEdgeAttribute(
+        edge,
+        "color",
+        isHighlighted ? "#f97316" : "#d4d4d8"
+      );
+      graph.setEdgeAttribute(edge, "size", isHighlighted ? 3.5 : 2);
+      graph.setEdgeAttribute(edge, "zIndex", isHighlighted ? 10 : 1);
     });
+
     renderer.refresh();
-  }, [search, graph]);
+  }, [search, selectedItem, graph]);
 
   useEffect(() => {
     if (!fullscreen) return;
@@ -249,9 +278,7 @@ export default function KnowledgeGraph() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [fullscreen]);
 
-  const selectItemDetails = selectedItem
-    ? selectedItem.value
-    : null;
+  const selectItemDetails = selectedItem ? selectedItem.value : null;
 
   const graphPanel = (
     <Card className={fullscreen ? "flex h-full min-h-0 flex-col rounded-none border-0" : "min-w-0"}>
@@ -301,7 +328,7 @@ export default function KnowledgeGraph() {
           <div
             ref={containerRef}
             className={fullscreen ? "min-h-0 flex-1" : "h-[560px]"}
-            style={{ background: "var(--background)", position: "relative" }}
+            style={{ background: "#f4f4f5", position: "relative" }}
             aria-label="Interactive causal graph. Select nodes or edges to inspect details."
           />
         )}
