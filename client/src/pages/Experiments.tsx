@@ -640,7 +640,7 @@ export default function Experiments() {
             </div>
             {suiteResult.failures.map((failure) => <p key={failure.dataset + failure.seed + failure.max_hops} className="text-xs text-destructive">{failure.dataset} · seed {failure.seed} · {failure.max_hops} hops: {failure.error}</p>)}
           </>}
-          {savedRuns.length > 0 && <div className="space-y-1 border-t border-border pt-3"><h3 className="text-sm font-medium">Saved suite runs</h3>{savedRuns.slice(0, 5).map((run) => <p key={run.run_id} className="text-xs text-muted-foreground">{run.run_id} · {run.runs.length} completed · {run.failures.length} failed</p>)}</div>}
+          {savedRuns.length > 0 && <div className="space-y-1 border-t border-border pt-3"><h3 className="text-sm font-medium">Saved suite runs</h3>{savedRuns.slice(0, 5).map((run) => <div key={run.run_id} className="flex items-center justify-between gap-2 rounded-md border border-border p-2"><p className="text-xs text-muted-foreground">{run.run_id} · {run.runs.length} completed · {run.failures.length} failed</p><Button size="sm" variant="outline" onClick={() => setSuiteResult(run)}>Open results</Button></div>)}</div>}
         </CardContent>
       </Card>
 
