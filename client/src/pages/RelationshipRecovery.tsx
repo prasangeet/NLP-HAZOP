@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { GitBranch, BrainCircuit, Workflow, Search } from "lucide-react";
+import {
+  BrainCircuit,
+  GitBranch,
+  Search,
+  Workflow,
+  ShieldAlert,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,24 +17,28 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import PageHeader from "@/components/layout/PageHeader";
 
 const strategies = [
   {
     id: "graph",
+    number: "01",
     title: "Graph-based",
-    description: "Infer missing links from existing graph structure.",
+    description: "Use existing graph structure and multi-hop paths to propose missing links.",
     icon: GitBranch,
   },
   {
     id: "llm",
+    number: "02",
     title: "LLM-based",
-    description: "Use language-model reasoning to propose relationships.",
+    description: "Use language-model reasoning over available HAZOP context.",
     icon: BrainCircuit,
   },
   {
     id: "hybrid",
+    number: "03",
     title: "Hybrid",
-    description: "Combine graph reasoning and language-model inference.",
+    description: "Combine graph-based evidence with language-model proposals.",
     icon: Workflow,
   },
 ] as const;
@@ -39,23 +49,25 @@ export default function RelationshipRecovery() {
   const [strategy, setStrategy] = useState<RecoveryStrategy>("hybrid");
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-8">
-      <section className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">
-          Relationship Recovery
-        </h2>
-
-        <p className="text-sm text-muted-foreground">
-          Identify potentially missing causal links in structured HAZOP data.
-        </p>
-      </section>
+    <div className="mx-auto w-full max-w-7xl space-y-6">
+      <PageHeader
+        eyebrow="Causal inference / 04"
+        title="Relationship recovery"
+        description="Generate candidate causal links for incomplete HAZOP records and review their supporting evidence."
+        actions={<Badge variant="outline">Proposal workflow</Badge>}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Recovery strategy</CardTitle>
-          <CardDescription>
-            Choose the method to use when recovering missing relationships.
-          </CardDescription>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-1">
+              <CardTitle>Recovery method</CardTitle>
+              <CardDescription>
+                Select the strategy used to generate candidate relationships.
+              </CardDescription>
+            </div>
+            <Badge variant="secondary">Default: Hybrid</Badge>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -65,30 +77,37 @@ export default function RelationshipRecovery() {
               const isSelected = strategy === item.id;
 
               return (
-                <button
+                <Button
                   key={item.id}
                   type="button"
-                  onClick={() => setStrategy(item.id)}
+                  variant={isSelected ? "secondary" : "outline"}
                   aria-pressed={isSelected}
-                  className={`flex flex-col items-start gap-3 rounded-lg border p-4 text-left transition-colors ${
-                    isSelected
-                      ? "border-primary bg-accent"
-                      : "border-border hover:bg-accent/50"
-                  }`}
+                  onClick={() => setStrategy(item.id)}
+                  className={`h-auto min-h-28 w-full justify-start whitespace-normal border p-4 text-left ${isSelected ? "border-primary" : "border-border"}`}
                 >
-                  <Icon className="size-5" />
+                  <div className="flex w-full items-start gap-3">
+                    <div className="flex size-8 shrink-0 items-center justify-center border border-border bg-background">
+                      <Icon className="size-4" />
+                    </div>
 
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">{item.title}</p>
-                    <p className="text-xs leading-5 text-muted-foreground">
-                      {item.description}
-                    </p>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold">{item.title}</span>
+                        <span className="text-[10px] tabular-nums text-muted-foreground">
+                          {item.number}
+                        </span>
+                      </div>
+                      <span className="block whitespace-normal text-[10px] font-normal leading-5 text-muted-foreground">
+                        {item.description}
+                      </span>
+                      {isSelected ? (
+                        <span className="block pt-1 text-[10px] font-medium text-foreground">
+                          Selected method
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
-
-                  {isSelected && (
-                    <Badge variant="secondary">Selected</Badge>
-                  )}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -96,47 +115,55 @@ export default function RelationshipRecovery() {
           <Separator />
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-medium">Selected method</p>
-              <p className="text-sm text-muted-foreground">
-                {strategies.find((item) => item.id === strategy)?.title}
+            <div className="space-y-1">
+              <p className="text-xs font-medium">
+                Selected: {strategies.find((item) => item.id === strategy)?.title}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                A dataset must be loaded before recovery can run.
               </p>
             </div>
 
             <Button disabled>
-              <Search className="size-4" />
-              Recover relationships
+              <Search className="size-3.5" />
+              Recovery API not connected
             </Button>
           </div>
-
-          <p className="text-xs text-muted-foreground">
-            Recovery will be enabled after a dataset is selected and the
-            backend API is connected.
-          </p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Proposed relationships</CardTitle>
-          <CardDescription>
-            Review inferred causal links and their supporting evidence.
-          </CardDescription>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <CardTitle>Candidate relationships</CardTitle>
+              <CardDescription>
+                Review proposed links, their provenance, and supporting evidence.
+              </CardDescription>
+            </div>
+            <Badge variant="outline">No proposals</Badge>
+          </div>
         </CardHeader>
 
         <CardContent>
-          <div className="flex min-h-64 flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-8 text-center">
-            <GitBranch className="size-8 text-muted-foreground" />
+          <div className="flex min-h-64 flex-col items-center justify-center gap-3 border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
+            <Workflow className="size-7 text-muted-foreground" />
 
             <div className="max-w-md space-y-1">
-              <p className="text-sm font-medium">No proposals available</p>
-              <p className="text-sm text-muted-foreground">
-                Run recovery on an imported dataset to inspect proposed
-                relationships, evidence, and provenance.
+              <p className="text-xs font-semibold">No recovery run available</p>
+              <p className="text-[11px] leading-5 text-muted-foreground">
+                Once recovery is connected, proposed deviation, cause,
+                consequence, and safeguard relationships will be listed here.
               </p>
             </div>
+          </div>
 
-            <Badge variant="outline">Awaiting recovery</Badge>
+          <div className="mt-4 flex items-start gap-2 border border-border px-3 py-3">
+            <ShieldAlert className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+            <p className="text-[10px] leading-5 text-muted-foreground">
+              Recovered relationships are hypotheses, not verified process-safety
+              facts. They must retain provenance and be reviewed before acceptance.
+            </p>
           </div>
         </CardContent>
       </Card>

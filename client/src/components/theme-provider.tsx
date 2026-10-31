@@ -29,23 +29,32 @@ export function ThemeProvider({
   storageKey = "nlp-hazop-theme",
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
-    return (localStorage.getItem(storageKey) as Theme | null) ?? defaultTheme;
+    const storedTheme = window.localStorage.getItem(storageKey);
+    return storedTheme === "light" || storedTheme === "dark" || storedTheme === "system"
+      ? storedTheme
+      : defaultTheme;
   });
 
   useEffect(() => {
     const root = window.document.documentElement;
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-    root.classList.remove("light", "dark");
+    const applyTheme = () => {
+      const resolvedTheme =
+        theme === "system" ? (mediaQuery.matches ? "dark" : "light") : theme;
 
-    const resolvedTheme =
-      theme === "system"
-        ? window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light"
-        : theme;
+      root.classList.remove("light", "dark");
+      root.classList.add(resolvedTheme);
+      root.style.colorScheme = resolvedTheme;
+    };
 
-    root.classList.add(resolvedTheme);
-    localStorage.setItem(storageKey, theme);
+    applyTheme();
+    window.localStorage.setItem(storageKey, theme);
+
+    if (theme === "system") {
+      mediaQuery.addEventListener("change", applyTheme);
+      return () => mediaQuery.removeEventListener("change", applyTheme);
+    }
   }, [theme, storageKey]);
 
   return (

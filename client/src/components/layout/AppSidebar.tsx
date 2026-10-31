@@ -53,24 +53,24 @@ export default function AppSidebar({
 }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" variant="sidebar">
-      <SidebarHeader className="h-16 justify-center overflow-hidden group-data-[collapsible=icon]:items-center">
-        <div className="flex min-w-0 items-center gap-3 px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <GitBranch className="size-5 shrink-0" />
+      <SidebarHeader className="h-16 justify-center overflow-hidden group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0">
+        <div className="flex w-full min-w-0 items-center gap-3 px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+          <div className="flex size-9 shrink-0 items-center justify-center border border-sidebar-border bg-sidebar-primary text-sidebar-primary-foreground">
+            <GitBranch className="size-4 shrink-0" />
           </div>
 
           <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-            <h1 className="truncate text-sm font-semibold tracking-tight">
+            <h1 className="truncate text-xs font-semibold tracking-tight">
               NLP-HAZOP
             </h1>
-            <p className="truncate text-xs text-sidebar-foreground/70">
+            <p className="truncate text-[10px] text-sidebar-foreground/65">
               Causal reasoning
             </p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="overflow-x-hidden">
+      <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Workspace</SidebarGroupLabel>
 
@@ -78,16 +78,15 @@ export default function AppSidebar({
             <SidebarMenu>
               {navigation.map((item) => {
                 const Icon = item.icon;
-                const isActive = activePage === item.page;
 
                 return (
                   <SidebarMenuItem key={item.page}>
                     <SidebarMenuButton
-                      isActive={isActive}
+                      isActive={activePage === item.page}
                       tooltip={item.label}
                       onClick={() => onNavigate(item.page)}
                     >
-                      <Icon className="shrink-0" />
+                      <Icon />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -99,8 +98,8 @@ export default function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter className="overflow-hidden">
-        <div className="px-2 py-2 text-xs text-sidebar-foreground/70 group-data-[collapsible=icon]:hidden">
-          Research build
+        <div className="border-t border-sidebar-border px-2 py-3 text-[10px] text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
+          NLP-HAZOP · Research build
         </div>
       </SidebarFooter>
 
