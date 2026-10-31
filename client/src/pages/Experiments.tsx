@@ -575,7 +575,7 @@ export default function Experiments() {
               </label>
             ))}
           </div>
-          <label className="block space-y-1 text-xs"><span className="text-muted-foreground">Random seeds (comma-separated; up to 10)</span>
+          <label className="block space-y-1 text-xs"><span className="text-muted-foreground">Random seeds (comma-separated; up to 6)</span>
             <input value={suiteSeeds} onChange={(event) => setSuiteSeeds(event.target.value)} disabled={suiteRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
           </label>
           <label className="block space-y-1 text-xs"><span className="text-muted-foreground">Graph hop settings for ablation (comma-separated; 2–8)</span>
