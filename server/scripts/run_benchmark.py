@@ -843,6 +843,27 @@ def write_outputs(
         )
     lines.extend([
         "",
+        "## Matched-case comparison",
+        "",
+        "- Comparison subset size: {}".format(metadata.get("comparison_case_count", 0)),
+        "- Selection: {}".format(metadata.get("comparison_case_selection", "not recorded")),
+        "",
+        "| Method | Status | Evaluated / matched | Micro F1 | Coverage |",
+        "|---|---|---:|---:|---:|",
+    ])
+    for method, metrics in result.get("matched_case_summary", {}).items():
+        lines.append(
+            "| {} | {} | {} / {} | {} | {} |".format(
+                method,
+                metrics.get("status", "unknown"),
+                metrics.get("n_evaluated", 0),
+                metrics.get("n_total_comparison_cases", 0),
+                format_metric(metrics.get("micro_f1")),
+                format_metric(metrics.get("coverage")),
+            )
+        )
+    lines.extend([
+        "",
         "## Interpretation notes",
         "",
         "- Missing or disabled methods are not scored as zero; inspect their status.",
