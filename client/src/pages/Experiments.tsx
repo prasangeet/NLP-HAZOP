@@ -528,9 +528,6 @@ export default function Experiments() {
         </CardContent>
       </Card>
 
-      <section className="space-y-3">
-        <div>
-
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
