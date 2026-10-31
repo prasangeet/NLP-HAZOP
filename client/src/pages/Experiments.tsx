@@ -24,7 +24,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import PageHeader from "@/components/layout/PageHeader";
-import { api, type BenchmarkRun, type RecoveryResponse } from "@/lib/api";
+import { api, type BenchmarkRun, type BenchmarkSuiteRun, type RecoveryResponse } from "@/lib/api";
 import { useWorkspaceStore } from "@/lib/workspace-store";
 
 type CheckStatus = "idle" | "running" | "passed" | "warning" | "failed";
@@ -105,6 +105,13 @@ export default function Experiments() {
   const [benchmarkRunning, setBenchmarkRunning] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
   const [benchmarkResult, setBenchmarkResult] = useState<BenchmarkRun | null>(null);
+  const [suiteDatasets, setSuiteDatasets] = useState<Array<"t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic">>(["t301-reconstructed", "t301-synthetic", "dwsim-synthetic"]);
+  const [suiteSeeds, setSuiteSeeds] = useState("42, 7, 21");
+  const [suiteRunning, setSuiteRunning] = useState(false);
+  const [suiteError, setSuiteError] = useState<string | null>(null);
+  const [suiteResult, setSuiteResult] = useState<BenchmarkSuiteRun | null>(null);
+  const [savedRuns, setSavedRuns] = useState<BenchmarkSuiteRun[]>([]);
+
 
   const runResearchBenchmark = async () => {
     if (benchmarkRunning) return;
@@ -125,6 +132,24 @@ export default function Experiments() {
     } finally {
       setBenchmarkRunning(false);
     }
+  };
+
+  const runBenchmarkSuite = async () => {
+    if (suiteRunning) return;
+    const seeds = suiteSeeds.split(",").map((value) => Number(value.trim()));
+    if (!suiteDatasets.length || !seeds.length || seeds.some((seed) => !Number.isInteger(seed) || seed < 0 || seed > 1000000) || new Set(seeds).size !== seeds.length) {
+      setSuiteError("Select at least one dataset and enter unique integer seeds between 0 and 1000000.");
+      return;
+    }
+    setSuiteRunning(true); setSuiteError(null); setSuiteResult(null);
+    try {
+      const result = await api.runBenchmarkSuite({ datasets: suiteDatasets, seeds, test_fraction: benchmarkTestFraction, with_llm: benchmarkWithLlm, max_llm_cases: 15 });
+      setSuiteResult(result);
+      const history = await api.listBenchmarkRuns();
+      setSavedRuns(history.runs);
+    } catch (error) {
+      setSuiteError(error instanceof Error ? error.message : "Benchmark suite failed.");
+    } finally { setSuiteRunning(false); }
   };
 
   const downloadBenchmarkArtifact = (filename: string, content: string, mimeType: string) => {
@@ -512,6 +537,48 @@ export default function Experiments() {
               </div></details>)}</div>
             </div>
           </div>}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Automated benchmark suite</CardTitle>
+          <CardDescription>Run a reproducible dataset × seed matrix and persist every run. Scores use silver row associations, not expert-verified causal truth.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            {([
+              ["t301-reconstructed", "T-301 reconstructed"],
+              ["t301-synthetic", "T-301 synthetic"],
+              ["dwsim-synthetic", "DWSIM synthetic"],
+            ] as const).map(([value, label]) => (
+              <label key={value} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={suiteDatasets.includes(value)} disabled={suiteRunning}
+                  onChange={(event) => setSuiteDatasets((current) => event.target.checked ? [...current, value] : current.filter((item) => item !== value))} />
+                {label}
+              </label>
+            ))}
+          </div>
+          <label className="block space-y-1 text-xs"><span className="text-muted-foreground">Random seeds (comma-separated; up to 10)</span>
+            <input value={suiteSeeds} onChange={(event) => setSuiteSeeds(event.target.value)} disabled={suiteRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={() => void runBenchmarkSuite()} disabled={suiteRunning || !suiteDatasets.length}>
+              {suiteRunning ? <LoaderCircle className="size-4 animate-spin" /> : <Play className="size-4" />}
+              {suiteRunning ? "Running suite…" : "Run benchmark suite"}
+            </Button>
+            <span className="text-xs text-muted-foreground">{suiteDatasets.length * suiteSeeds.split(",").filter((item) => item.trim()).length} planned runs</span>
+          </div>
+          {suiteError && <p role="alert" className="text-sm text-destructive">{suiteError}</p>}
+          {suiteResult && <>
+            <div className="rounded-md border border-border p-3 text-xs"><p className="font-medium">Run {suiteResult.run_id}</p><p className="mt-1 text-muted-foreground">{suiteResult.runs.length} completed · {suiteResult.failures.length} failed</p><p className="mt-2 text-muted-foreground">{suiteResult.label_warning}</p></div>
+            <div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[680px] text-left text-xs">
+              <thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-2">Dataset</th><th className="p-2">Seed</th><th className="p-2">Cases</th><th className="p-2">Method</th><th className="p-2">Micro F1</th><th className="p-2">Coverage</th></tr></thead>
+              <tbody>{suiteResult.runs.flatMap((run) => Object.entries(run.method_summary).map(([method, metrics]) => <tr key={run.dataset + run.seed + method} className="border-t border-border"><td className="p-2">{run.dataset}</td><td className="p-2">{run.seed}</td><td className="p-2">{run.case_count}</td><td className="p-2">{method} · {metrics.status ?? "unknown"}</td><td className="p-2">{formatBenchmarkMetric(metrics.micro_f1)}</td><td className="p-2">{formatBenchmarkMetric(metrics.coverage)}</td></tr>))}</tbody>
+            </table></div>
+            {suiteResult.failures.map((failure) => <p key={failure.dataset + failure.seed} className="text-xs text-destructive">{failure.dataset} · seed {failure.seed}: {failure.error}</p>)}
+          </>}
+          {savedRuns.length > 0 && <div className="space-y-1 border-t border-border pt-3"><h3 className="text-sm font-medium">Saved suite runs</h3>{savedRuns.slice(0, 5).map((run) => <p key={run.run_id} className="text-xs text-muted-foreground">{run.run_id} · {run.runs.length} completed · {run.failures.length} failed</p>)}</div>}
         </CardContent>
       </Card>
 
