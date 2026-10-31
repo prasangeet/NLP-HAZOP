@@ -53,7 +53,11 @@ const strategyLabels = {
   hybrid: "Hybrid",
 } as const;
 
-function formatBenchmarkMetric(value: number | null | undefined): string {\n  return value == null || !Number.isFinite(value) ? "—" : value.toFixed(3);\n}\n\nfunction StatusBadge({ status }: { status: CheckStatus }) {
+function formatBenchmarkMetric(value: number | null | undefined): string {
+  return value == null || !Number.isFinite(value) ? "—" : value.toFixed(3);
+}
+
+function StatusBadge({ status }: { status: CheckStatus }) {
   if (status === "passed") return <Badge variant="secondary">Passed</Badge>;
   if (status === "failed") return <Badge variant="destructive">Failed</Badge>;
   if (status === "warning") return <Badge variant="outline">Warning</Badge>;
