@@ -122,6 +122,27 @@ Required controls:
 - Mark silver-label and expert-adjudicated evaluations distinctly.
 - Never display a metric as causal validity or safety certification.
 
+## 7.1 Implemented automated ablation and repeated-seed summaries
+
+The suite now accepts graph hop limits (2–8) alongside dataset tracks and
+random seeds. Each selected combination runs the same benchmark CLI with
+the requested `--max-hops` value. This is a **graph-depth sensitivity
+ablation**, not a complete component ablation: it tests the effect of the
+reasoner's maximum traversal depth while leaving the dataset split protocol,
+retrieval settings, and other model components unchanged.
+
+For each dataset, hop setting, method, and metric, the API aggregates
+seed-level results. With two to six successful seeds it reports the sample
+mean, sample standard deviation, and a two-sided 95% Student-t interval.
+With one successful seed, uncertainty is explicitly marked not estimable.
+The frontend displays the across-seed micro-F1 interval and mean coverage.
+Intervals are descriptive of random split variability; they do not account
+for dataset sampling bias, label uncertainty, or expert disagreement.
+
+The frontend also retrieves each persisted run's Markdown report and CSV
+artifacts from the API. A suite is limited to 18 dataset × seed × hop runs
+to bound synchronous API work.
+
 ## 8.1 Automated frontend execution and persisted runs
 
 The Experiments workbench exposes a multi-dataset, multi-seed suite through
