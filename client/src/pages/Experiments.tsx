@@ -99,13 +99,14 @@ export default function Experiments() {
 
         <div className="grid gap-3 md:grid-cols-3">
           {metrics.map((metric) => (
-              <MetricCard
-                title={metric.title}
-                symbol={metric.symbol}
-                description={metric.description}
-                formula={metric.formula}
-                icon={metric.icon}
-              />
+            <MetricCard
+              key={metric.title}
+              title={metric.title}
+              symbol={metric.symbol}
+              description={metric.description}
+              formula={metric.formula}
+              icon={metric.icon}
+            />
           ))}
         </div>
       </section>
