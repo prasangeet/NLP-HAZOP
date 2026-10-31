@@ -235,7 +235,7 @@ export interface BenchmarkCaseResult {
 
 export interface BenchmarkRun {
   status: string;
-  dataset: string;
+  dataset: "t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic";
   seed: number;
   test_fraction: number;
   metadata: Record<string, unknown>;
