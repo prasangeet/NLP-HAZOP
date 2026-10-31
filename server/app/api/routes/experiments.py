@@ -235,12 +235,12 @@ def list_benchmark_runs() -> dict[str, object]:
     return {"count": len(runs), "runs": runs}
 
 
-@router.get("/benchmark-runs/{run_id}/{dataset}/{seed}/{artifact}")
-def get_benchmark_artifact(run_id: str, dataset: str, seed: int, artifact: str) -> dict[str, str]:
+@router.get("/benchmark-runs/{run_id}/{dataset}/{seed}/{max_hops}/{artifact}")
+def get_benchmark_artifact(run_id: str, dataset: str, seed: int, max_hops: int, artifact: str) -> dict[str, str]:
     allowed = {"results.json", "summary.csv", "predictions.csv", "report.md"}
     if artifact not in allowed or Path(run_id).name != run_id or Path(dataset).name != dataset:
         raise HTTPException(status_code=404, detail="Artifact not found.")
-    path = RUNS_ROOT / run_id / dataset / f"seed-{seed}" / artifact
+    path = RUNS_ROOT / run_id / dataset / f"seed-{seed}" / f"hops-{max_hops}" / artifact
     if not path.is_file():
         raise HTTPException(status_code=404, detail="Artifact not found.")
     return {"filename": artifact, "content": path.read_text(encoding="utf-8")}
