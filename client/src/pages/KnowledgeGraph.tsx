@@ -188,7 +188,6 @@ export default function KnowledgeGraph() {
       renderLabels: true,
       renderEdgeLabels: true, // Enabled edge labels so relationships are visible on the canvas!
       defaultEdgeType: "arrow",
-      defaultLabelColor: "#0f172a",
       labelColor: { attribute: "labelColor" },
       labelDensity: 0.07,
       labelGridCellSize: 90,
