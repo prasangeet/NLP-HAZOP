@@ -90,6 +90,7 @@ def run_benchmark(payload: BenchmarkRequest) -> dict[str, object]:
             "seed": payload.seed,
             "test_fraction": payload.test_fraction,
             "method_summary": results.get("method_summary", {}),
+            "matched_case_summary": results.get("matched_case_summary", {}),
             "metadata": results.get("metadata", {}),
             "cases": results.get("cases", []),
             "artifacts": {
