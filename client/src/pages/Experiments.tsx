@@ -1,12 +1,21 @@
+import { useState } from "react";
 import {
-  ChartNoAxesCombined,
-  ClipboardCheck,
+  Activity,
+  CheckCircle2,
+  CircleAlert,
+  Clock3,
   FlaskConical,
-  Target,
-  Scale,
+  GitBranch,
+  LoaderCircle,
+  Play,
+  RotateCcw,
+  ShieldCheck,
+  Workflow,
+  XCircle,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -15,98 +24,442 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import PageHeader from "@/components/layout/PageHeader";
-import MetricCard from "@/components/dashboard/MetricCard";
+import { api, type RecoveryResponse } from "@/lib/api";
+import { useWorkspaceStore } from "@/lib/workspace-store";
 
-const metrics = [
-  {
-    title: "Precision",
-    symbol: "P",
-    description: "How many proposed relationships are relevant or correct.",
-    formula: "TP / (TP + FP)",
-    icon: Target,
-  },
-  {
-    title: "Recall",
-    symbol: "R",
-    description: "How many reference relationships the method successfully recovers.",
-    formula: "TP / (TP + FN)",
-    icon: ClipboardCheck,
-  },
-  {
-    title: "F1-score",
-    symbol: "F1",
-    description: "Harmonic mean of precision and recall.",
-    formula: "2 × (P × R) / (P + R)",
-    icon: Scale,
-  },
-];
+type CheckStatus = "idle" | "running" | "passed" | "warning" | "failed";
 
-const methods = [
-  { name: "Graph-based", detail: "Structural and multi-hop reasoning" },
-  { name: "LLM-based", detail: "Language-model inference" },
-  { name: "Hybrid", detail: "Combined graph and language-model reasoning" },
-];
+type CheckResult = {
+  id: string;
+  title: string;
+  status: CheckStatus;
+  summary: string;
+  details: string[];
+  durationMs?: number;
+};
+
+type StrategyResult = {
+  strategy: "graph" | "llm" | "hybrid";
+  status: "passed" | "failed";
+  durationMs: number;
+  candidateCount: number;
+  response: RecoveryResponse | null;
+  error?: string;
+};
+
+const strategyLabels = {
+  graph: "Graph-based",
+  llm: "LLM-based",
+  hybrid: "Hybrid",
+} as const;
+
+function StatusBadge({ status }: { status: CheckStatus }) {
+  if (status === "passed") return <Badge variant="secondary">Passed</Badge>;
+  if (status === "failed") return <Badge variant="destructive">Failed</Badge>;
+  if (status === "warning") return <Badge variant="outline">Warning</Badge>;
+  if (status === "running") return <Badge variant="outline">Running</Badge>;
+  return <Badge variant="outline">Not run</Badge>;
+}
+
+function ResultIcon({ status }: { status: CheckStatus }) {
+  if (status === "passed") return <CheckCircle2 className="size-4 text-primary" />;
+  if (status === "failed") return <XCircle className="size-4 text-destructive" />;
+  if (status === "warning") return <CircleAlert className="size-4 text-muted-foreground" />;
+  if (status === "running") return <LoaderCircle className="size-4 animate-spin text-muted-foreground" />;
+  return <Activity className="size-4 text-muted-foreground" />;
+}
 
 export default function Experiments() {
+  const activeDatasetId = useWorkspaceStore((state) => state.activeDatasetId);
+  const [checks, setChecks] = useState<CheckResult[]>([
+    {
+      id: "api",
+      title: "API connectivity",
+      status: "idle",
+      summary: "Check whether the FastAPI service responds.",
+      details: [],
+    },
+    {
+      id: "dataset",
+      title: "Dataset consistency",
+      status: "idle",
+      summary: "Compare dataset, scenario, and relationship data returned by the API.",
+      details: [],
+    },
+    {
+      id: "graph",
+      title: "Knowledge graph integrity",
+      status: "idle",
+      summary: "Check graph nodes, edges, and relationship endpoints.",
+      details: [],
+    },
+  ]);
+  const [strategyResults, setStrategyResults] = useState<StrategyResult[]>([]);
+  const [running, setRunning] = useState(false);
+  const [lastRun, setLastRun] = useState<string | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
+
+  const setCheck = (result: CheckResult) => {
+    setChecks((current) => {
+      const found = current.some((item) => item.id === result.id);
+      return found
+        ? current.map((item) => (item.id === result.id ? result : item))
+        : [...current, result];
+    });
+  };
+
+  const runConnectivity = async () => {
+    const started = performance.now();
+    setCheck({
+      id: "api",
+      title: "API connectivity",
+      status: "running",
+      summary: "Checking FastAPI health endpoint…",
+      details: [],
+    });
+    try {
+      const health = await api.health();
+      setCheck({
+        id: "api",
+        title: "API connectivity",
+        status: health.status?.toLowerCase() === "ok" || Boolean(health.status)
+          ? "passed"
+          : "warning",
+        summary: `Health endpoint responded: ${health.status || "status not provided"}.`,
+        details: [`Service: ${health.service || "not specified"}`, `Endpoint: ${api.baseUrl}/health`],
+        durationMs: Math.round(performance.now() - started),
+      });
+      return true;
+    } catch (error) {
+      setCheck({
+        id: "api",
+        title: "API connectivity",
+        status: "failed",
+        summary: error instanceof Error ? error.message : "Health check failed.",
+        details: [`Endpoint: ${api.baseUrl}/health`],
+        durationMs: Math.round(performance.now() - started),
+      });
+      return false;
+    }
+  };
+
+  const runDatasetChecks = async () => {
+    const started = performance.now();
+    setCheck({
+      id: "dataset",
+      title: "Dataset consistency",
+      status: "running",
+      summary: "Loading dataset records, scenarios, and relationships…",
+      details: [],
+    });
+    setCheck({
+      id: "graph",
+      title: "Knowledge graph integrity",
+      status: "running",
+      summary: "Checking graph node and edge references…",
+      details: [],
+    });
+
+    if (!activeDatasetId) {
+      const message = "Select an imported dataset on the Datasets page first.";
+      setCheck({
+        id: "dataset",
+        title: "Dataset consistency",
+        status: "warning",
+        summary: message,
+        details: [],
+      });
+      setCheck({
+        id: "graph",
+        title: "Knowledge graph integrity",
+        status: "warning",
+        summary: message,
+        details: [],
+      });
+      return null;
+    }
+
+    try {
+      const [datasetResponse, scenariosResponse, relationshipsResponse, graph] =
+        await Promise.all([
+          api.listDatasets(),
+          api.listScenarios(activeDatasetId),
+          api.listRelationships(activeDatasetId),
+          api.graph(activeDatasetId),
+        ]);
+
+      const dataset = datasetResponse.datasets.find(
+        (item) => item.dataset_id === activeDatasetId,
+      );
+      const scenarios = scenariosResponse.scenarios ?? [];
+      const relationships = relationshipsResponse.relationships ?? [];
+      const nodeIds = new Set(graph.nodes.map((node) => node.id));
+      const danglingEdges = graph.edges.filter(
+        (edge) => !nodeIds.has(edge.source) || !nodeIds.has(edge.target),
+      );
+      const relationshipCountMismatch =
+        typeof dataset?.relationship_count === "number" &&
+        dataset.relationship_count !== relationships.length;
+      const datasetDetails = [
+        `Dataset: ${dataset?.name ?? activeDatasetId}`,
+        `Scenarios returned: ${scenarios.length}`,
+        `Relationships returned: ${relationships.length}`,
+        dataset
+          ? `Dataset summary count: ${dataset.relationship_count}`
+          : "Dataset ID was not present in the dataset listing.",
+      ];
+      const datasetPassed = Boolean(dataset) && scenarios.length > 0;
+      setCheck({
+        id: "dataset",
+        title: "Dataset consistency",
+        status: !dataset ? "failed" : relationshipCountMismatch ? "warning" : datasetPassed ? "passed" : "warning",
+        summary: !dataset
+          ? "The selected dataset was not found in the dataset listing."
+          : relationshipCountMismatch
+            ? "The dataset summary count differs from the relationship endpoint count; check endpoint semantics or pagination."
+            : datasetPassed
+              ? "Dataset and scenario records are accessible."
+              : "Dataset is accessible, but no scenarios were returned.",
+        details: datasetDetails,
+        durationMs: Math.round(performance.now() - started),
+      });
+
+      const graphPassed = graph.nodes.length > 0 && danglingEdges.length === 0;
+      setCheck({
+        id: "graph",
+        title: "Knowledge graph integrity",
+        status: danglingEdges.length > 0 ? "failed" : graphPassed ? "passed" : "warning",
+        summary: danglingEdges.length > 0
+          ? `${danglingEdges.length} edge(s) reference missing nodes.`
+          : graphPassed
+            ? "Every returned edge points to a node present in the graph."
+            : "The graph endpoint responded, but returned no nodes to validate.",
+        details: [
+          `Nodes: ${graph.nodes.length}`,
+          `Edges: ${graph.edges.length}`,
+          `Dangling edges: ${danglingEdges.length}`,
+          `Graph truncated by API: ${graph.truncated ? "yes" : "no"}`,
+        ],
+        durationMs: Math.round(performance.now() - started),
+      });
+
+      return { scenarios, relationships };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Dataset checks failed.";
+      setCheck({
+        id: "dataset",
+        title: "Dataset consistency",
+        status: "failed",
+        summary: message,
+        details: [],
+        durationMs: Math.round(performance.now() - started),
+      });
+      setCheck({
+        id: "graph",
+        title: "Knowledge graph integrity",
+        status: "failed",
+        summary: message,
+        details: [],
+        durationMs: Math.round(performance.now() - started),
+      });
+      return null;
+    }
+  };
+
+  const runStrategyComparison = async (
+    context?: Awaited<ReturnType<typeof runDatasetChecks>>,
+  ) => {
+    setStrategyResults([]);
+    if (!activeDatasetId) {
+      setRunError("Select an imported dataset before running recovery experiments.");
+      return;
+    }
+
+    const data = context ?? (await runDatasetChecks());
+    if (!data) {
+      setRunError("Could not load dataset context for the recovery comparison.");
+      return;
+    }
+
+    const relationship = data.relationships.find(
+      (item) => item.subject && item.predicate && item.scenario_id,
+    );
+    const scenarioId =
+      relationship?.scenario_id ?? data.scenarios.find((item) => item.scenario_id)?.scenario_id;
+    const knownEndpoint = relationship?.subject;
+    const predicate = relationship?.predicate;
+
+    if (!scenarioId || !knownEndpoint || !predicate) {
+      setRunError(
+        "No usable relationship with scenario ID, subject, and predicate was found. Check that the imported dataset contains mapped relationships.",
+      );
+      return;
+    }
+
+    setRunError(null);
+    const strategies = ["graph", "llm", "hybrid"] as const;
+    const results = await Promise.all(
+      strategies.map(async (strategy): Promise<StrategyResult> => {
+        const started = performance.now();
+        try {
+          const response = await api.recover(activeDatasetId, {
+            scenario_id: scenarioId,
+            predicate,
+            known_endpoint: knownEndpoint,
+            missing_endpoint: "object",
+            limit: 20,
+            strategy,
+          });
+          return {
+            strategy,
+            status: "passed",
+            durationMs: Math.round(performance.now() - started),
+            candidateCount: response.recovery?.candidates?.length ?? 0,
+            response,
+          };
+        } catch (error) {
+          return {
+            strategy,
+            status: "failed",
+            durationMs: Math.round(performance.now() - started),
+            candidateCount: 0,
+            response: null,
+            error: error instanceof Error ? error.message : "Recovery request failed.",
+          };
+        }
+      }),
+    );
+    setStrategyResults(results);
+  };
+
+  const runAllExperiments = async () => {
+    if (running) return;
+    setRunning(true);
+    setRunError(null);
+    setLastRun(null);
+    setStrategyResults([]);
+    try {
+      const healthy = await runConnectivity();
+      const data = await runDatasetChecks();
+      if (healthy && data) {
+        await runStrategyComparison(data);
+      } else if (!healthy) {
+        setRunError("API health check failed. Dataset checks were still attempted; recovery comparison was skipped.");
+      } else {
+        setRunError("Dataset checks did not complete successfully; recovery comparison was skipped.");
+      }
+      setLastRun(new Date().toLocaleString());
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const passedCount = checks.filter((check) => check.status === "passed").length;
+  const failedCount = checks.filter((check) => check.status === "failed").length;
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
       <PageHeader
         eyebrow="Validation / 05"
         title="Experiments"
-        description="Compare relationship-recovery strategies using reference data and explicit evaluation criteria."
-        actions={<Badge variant="outline">No evaluation run</Badge>}
+        description="Run repeatable, one-click checks against the live API, imported HAZOP data, graph structure, and recovery strategies."
+        actions={<Badge variant="outline">{activeDatasetId ?? "No dataset selected"}</Badge>}
       />
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <FlaskConical className="size-4 text-muted-foreground" />
-            <CardTitle>Methods under evaluation</CardTitle>
-          </div>
-          <CardDescription>
-            These are the recovery strategies available in the research workflow.
-            No experiment results are loaded yet.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="grid gap-3 md:grid-cols-3">
-          {methods.map((method, index) => (
-            <div key={method.name} className="border border-border p-4">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold">{method.name}</p>
-                <span className="text-[10px] tabular-nums text-muted-foreground">
-                  0{index + 1}
-                </span>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <FlaskConical className="size-4 text-muted-foreground" />
+                <CardTitle>Experiment runner</CardTitle>
               </div>
-              <p className="mt-2 text-[10px] leading-5 text-muted-foreground">
-                {method.detail}
-              </p>
-              <div className="mt-4">
-                <Badge variant="outline">Not evaluated</Badge>
-              </div>
+              <CardDescription>
+                The full suite calls the configured backend. Results reflect actual responses, not simulated metrics.
+              </CardDescription>
             </div>
-          ))}
+            <Button onClick={() => void runAllExperiments()} disabled={running}>
+              {running ? <LoaderCircle className="size-4 animate-spin" /> : <Play className="size-4" />}
+              {running ? "Running suite…" : "Run all experiments"}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="border border-border p-3">
+              <p className="text-[10px] text-muted-foreground">Checks passed</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{passedCount}</p>
+            </div>
+            <div className="border border-border p-3">
+              <p className="text-[10px] text-muted-foreground">Checks failed</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{failedCount}</p>
+            </div>
+            <div className="border border-border p-3">
+              <p className="text-[10px] text-muted-foreground">Last run</p>
+              <p className="mt-2 text-xs font-medium">{lastRun ?? "Not run yet"}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+            <Button variant="outline" size="sm" disabled={running} onClick={() => void runConnectivity()}>
+              <Activity className="size-3.5" /> Test API
+            </Button>
+            <Button variant="outline" size="sm" disabled={running} onClick={() => void runDatasetChecks()}>
+              <ShieldCheck className="size-3.5" /> Validate dataset and graph
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={running || !activeDatasetId}
+              onClick={() => void runStrategyComparison()}
+            >
+              <GitBranch className="size-3.5" /> Compare recovery strategies
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={running}
+              onClick={() => {
+                setChecks((current) => current.map((item) => ({ ...item, status: "idle", details: [], durationMs: undefined })));
+                setStrategyResults([]);
+                setRunError(null);
+                setLastRun(null);
+              }}
+            >
+              <RotateCcw className="size-3.5" /> Reset results
+            </Button>
+          </div>
+          {runError && <p className="text-xs text-destructive" role="alert">{runError}</p>}
         </CardContent>
       </Card>
 
       <section className="space-y-3">
-        <div className="space-y-1">
-          <h3 className="text-sm font-semibold">Evaluation criteria</h3>
-          <p className="text-[11px] text-muted-foreground">
-            Metric definitions only; values will come from actual evaluation runs.
-          </p>
+        <div>
+          <h2 className="text-sm font-semibold">System and data checks</h2>
+          <p className="mt-1 text-[11px] text-muted-foreground">Each check can run independently or as part of the full suite.</p>
         </div>
-
-        <div className="grid gap-3 md:grid-cols-3">
-          {metrics.map((metric) => (
-            <MetricCard
-              key={metric.title}
-              title={metric.title}
-              symbol={metric.symbol}
-              description={metric.description}
-              formula={metric.formula}
-              icon={metric.icon}
-            />
+        <div className="grid gap-3 lg:grid-cols-3">
+          {checks.filter((check) => ["api", "dataset", "graph"].includes(check.id)).map((check) => (
+            <Card key={check.id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-sm">{check.title}</CardTitle>
+                  <StatusBadge status={check.status} />
+                </div>
+                <CardDescription>{check.summary}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <ResultIcon status={check.status} />
+                  {check.durationMs !== undefined ? <><Clock3 className="size-3" /> {check.durationMs} ms</> : "Waiting for run"}
+                </div>
+                {check.details.length > 0 && (
+                  <ul className="space-y-1 border-t border-border pt-3">
+                    {check.details.map((detail) => <li key={detail} className="break-words text-[10px] leading-5 text-muted-foreground">{detail}</li>)}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
       </section>
@@ -114,27 +467,48 @@ export default function Experiments() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <ChartNoAxesCombined className="size-4 text-muted-foreground" />
-            <CardTitle>Experiment results</CardTitle>
+            <Workflow className="size-4 text-muted-foreground" />
+            <CardTitle>Recovery strategy comparison</CardTitle>
           </div>
           <CardDescription>
-            Precision, recall, F1-score, and method comparisons will appear after
-            an evaluation run has been implemented.
+            The runner selects a relationship from the active dataset and sends the same scenario, predicate, and known subject to each available strategy. Candidate counts and response times are reported; these are not precision/recall scores.
           </CardDescription>
         </CardHeader>
-
-        <CardContent>
-          <div className="flex min-h-52 flex-col items-center justify-center gap-3 border border-dashed border-border bg-muted/20 px-6 py-8 text-center">
-            <ChartNoAxesCombined className="size-7 text-muted-foreground" />
-            <div className="space-y-1">
-              <p className="text-xs font-semibold">No experiment results</p>
-              <p className="max-w-sm text-[11px] leading-5 text-muted-foreground">
-                Results will not be generated or estimated by the interface.
-                They will be displayed when the evaluation pipeline supplies them.
+        <CardContent className="space-y-3">
+          {strategyResults.length === 0 ? (
+            <div className="flex min-h-36 flex-col items-center justify-center gap-2 border border-dashed border-border bg-muted/20 p-6 text-center">
+              <GitBranch className="size-6 text-muted-foreground" />
+              <p className="text-xs font-medium">No recovery comparison run</p>
+              <p className="max-w-lg text-[11px] leading-5 text-muted-foreground">
+                Choose Compare recovery strategies or Run all experiments. The dataset must contain at least one usable relationship.
               </p>
             </div>
-            <Badge variant="outline">Awaiting evaluation pipeline</Badge>
-          </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-3">
+              {strategyResults.map((result) => (
+                <div key={result.strategy} className="space-y-3 border border-border p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-semibold">{strategyLabels[result.strategy]}</p>
+                    <Badge variant={result.status === "passed" ? "secondary" : "destructive"}>
+                      {result.status === "passed" ? "Responded" : "Failed"}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><p className="text-[10px] text-muted-foreground">Candidates</p><p className="mt-1 text-xl font-semibold tabular-nums">{result.candidateCount}</p></div>
+                    <div><p className="text-[10px] text-muted-foreground">Latency</p><p className="mt-1 text-xl font-semibold tabular-nums">{result.durationMs}<span className="ml-1 text-[10px] font-normal">ms</span></p></div>
+                  </div>
+                  {result.error ? (
+                    <p className="break-words border-t border-border pt-3 text-[10px] leading-5 text-destructive">{result.error}</p>
+                  ) : (
+                    <div className="border-t border-border pt-3 text-[10px] leading-5 text-muted-foreground">
+                      Validation: {result.response?.validation.valid ? "passed" : "failed"}
+                      {result.response?.validation.errors.length ? ` · ${result.response.validation.errors.length} validation error(s)` : ""}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
