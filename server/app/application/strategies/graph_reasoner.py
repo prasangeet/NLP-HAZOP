@@ -164,6 +164,13 @@ class GraphReasoner:
             object=object_,
             origin=RelationshipOrigin.GRAPH_INFERRED,
             evidence=(
+                "Row-association candidate inferred by typed graph "
+                f"composition. {path_evidence} The endpoints are co-listed "
+                "through a reconstructed relationship path; this does not "
+                "establish an independently validated causal assertion."
+                if context.predicate.strip().casefold()
+                == "co_listed_with_consequence"
+                else
                 "Indirect causal reachability inferred by typed graph "
                 f"composition. {path_evidence} This is not evidence that "
                 "the endpoints are an immediate/direct cause-effect pair."
@@ -188,6 +195,89 @@ class GraphReasoner:
             ),
             confidence=None,
         )
+
+    def reason_all(
+        self,
+        context: EvidenceContextProtocol,
+    ) -> tuple[CausalRelation, ...]:
+        """Return all supported endpoints for a set-valued recovery query.
+
+        The interactive API keeps the conservative single-proposal behavior
+        of reason(). The benchmark uses this method because its target is a
+        set of co-listed consequences, not one uniquely determined node.
+        """
+        if not context.graph_context:
+            return ()
+
+        direction = context.missing_endpoint.strip().casefold()
+        if direction not in {"subject", "object"}:
+            return ()
+
+        paths = self._find_paths(context, direction)
+        if not paths:
+            return ()
+
+        requested_spec = RELATION_SCHEMA.get(context.predicate.strip().casefold())
+        if requested_spec is None:
+            return ()
+
+        by_endpoint: dict[tuple[EntityType, str], list[_Path]] = defaultdict(list)
+        for path in paths:
+            by_endpoint[path.endpoint].append(path)
+
+        dataset_id = getattr(context, "dataset_id", "default")
+        known = context.known_endpoint.strip()
+        relations: list[CausalRelation] = []
+        for endpoint_paths in by_endpoint.values():
+            selected = min(endpoint_paths, key=lambda path: len(path.edges))
+            known_type = selected.nodes[0][0]
+            endpoint_type = selected.nodes[-1][0]
+            subject, object_ = (
+                (selected.display_endpoint, known)
+                if direction == "subject"
+                else (known, selected.display_endpoint)
+            )
+            subject_type, object_type = (
+                (endpoint_type, known_type)
+                if direction == "subject"
+                else (known_type, endpoint_type)
+            )
+            if (
+                subject_type not in requested_spec.subject_types
+                or object_type not in requested_spec.object_types
+            ):
+                continue
+
+            path_evidence = self._format_path(selected)
+            path_source_ids = [
+                edge.source_id for edge in selected.edges if edge.source_id
+            ]
+            relations.append(
+                CausalRelation(
+                    subject=subject,
+                    predicate=context.predicate,
+                    object=object_,
+                    origin=RelationshipOrigin.GRAPH_INFERRED,
+                    evidence=(
+                        "Row-association candidate inferred by typed graph "
+                        f"composition. {path_evidence} The endpoints are "
+                        "co-listed through a reconstructed relationship "
+                        "path; this does not establish an independently "
+                        "validated causal assertion."
+                    ),
+                    confidence=None,
+                    source_id=(
+                        f"graph-path:{dataset_id}:" + "->".join(path_source_ids)
+                        if path_source_ids
+                        else None
+                    ),
+                    dataset_id=dataset_id,
+                    subject_type=subject_type,
+                    object_type=object_type,
+                )
+            )
+
+        return tuple(relations)
 
     def _direct_candidates(
         self,
@@ -362,21 +452,71 @@ class GraphReasoner:
                 )
 
                 if len(next_path.edges) >= 2:
-                    # Only compose the canonical propagation chain:
-                    # Deviation -> Effect -> Consequence. Do not turn a
-                    # cause-to-deviation path into an invented direct cause
-                    # to consequence relationship.
+                    # Compose only explicitly typed propagation paths.
+                    # T-301 rows without an intermediate-effect column encode
+                    # Cause -> Deviation -> Consequence (2 edges). Datasets
+                    # with an explicit effect encode the 3-edge variant.
+                    # These paths support a row-association candidate; they
+                    # do not create a direct causal edge between endpoints.
                     predicates = [
                         item.predicate.strip().casefold()
                         for item in next_path.edges
                     ]
-                    valid_chain = (
-                        predicates[0] == "leads_to"
-                        and predicates[-1] == "leads_to_consequence"
-                        if direction == "object"
-                        else predicates[0] == "leads_to_consequence"
-                        and predicates[-1] == "leads_to"
+                    association_query = (
+                        context.predicate.strip().casefold()
+                        == "co_listed_with_consequence"
                     )
+                    if association_query and direction == "object":
+                        valid_chain = predicates in (
+                            [
+                                "causes_deviation",
+                                "leads_to_consequence",
+                            ],
+                            [
+                                "causes_deviation",
+                                "leads_to",
+                                "leads_to_consequence",
+                            ],
+                        )
+                    elif association_query:
+                        valid_chain = predicates in (
+                            [
+                                "leads_to_consequence",
+                                "causes_deviation",
+                            ],
+                            [
+                                "leads_to_consequence",
+                                "leads_to",
+                                "causes_deviation",
+                            ],
+                        )
+                    elif direction == "object":
+                        valid_chain = predicates == [
+                            "leads_to",
+                            "leads_to_consequence",
+                        ]
+                    else:
+                        valid_chain = predicates == [
+                            "leads_to_consequence",
+                            "leads_to",
+                        ]
+                    if valid_chain and association_query:
+                        context_parts = [
+                            part.strip().casefold()
+                            for part in context.scenario_context.split(" | ")
+                            if part.strip()
+                        ]
+                        context_deviation = (
+                            context_parts[-1] if context_parts else ""
+                        )
+                        if context_deviation:
+                            deviation_nodes = {
+                                value
+                                for entity_type, value in next_path.nodes
+                                if entity_type == EntityType.DEVIATION
+                            }
+                            valid_chain = context_deviation in deviation_nodes
+
                     if valid_chain:
                         candidates.append(next_path)
 

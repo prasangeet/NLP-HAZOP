@@ -54,7 +54,7 @@ from app.infrastructure.graph.in_memory_graph_repository import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-PROTOCOL_VERSION = "1.0"
+PROTOCOL_VERSION = "1.1"
 DATASET_PATHS = {
     "t301-reconstructed": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
     "t301-synthetic": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
@@ -451,18 +451,40 @@ def _run_recovery(
         status = recovery.status.value
     else:
         context = builder.execute(recovery, request)
-        reasoning = reasoner.reason(context)
-        predictions = prediction_from_reasoning(
-            reasoning,
-            request.missing_endpoint.value,
-            request.scenario_id,
-        )
-        status = (
-            reasoning.abstention_reason.value
-            if reasoning.status == ReasoningStatus.ABSTAINED
-            and reasoning.abstention_reason is not None
-            else reasoning.status.value
-        )
+        reason_all = getattr(reasoner, "reason_all", None)
+        if callable(reason_all):
+            relations = reason_all(context)
+            predictions = [
+                prediction_from_relation(
+                    relation,
+                    request.missing_endpoint.value,
+                    scenario_id=request.scenario_id,
+                )
+                for relation in relations
+            ]
+            if predictions:
+                status = "candidates_found"
+            else:
+                reasoning = reasoner.reason(context)
+                status = (
+                    reasoning.abstention_reason.value
+                    if reasoning.status == ReasoningStatus.ABSTAINED
+                    and reasoning.abstention_reason is not None
+                    else reasoning.status.value
+                )
+        else:
+            reasoning = reasoner.reason(context)
+            predictions = prediction_from_reasoning(
+                reasoning,
+                request.missing_endpoint.value,
+                request.scenario_id,
+            )
+            status = (
+                reasoning.abstention_reason.value
+                if reasoning.status == ReasoningStatus.ABSTAINED
+                and reasoning.abstention_reason is not None
+                else reasoning.status.value
+            )
     latency_ms = (time.perf_counter() - started) * 1000.0
     return predictions, latency_ms, status
 
@@ -564,7 +586,7 @@ def run(
     for case in cases:
         request = RecoveryRequest(
             scenario_id=case.scenario_id,
-            predicate="causes",
+            predicate="co_listed_with_consequence",
             known_endpoint=case.known_endpoint,
             missing_endpoint=MissingEndpoint.OBJECT,
             limit=args.top_k,

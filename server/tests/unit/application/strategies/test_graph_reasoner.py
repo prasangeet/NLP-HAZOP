@@ -7,6 +7,7 @@ from app.application.use_cases.build_evidence_context import (
 )
 from app.application.use_cases.recover_missing_link import RecoveryStatus
 from app.domain.entities.hazop_record import RelationshipOrigin
+from app.domain.ontology.schema import EntityType
 from app.domain.reasoning.models import AbstentionReason, ReasoningStatus
 
 
@@ -162,3 +163,208 @@ def test_does_not_propose_an_edge_with_wrong_known_endpoint() -> None:
     )
     assert result.status == ReasoningStatus.ABSTAINED
     assert result.abstention_reason == AbstentionReason.INSUFFICIENT_SUPPORT
+
+
+
+def _typed_edge(
+    subject: str,
+    predicate: str,
+    object_: str,
+    subject_type: EntityType,
+    object_type: EntityType,
+    source_id: str,
+) -> EvidenceItem:
+    return EvidenceItem(
+        subject=subject,
+        predicate=predicate,
+        object=object_,
+        origin=RelationshipOrigin.RECONSTRUCTED,
+        evidence=f"Reconstructed row association: {subject} {predicate} {object_}.",
+        confidence=None,
+        source_id=source_id,
+        relevance_note="Reconstructed graph evidence.",
+        dataset_id="t301-reconstructed",
+        subject_type=subject_type,
+        object_type=object_type,
+    )
+
+
+def _cause_consequence_context(*edges: EvidenceItem) -> EvidenceContext:
+    return EvidenceContext(
+        scenario_id="T301-TEST",
+        predicate="co_listed_with_consequence",
+        known_endpoint="Blocked inflow line",
+        missing_endpoint="object",
+        status=RecoveryStatus.NO_CANDIDATES,
+        evidence_items=(),
+        graph_context=edges,
+        scenario_context="T-301 | Low level",
+        dataset_id="t301-reconstructed",
+    )
+
+
+def test_recovers_t301_cause_to_consequence_from_two_hop_path() -> None:
+    edges = (
+        _typed_edge(
+            "Blocked inflow line",
+            "causes_deviation",
+            "Low level",
+            EntityType.CAUSE,
+            EntityType.DEVIATION,
+            "row-1-cause",
+        ),
+        _typed_edge(
+            "Low level",
+            "leads_to_consequence",
+            "Pump running dry",
+            EntityType.DEVIATION,
+            EntityType.CONSEQUENCE,
+            "row-1-consequence",
+        ),
+    )
+
+    result = GraphReasoner(max_hops=2).reason(
+        _cause_consequence_context(*edges)
+    )
+
+    assert result.status == ReasoningStatus.PROPOSED
+    assert result.proposed_relation is not None
+    assert result.proposed_relation.subject == "Blocked inflow line"
+    assert result.proposed_relation.predicate == "co_listed_with_consequence"
+    assert result.proposed_relation.object == "Pump running dry"
+    assert result.proposed_relation.subject_type == EntityType.CAUSE
+    assert result.proposed_relation.object_type == EntityType.CONSEQUENCE
+    assert result.proposed_relation.origin == RelationshipOrigin.GRAPH_INFERRED
+    assert "does not establish an independently validated causal assertion" in result.proposed_relation.evidence
+
+
+def test_recovers_cause_to_consequence_through_intermediate_effect() -> None:
+    edges = (
+        _typed_edge(
+            "Blocked inflow line",
+            "causes_deviation",
+            "Low level",
+            EntityType.CAUSE,
+            EntityType.DEVIATION,
+            "row-1-cause",
+        ),
+        _typed_edge(
+            "Low level",
+            "leads_to",
+            "Pump cavitation",
+            EntityType.DEVIATION,
+            EntityType.EFFECT,
+            "row-1-effect",
+        ),
+        _typed_edge(
+            "Pump cavitation",
+            "leads_to_consequence",
+            "Pump running dry",
+            EntityType.EFFECT,
+            EntityType.CONSEQUENCE,
+            "row-1-consequence",
+        ),
+    )
+
+    result = GraphReasoner(max_hops=3).reason(
+        _cause_consequence_context(*edges)
+    )
+
+    assert result.status == ReasoningStatus.PROPOSED
+    assert result.proposed_relation is not None
+    assert result.proposed_relation.object == "Pump running dry"
+    assert "causes_deviation" in result.proposed_relation.evidence
+    assert "leads_to" in result.proposed_relation.evidence
+
+
+def test_cause_consequence_path_respects_hop_limit() -> None:
+    edges = (
+        _typed_edge(
+            "Blocked inflow line",
+            "causes_deviation",
+            "Low level",
+            EntityType.CAUSE,
+            EntityType.DEVIATION,
+            "row-1-cause",
+        ),
+        _typed_edge(
+            "Low level",
+            "leads_to",
+            "Pump cavitation",
+            EntityType.DEVIATION,
+            EntityType.EFFECT,
+            "row-1-effect",
+        ),
+        _typed_edge(
+            "Pump cavitation",
+            "leads_to_consequence",
+            "Pump running dry",
+            EntityType.EFFECT,
+            EntityType.CONSEQUENCE,
+            "row-1-consequence",
+        ),
+    )
+
+    result = GraphReasoner(max_hops=2).reason(
+        _cause_consequence_context(*edges)
+    )
+
+    assert result.status == ReasoningStatus.ABSTAINED
+
+
+
+def test_reason_all_returns_set_of_consequences_for_benchmark() -> None:
+    edges = (
+        _typed_edge(
+            "Blocked inflow line",
+            "causes_deviation",
+            "Low level",
+            EntityType.CAUSE,
+            EntityType.DEVIATION,
+            "row-1-cause",
+        ),
+        _typed_edge(
+            "Low level",
+            "leads_to_consequence",
+            "Pump running dry",
+            EntityType.DEVIATION,
+            EntityType.CONSEQUENCE,
+            "row-1-consequence",
+        ),
+        _typed_edge(
+            "Low level",
+            "leads_to_consequence",
+            "Production downtime",
+            EntityType.DEVIATION,
+            EntityType.CONSEQUENCE,
+            "row-2-consequence",
+        ),
+        _typed_edge(
+            "Blocked inflow line",
+            "causes_deviation",
+            "High pressure",
+            EntityType.CAUSE,
+            EntityType.DEVIATION,
+            "row-3-cause",
+        ),
+        _typed_edge(
+            "High pressure",
+            "leads_to_consequence",
+            "Equipment rupture",
+            EntityType.DEVIATION,
+            EntityType.CONSEQUENCE,
+            "row-3-consequence",
+        ),
+    )
+
+    reasoner = GraphReasoner(max_hops=2)
+    relations = reasoner.reason_all(_cause_consequence_context(*edges))
+
+    assert {relation.object for relation in relations} == {
+        "Pump running dry",
+        "Production downtime",
+    }
+    assert all(
+        relation.origin == RelationshipOrigin.GRAPH_INFERRED
+        for relation in relations
+    )
