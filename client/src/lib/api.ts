@@ -177,6 +177,10 @@ export const api = {
     request<{ filename: string; content: string }>(
       `/api/v1/experiments/benchmark-runs/${encodeURIComponent(runId)}/${encodeURIComponent(dataset)}/${seed}/${maxHops}/${encodeURIComponent(artifact)}`,
     ),
+  getBenchmarkFullReport: (runId: string) =>
+    request<{ filename: string; content: string }>(
+      `/api/v1/experiments/benchmark-runs/${encodeURIComponent(runId)}/full-report`,
+    ),
   runBenchmark: (payload: {
     dataset: string;
     seed: number;
