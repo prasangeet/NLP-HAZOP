@@ -9,6 +9,7 @@ from app.application.strategies.retrieval.models import (
     RetrievedEvidence,
 )
 from app.domain.entities.hazop_record import RelationshipOrigin
+from app.domain.ontology.schema import EntityType
 from app.domain.repositories.graph_repository import GraphRepository
 
 
@@ -77,6 +78,17 @@ class ScenarioLocalRetriever:
             if len(results) >= request.limit:
                 break
 
+        scenario_entities = tuple(
+            (value, entity_type)
+            for value, entity_type in (
+                (record.plant_unit, EntityType.PROCESS_UNIT),
+                (record.equipment, EntityType.EQUIPMENT),
+                (record.parameter, EntityType.PARAMETER),
+                (record.deviation, EntityType.DEVIATION),
+            )
+            if value
+        )
+
         return RetrievalResult(
             scenario_id=request.scenario_id,
             dataset_id=request.dataset_id,
@@ -94,6 +106,7 @@ class ScenarioLocalRetriever:
                     record.deviation,
                 ) if value
             ),
+            scenario_entities=scenario_entities,
         )
 
     @staticmethod
