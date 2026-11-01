@@ -73,7 +73,7 @@ function ResultIcon({ status }: { status: CheckStatus }) {
   return <Activity className="size-4 text-muted-foreground" />;
 }
 
-export default function Experiments() {
+export default function Experiments({ onOpenResults }: { onOpenResults: (runId: string) => void }) {
   const activeDatasetId = useWorkspaceStore((state) => state.activeDatasetId);
   const [checks, setChecks] = useState<CheckResult[]>([
     {
@@ -644,7 +644,7 @@ export default function Experiments() {
             </div>
             {suiteResult.failures.map((failure) => <p key={failure.dataset + failure.seed + failure.max_hops} className="text-xs text-destructive">{failure.dataset} · seed {failure.seed} · {failure.max_hops} hops: {failure.error}</p>)}
           </>}
-          {savedRuns.length > 0 && <div className="space-y-1 border-t border-border pt-3"><h3 className="text-sm font-medium">Saved suite runs</h3>{savedRuns.slice(0, 5).map((run) => <div key={run.run_id} className="flex items-center justify-between gap-2 rounded-md border border-border p-2"><p className="text-xs text-muted-foreground">{run.run_id} · {run.runs.length} completed · {run.failures.length} failed</p><Button size="sm" variant="outline" onClick={() => setSuiteResult(run)}>Open results</Button></div>)}</div>}
+          {savedRuns.length > 0 && <div className="space-y-1 border-t border-border pt-3"><h3 className="text-sm font-medium">Saved suite runs</h3>{savedRuns.slice(0, 5).map((run) => <div key={run.run_id} className="flex items-center justify-between gap-2 rounded-md border border-border p-2"><p className="text-xs text-muted-foreground">{run.run_id} · {run.runs.length} completed · {run.failures.length} failed</p><Button size="sm" variant="outline" onClick={() => onOpenResults(run.run_id)}>Open results</Button></div>)}</div>}
         </CardContent>
       </Card>
 
