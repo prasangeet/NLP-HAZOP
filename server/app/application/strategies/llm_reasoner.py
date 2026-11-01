@@ -73,7 +73,7 @@ class LLMReasoner:
 
     def __init__(
         self,
-        model_name: str = "llama-3.3-70b-versatile",
+        model_name: str = "openai/gpt-oss-120b",
         temperature: float = 0.0,
         *,
         chat_model: StructuredChatModel | None = None,
@@ -92,7 +92,7 @@ class LLMReasoner:
             model=model_name,
             temperature=temperature,
             api_key=SecretStr(api_key),
-        ).with_structured_output(LLMDecision)
+        ).with_structured_output(LLMDecision, method="json_schema", strict=False)
 
     def reason(
         self,

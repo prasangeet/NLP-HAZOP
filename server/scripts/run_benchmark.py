@@ -1136,7 +1136,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit-cases", type=int, default=None)
     parser.add_argument("--with-llm", action="store_true")
     parser.add_argument("--max-llm-cases", type=int, default=15)
-    parser.add_argument("--model", default="llama-3.3-70b-versatile")
+    parser.add_argument("--model", default="openai/gpt-oss-120b")
     args = parser.parse_args()
     if args.max_llm_cases < 0:
         parser.error("--max-llm-cases must be >= 0")

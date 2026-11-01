@@ -61,7 +61,7 @@ class PromptOnlyReasoner:
 
     def __init__(
         self,
-        model_name: str = "llama-3.3-70b-versatile",
+        model_name: str = "openai/gpt-oss-120b",
         temperature: float = 0.0,
         *,
         chat_model: PromptOnlyChatModel | None = None,
@@ -84,7 +84,7 @@ class PromptOnlyReasoner:
                 model=self._model_name,
                 temperature=self._temperature,
                 api_key=SecretStr(api_key),
-            ).with_structured_output(PromptOnlyDecision)
+            ).with_structured_output(PromptOnlyDecision, method="json_schema", strict=False)
         return self._llm
 
     def reason(self, context: EvidenceContextProtocol) -> ReasoningResult:
