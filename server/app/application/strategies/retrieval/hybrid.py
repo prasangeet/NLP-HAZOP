@@ -1,4 +1,4 @@
-"""Hybrid local-graph and TF-IDF retrieval strategy."""
+""""Hybrid local-graph and TF-IDF retrieval strategy."""
 
 from __future__ import annotations
 
@@ -88,4 +88,5 @@ class HybridRetriever:
             scenario_exists=True,
             graph_context=local.graph_context,
             scenario_context=local.scenario_context,
+            scenario_entities=local.scenario_entities,
         )
