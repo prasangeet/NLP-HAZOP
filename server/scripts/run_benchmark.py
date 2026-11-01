@@ -54,7 +54,7 @@ from app.infrastructure.graph.in_memory_graph_repository import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-PROTOCOL_VERSION = "1.1"
+PROTOCOL_VERSION = "1.2"
 DATASET_PATHS = {
     "t301-reconstructed": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
     "t301-synthetic": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
