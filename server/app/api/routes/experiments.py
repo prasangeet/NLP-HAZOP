@@ -97,6 +97,7 @@ def run_benchmark(payload: BenchmarkRequest) -> dict[str, object]:
             "cross_validation_folds": payload.cross_validation_folds,
             "method_summary": results.get("method_summary", {}),
             "matched_case_summary": results.get("matched_case_summary", {}),
+            "fold_results": results.get("fold_results", []),
             "metadata": results.get("metadata", {}),
             "cases": results.get("cases", []),
             "artifacts": {
