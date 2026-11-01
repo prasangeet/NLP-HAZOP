@@ -21,6 +21,10 @@ class CapturingReasoner:
     def __init__(self) -> None:
         self.context = None
 
+    def reason_all(self, context):
+        self.context = context
+        return ()
+
     def reason(self, context) -> ReasoningResult:
         self.context = context
         return ReasoningResult(
@@ -188,3 +192,36 @@ def test_hybrid_uses_generative_fallback_when_retrieval_candidates_do_not_match_
     assert fallback.context is not None
     assert fallback.context.evidence_items == ()
     assert fallback.context.scenario_context == context.scenario_context
+
+
+def test_reason_all_routes_matching_retrieval_candidates_to_llm_set_mode() -> None:
+    candidate = make_item(
+        "Pump failure",
+        "co_listed_with_consequence",
+        "Loss of feed",
+        RelationshipOrigin.RETRIEVAL_INFERRED,
+        "retrieval-row-1",
+    )
+    context = EvidenceContext(
+        scenario_id="HELD-OUT-003",
+        predicate="co_listed_with_consequence",
+        known_endpoint="Pump failure",
+        missing_endpoint="object",
+        status=RecoveryStatus.CANDIDATES_FOUND,
+        evidence_items=(candidate,),
+        graph_context=(),
+        scenario_context="P-101 | No feed flow",
+    )
+    adjudicator = CapturingReasoner()
+
+    relations = HybridReasoner(
+        graph_reasoner=GraphReasoner(),
+        llm_reasoner=adjudicator,
+    ).reason_all(context)
+
+    assert relations == ()
+    assert adjudicator.context is not None
+    assert len(adjudicator.context.evidence_items) == 1
+    assert adjudicator.context.evidence_items[0].source_id == "retrieval-row-1"
+    assert adjudicator.context.predicate == "co_listed_with_consequence"
+
