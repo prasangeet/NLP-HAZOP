@@ -1,13 +1,15 @@
 """Unit tests for the LLM missing-link reasoning strategy."""
 
+from dataclasses import replace
+
 from app.application.strategies.llm_reasoner import LLMDecision, LLMReasoner
-from app.domain.ontology.schema import EntityType
 from app.application.use_cases.build_evidence_context import (
     EvidenceContext,
     EvidenceItem,
 )
 from app.application.use_cases.recover_missing_link import RecoveryStatus
 from app.domain.entities.hazop_record import RelationshipOrigin
+from app.domain.ontology.schema import EntityType
 from app.domain.reasoning.models import AbstentionReason, ReasoningStatus
 
 
@@ -220,9 +222,10 @@ def test_reason_all_recovers_multiple_row_associations_with_provenance() -> None
         subject_type=EntityType.CAUSE,
         object_type=EntityType.CONSEQUENCE,
     )
-    context = make_context(first, second)
-    from dataclasses import replace
-    context = replace(context, predicate="co_listed_with_consequence")
+    context = replace(
+        make_context(first, second),
+        predicate="co_listed_with_consequence",
+    )
 
     relations = reasoner.reason_all(context)
 
@@ -233,7 +236,9 @@ def test_reason_all_recovers_multiple_row_associations_with_provenance() -> None
         "Overfilling", "Loss of containment"
     ]
     assert [relation.source_id for relation in relations] == ["row-1", "row-2"]
-    assert all(relation.origin == RelationshipOrigin.SOURCE for relation in relations)
+    assert all(
+        relation.origin == RelationshipOrigin.SOURCE for relation in relations
+    )
 
 
 def test_reason_all_is_restricted_to_row_association_predicate() -> None:
@@ -254,9 +259,9 @@ def test_reason_all_rejects_wrong_ontology_types() -> None:
         subject_type=EntityType.CAUSE,
         object_type=EntityType.EFFECT,
     )
-    from dataclasses import replace
     context = replace(
-        make_context(item), predicate="co_listed_with_consequence"
+        make_context(item),
+        predicate="co_listed_with_consequence",
     )
     assert reasoner.reason_all(context) == ()
 
@@ -268,6 +273,8 @@ def test_reason_remains_single_candidate_and_abstains_on_multiple_indices() -> N
             reason="Two endpoints are present.",
         )
     )
-    result = reasoner.reason(make_context(make_item(), make_item(object_="Tank overflow")))
+    result = reasoner.reason(
+        make_context(make_item(), make_item(object_="Tank overflow"))
+    )
     assert result.status == ReasoningStatus.ABSTAINED
     assert result.abstention_reason == AbstentionReason.AMBIGUOUS_EVIDENCE
