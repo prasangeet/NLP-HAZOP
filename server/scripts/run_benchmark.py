@@ -1084,7 +1084,6 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--dataset",
-        choices=tuple(DATASET_PATHS),
         required=True,
         help="Run one dataset track only; datasets are never pooled.",
     )
