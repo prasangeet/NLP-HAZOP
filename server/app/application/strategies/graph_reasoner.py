@@ -164,7 +164,6 @@ class GraphReasoner:
             object=object_,
             origin=RelationshipOrigin.GRAPH_INFERRED,
             evidence=(
-                (
                 "Row-association candidate inferred by typed graph "
                 f"composition. {path_evidence} The endpoints are co-listed "
                 "through a reconstructed relationship path; this does not "
@@ -175,7 +174,6 @@ class GraphReasoner:
                 "Indirect causal reachability inferred by typed graph "
                 f"composition. {path_evidence} This is not evidence that "
                 "the endpoints are an immediate/direct cause-effect pair."
-            )
             ),
             confidence=None,
             source_id=(
