@@ -143,7 +143,6 @@ class HazopSafetyValidator:
             ))
 
         folded = lambda values: {value.strip().casefold() for value in values if value.strip()}
-        candidate = missing_value.strip().casefold()
         cause_values = folded(record.causes)
         effect_values = folded(record.effects)
         consequence_values = folded(record.consequences)
