@@ -181,6 +181,7 @@ export const api = {
     test_fraction: number;
     with_llm: boolean;
     max_llm_cases: number;
+    cross_validation_folds: number;
   }) =>
     request<BenchmarkRun>("/api/v1/experiments/benchmark", {
       method: "POST",
@@ -222,6 +223,7 @@ export interface BenchmarkMethodMetrics {
 export interface BenchmarkCaseResult {
   case_id: string;
   scenario_id: string;
+  fold?: number;
   record_type: string;
   known_endpoint: string;
   gold_values: string[];
@@ -238,7 +240,9 @@ export interface BenchmarkRun {
   dataset: "t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic";
   seed: number;
   test_fraction: number;
+  cross_validation_folds?: number;
   metadata: Record<string, unknown>;
+  fold_results?: Array<{ fold: number; metadata: Record<string, unknown>; method_summary: Record<string, BenchmarkMethodMetrics>; matched_case_summary: Record<string, BenchmarkMethodMetrics> }>;
   method_summary: Record<string, BenchmarkMethodMetrics>;
   matched_case_summary: Record<string, BenchmarkMethodMetrics>;
   cases: BenchmarkCaseResult[];
