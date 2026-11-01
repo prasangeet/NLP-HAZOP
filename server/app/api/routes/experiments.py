@@ -313,6 +313,86 @@ def list_benchmark_runs() -> dict[str, object]:
     return {"count": len(runs), "runs": runs}
 
 
+@router.get("/benchmark-runs/{run_id}/full-report", summary="Download the complete report for a saved benchmark suite")
+def get_benchmark_full_report(run_id: str) -> dict[str, str]:
+    """Combine suite metadata, aggregate metrics, failures, and each run report."""
+    if Path(run_id).name != run_id or not re.fullmatch(r"[A-Za-z0-9._-]{1,100}", run_id):
+        raise HTTPException(status_code=404, detail="Experiment run not found.")
+    run_dir = RUNS_ROOT / run_id
+    manifest_path = run_dir / "manifest.json"
+    if not manifest_path.is_file():
+        raise HTTPException(status_code=404, detail="Experiment run not found.")
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=500, detail="Could not read experiment manifest.") from exc
+
+    lines = [
+        "# NLP-HAZOP — Complete Experiment Report",
+        "",
+        f"- **Run ID:** {run_id}",
+        f"- **Created:** {manifest.get('created_at', 'Unknown')}",
+        f"- **Protocol version:** {manifest.get('protocol_version', 'Unknown')}",
+        f"- **Label status:** {manifest.get('label_status', 'Unknown')}",
+        f"- **Datasets:** {', '.join(manifest.get('datasets', []))}",
+        f"- **Seeds:** {', '.join(map(str, manifest.get('seeds', [])))}",
+        f"- **Graph hops:** {', '.join(map(str, manifest.get('graph_hops', [])))}",
+        f"- **Test fraction:** {manifest.get('test_fraction', 'Unknown')}",
+        f"- **LLM enabled:** {manifest.get('with_llm', False)}",
+        "",
+        "> " + str(manifest.get("label_warning", "No label qualification supplied.")),
+        "",
+        "## Execution overview",
+        "",
+        f"- Completed runs: {len(manifest.get('runs', []))}",
+        f"- Failed runs: {len(manifest.get('failures', []))}",
+        "",
+        "## Aggregate metrics",
+        "",
+        "| Scope | Dataset | Hops | Method | Metric | Seeds | Mean | Sample SD | 95% CI |",
+        "|---|---|---:|---|---|---:|---:|---:|---|",
+    ]
+    for aggregate in manifest.get("aggregate_summary", {}).values():
+        for metric_name, values in aggregate.get("metrics", {}).items():
+            low, high = values.get("ci95_low"), values.get("ci95_high")
+            interval = f"{low:.4f}–{high:.4f}" if isinstance(low, (int, float)) and isinstance(high, (int, float)) else "Not estimable"
+            mean = values.get("mean")
+            sd = values.get("sample_sd")
+            lines.append(
+                f"| {aggregate.get('scope', '')} | {aggregate.get('dataset', '')} | "
+                f"{aggregate.get('max_hops', '')} | {aggregate.get('method', '')} | {metric_name} | "
+                f"{values.get('n_seeds', 0)} | {mean:.4f} | "
+                f"{sd:.4f if isinstance(sd, (int, float)) else '—'} | {interval} |"
+                if isinstance(mean, (int, float)) else
+                f"| {aggregate.get('scope', '')} | {aggregate.get('dataset', '')} | "
+                f"{aggregate.get('max_hops', '')} | {aggregate.get('method', '')} | {metric_name} | "
+                f"{values.get('n_seeds', 0)} | — | — | {interval} |"
+            )
+    failures = manifest.get("failures", [])
+    if failures:
+        lines.extend(["", "## Failed runs", ""])
+        for failure in failures:
+            lines.append(
+                f"- **{failure.get('dataset', 'Unknown')}**, seed {failure.get('seed', '—')}, "
+                f"{failure.get('max_hops', '—')} hops: {failure.get('error', 'Unknown error')}"
+            )
+    for run in manifest.get("runs", []):
+        dataset = str(run.get("dataset", "dataset"))
+        seed = run.get("seed", 0)
+        hops = run.get("max_hops", 0)
+        report_path = run_dir / dataset / f"seed-{seed}" / f"hops-{hops}" / "report.md"
+        lines.extend(["", "---", "", f"## Detailed report: {dataset} · seed {seed} · {hops} hops", ""])
+        if report_path.is_file():
+            try:
+                lines.append(report_path.read_text(encoding="utf-8").strip())
+            except OSError:
+                lines.append("_The individual report file could not be read._")
+        else:
+            lines.append("_No individual Markdown report was produced for this run._")
+    filename = f"nlp-hazop-{run_id}-full-report.md"
+    return {"filename": filename, "content": "\n".join(lines).rstrip() + "\n"}
+
+
 @router.get("/benchmark-runs/{run_id}/{dataset}/{seed}/{max_hops}/{artifact}")
 def get_benchmark_artifact(run_id: str, dataset: str, seed: int, max_hops: int, artifact: str) -> dict[str, str]:
     allowed = {"results.json", "summary.csv", "predictions.csv", "report.md"}
