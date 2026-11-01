@@ -7,6 +7,7 @@ from enum import StrEnum
 from typing import Protocol, runtime_checkable
 
 from app.domain.entities.hazop_record import CausalRelation
+from app.domain.ontology.schema import EntityType
 
 
 class RetrievalScope(StrEnum):
@@ -49,15 +50,11 @@ class RetrievalRequest:
         ):
             value = getattr(self, field_name)
             if not isinstance(value, str) or not value.strip():
-                raise ValueError(
-                    f"{field_name} must be a non-empty string"
-                )
+                raise ValueError(f"{field_name} must be a non-empty string")
             object.__setattr__(self, field_name, value.strip())
 
         if self.missing_endpoint not in {"subject", "object"}:
-            raise ValueError(
-                "MissingEndpoint must be either 'subject' or 'object'"
-            )
+            raise ValueError("MissingEndpoint must be either 'subject' or 'object'")
 
         if isinstance(self.limit, bool) or not isinstance(self.limit, int):
             raise TypeError("limit must be an integer")
@@ -76,10 +73,12 @@ class RetrievalResult:
     graph_context: tuple[RetrievedEvidence, ...] = ()
     scenario_context: str = ""
     dataset_id: str = "default"
+    scenario_entities: tuple[tuple[str, EntityType], ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence", tuple(self.evidence))
         object.__setattr__(self, "graph_context", tuple(self.graph_context))
+        object.__setattr__(self, "scenario_entities", tuple(self.scenario_entities))
 
     @property
     def is_empty(self) -> bool:
@@ -88,8 +87,8 @@ class RetrievalResult:
 
 @runtime_checkable
 class RetrievalStrategy(Protocol):
-    """Interface for interchangeable evidence retrieval methods."""
+    """Interface for interchangeable retrieval strategies."""
 
     def retrieve(self, request: RetrievalRequest) -> RetrievalResult:
-        """Retrieve evidence relevant to a partial causal link."""
+        """Retrieve evidence relevant to a partial HAZOP link."""
         ...
