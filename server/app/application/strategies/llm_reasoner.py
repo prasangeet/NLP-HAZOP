@@ -148,12 +148,13 @@ class LLMReasoner:
             ValidationError,
             ValueError,
             TypeError,
-        ):
+        ) as exc:
             # Provider and structured-output failures must never produce an
-            # unsupported relationship. Programming errors are not swallowed.
+            # unsupported relationship. Keep a safe diagnostic for evaluation.
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
+                (f"llm_call_failed:{type(exc).__name__}",),
                 dataset_id=dataset_id,
             )
 
