@@ -157,3 +157,34 @@ def test_hybrid_uses_generative_llm_fallback_when_retrieval_is_empty() -> None:
     assert fallback.context is not None
     assert fallback.context.scenario_context == context.scenario_context
     assert fallback.context.evidence_items == ()
+
+def test_hybrid_uses_generative_fallback_when_retrieval_candidates_do_not_match_query() -> None:
+    irrelevant_candidate = make_item(
+        "Different cause",
+        "leads_to_consequence",
+        "Loss of containment",
+        RelationshipOrigin.RETRIEVAL_INFERRED,
+        "vector-row-irrelevant",
+    )
+    context = EvidenceContext(
+        scenario_id="HELD-OUT-002",
+        predicate="co_listed_with_consequence",
+        known_endpoint="Pump failure",
+        missing_endpoint="object",
+        status=RecoveryStatus.CANDIDATES_FOUND,
+        evidence_items=(irrelevant_candidate,),
+        graph_context=(),
+        scenario_context="Equipment: P-101 | Deviation: No feed flow | Cause: Pump failure",
+    )
+    fallback = CapturingReasoner()
+
+    result = HybridReasoner(
+        graph_reasoner=GraphReasoner(),
+        llm_reasoner=CapturingReasoner(),
+        fallback_reasoner=fallback,
+    ).reason(context)
+
+    assert result.status == ReasoningStatus.ABSTAINED
+    assert fallback.context is not None
+    assert fallback.context.evidence_items == ()
+    assert fallback.context.scenario_context == context.scenario_context

@@ -440,9 +440,10 @@ def _run_recovery(
     request: RecoveryRequest,
     *,
     reasoner=None,
-) -> tuple[list[dict[str, Any]], float, str]:
+) -> tuple[list[dict[str, Any]], float, str, list[str]]:
     started = time.perf_counter()
     recovery = use_case.execute(request)
+    diagnostics: list[str] = []
     if reasoner is None:
         predictions = predictions_from_recovery(
             recovery,
@@ -472,6 +473,7 @@ def _run_recovery(
                     and reasoning.abstention_reason is not None
                     else reasoning.status.value
                 )
+                diagnostics.extend(reasoning.supporting_evidence)
         else:
             reasoning = reasoner.reason(context)
             predictions = prediction_from_reasoning(
@@ -485,8 +487,9 @@ def _run_recovery(
                 and reasoning.abstention_reason is not None
                 else reasoning.status.value
             )
+            diagnostics.extend(reasoning.supporting_evidence)
     latency_ms = (time.perf_counter() - started) * 1000.0
-    return predictions, latency_ms, status
+    return predictions, latency_ms, status, diagnostics
 
 
 def build_matched_case_summary(
@@ -614,7 +617,7 @@ def run(
         }
 
         # Vector-only retrieval baseline.
-        vector_predictions, vector_latency, vector_status = _run_recovery(
+        vector_predictions, vector_latency, vector_status, vector_diagnostics = _run_recovery(
             vector_use_case,
             builder,
             request,
@@ -625,13 +628,14 @@ def run(
             "predictions": vector_predictions,
             "latency_ms": vector_latency,
             "status": vector_status,
+            "diagnostics": vector_diagnostics,
         }
         method_cases["tfidf_vector_retrieval"].append(vector_case)
         case_result["methods"]["tfidf_vector_retrieval"] = vector_case
 
         # Graph baseline: training-scenario neighbourhood only. The target
         # record has no edges in the repository, preventing same-row leakage.
-        graph_predictions, graph_latency, graph_status = _run_recovery(
+        graph_predictions, graph_latency, graph_status, graph_diagnostics = _run_recovery(
             graph_use_case,
             builder,
             request,
@@ -643,6 +647,7 @@ def run(
             "predictions": graph_predictions,
             "latency_ms": graph_latency,
             "status": graph_status,
+            "diagnostics": graph_diagnostics,
         }
         method_cases["graph_reasoning"].append(graph_case)
         case_result["methods"]["graph_reasoning"] = graph_case
@@ -671,7 +676,7 @@ def run(
 
         # LLM methods are evaluated on the same deterministic capped subset.
         if llm_enabled and case.case_id in llm_case_ids:
-            prompt_predictions, prompt_latency, prompt_status = _run_recovery(
+            prompt_predictions, prompt_latency, prompt_status, prompt_diagnostics = _run_recovery(
                 local_use_case,
                 builder,
                 request,
@@ -683,11 +688,12 @@ def run(
                 "predictions": prompt_predictions,
                 "latency_ms": prompt_latency,
                 "status": prompt_status,
+                "diagnostics": prompt_diagnostics,
             }
             method_cases["prompt_only_llm"].append(prompt_case)
             case_result["methods"]["prompt_only_llm"] = prompt_case
 
-            hybrid_predictions, hybrid_latency, hybrid_status = _run_recovery(
+            hybrid_predictions, hybrid_latency, hybrid_status, hybrid_diagnostics = _run_recovery(
                 hybrid_use_case,
                 builder,
                 request,
@@ -699,6 +705,7 @@ def run(
                 "predictions": hybrid_predictions,
                 "latency_ms": hybrid_latency,
                 "status": hybrid_status,
+                "diagnostics": hybrid_diagnostics,
             }
             method_cases["hybrid_graph_vector_llm"].append(hybrid_case)
             case_result["methods"]["hybrid_graph_vector_llm"] = hybrid_case

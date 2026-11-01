@@ -142,10 +142,13 @@ one missing_value, or decision="abstain" with missing_value=null.
             ValidationError,
             ValueError,
             TypeError,
-        ):
+        ) as exc:
+            # Preserve the failure category in diagnostics without exposing
+            # provider response bodies or credentials.
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
+                (f"llm_call_failed:{type(exc).__name__}",),
                 dataset_id=dataset_id,
             )
 
