@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import Literal, Protocol
 
@@ -16,7 +17,12 @@ from app.domain.entities.hazop_record import (
     CausalRelation,
     RelationshipOrigin,
 )
-from app.domain.ontology.schema import infer_entity_types, validate_relation_types
+from app.domain.ontology.schema import (
+    RELATION_SCHEMA,
+    EntityType,
+    infer_entity_types,
+    validate_relation_types,
+)
 from app.domain.reasoning.models import (
     AbstentionReason,
     EvidenceContextProtocol,
@@ -41,7 +47,7 @@ class PromptOnlyDecision(BaseModel):
     )
     missing_value: str | None = Field(
         default=None,
-        description="The proposed missing endpoint, if supported."
+        description="The proposed missing endpoint, if supported.",
     )
     confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     reason: str = Field(description="Concise explanation.")
@@ -52,11 +58,17 @@ ENV_FILE = SERVER_ROOT / ".env"
 load_dotenv(ENV_FILE)
 
 
+def _normalize_entity(value: str) -> str:
+    """Normalize an entity phrase for conservative scenario-entity matching."""
+    return " ".join(re.findall(r"[a-z0-9]+", value.casefold()))
+
+
 class PromptOnlyReasoner:
     """Ask an LLM to complete a link from scenario context alone.
 
-    No retrieved relationships, vector search, or graph neighborhood is
-    supplied. The output is always marked MODEL_INFERRED.
+    No retrieved relationships or vector search are supplied. Typed scenario
+    metadata is retained only as a guard against reusing a known entity of an
+    incompatible type. The output is always marked MODEL_INFERRED.
     """
 
     def __init__(
@@ -84,8 +96,65 @@ class PromptOnlyReasoner:
                 model=self._model_name,
                 temperature=self._temperature,
                 api_key=SecretStr(api_key),
-            ).with_structured_output(PromptOnlyDecision, method="json_schema", strict=False)
+            ).with_structured_output(
+                PromptOnlyDecision,
+                method="json_schema",
+                strict=False,
+            )
         return self._llm
+
+    @staticmethod
+    def _expected_missing_types(
+        predicate: str,
+        missing_endpoint: str,
+    ) -> frozenset[EntityType]:
+        spec = RELATION_SCHEMA.get(predicate.strip().casefold())
+        if spec is None:
+            return frozenset()
+        if missing_endpoint == "subject":
+            return spec.subject_types
+        if missing_endpoint == "object":
+            return spec.object_types
+        return frozenset()
+
+    @staticmethod
+    def _known_entity_type_error(
+        candidate: str,
+        scenario_entities: tuple[tuple[str, EntityType], ...],
+        expected_types: frozenset[EntityType],
+    ) -> str | None:
+        """Reject a generated phrase matching a known entity of another type."""
+        normalized_candidate = _normalize_entity(candidate)
+        if len(normalized_candidate.split()) < 2:
+            return None
+
+        matches = [
+            (value, entity_type)
+            for value, entity_type in scenario_entities
+            if normalized_candidate in _normalize_entity(value)
+        ]
+        if not matches:
+            return None
+
+        incompatible = [
+            (value, entity_type)
+            for value, entity_type in matches
+            if entity_type not in expected_types
+        ]
+        if incompatible:
+            details = ", ".join(
+                f"{value!r} ({entity_type.value})"
+                for value, entity_type in incompatible
+            )
+            expected = ", ".join(
+                sorted(entity_type.value for entity_type in expected_types)
+            )
+            return (
+                f"Generated endpoint {candidate!r} matches a known scenario "
+                f"entity with incompatible type: {details}. Expected endpoint "
+                f"type: {expected or 'not defined'}."
+            )
+        return None
 
     def reason(self, context: EvidenceContextProtocol) -> ReasoningResult:
         """Return a model-inferred candidate or abstain."""
@@ -105,7 +174,24 @@ class PromptOnlyReasoner:
             f"(origin={item.origin.value}; evidence={item.evidence})"
             for item in context.graph_context
         ) if self._include_graph_context else ""
-        context_label = "Scenario and graph context" if self._include_graph_context else "Scenario context only"
+        context_label = (
+            "Scenario and graph context"
+            if self._include_graph_context
+            else "Scenario context only"
+        )
+        scenario_entities = tuple(getattr(context, "scenario_entities", ()))
+        entity_catalog = "\n".join(
+            f"- {value} [type={entity_type.value}]"
+            for value, entity_type in scenario_entities
+        ) or "No typed scenario-entity inventory supplied."
+        expected_types = self._expected_missing_types(
+            context.predicate,
+            context.missing_endpoint,
+        )
+        expected_type_text = (
+            ", ".join(sorted(item.value for item in expected_types))
+            or "No ontology type is defined for this endpoint."
+        )
         prompt = f"""
 You are a cautious assistant for missing-link research in HAZOP records.
 
@@ -114,13 +200,21 @@ Task:
 - Predicate: {context.predicate}
 - Known endpoint: {context.known_endpoint}
 - Missing endpoint: {context.missing_endpoint}
+- Required missing-endpoint type: {expected_type_text}
 
 {context_label}:
 {context.scenario_context}
 
+Typed entities already present in this scenario:
+{entity_catalog}
+
 Graph relationships (if supplied):
 {graph_context or "None supplied."}
 
+The missing endpoint MUST have the required ontology type. Do not return an
+equipment item, process unit, parameter, or deviation when the required type
+is Consequence. In particular, do not copy an entity from the typed scenario
+inventory unless its listed type is one of the required missing-endpoint types.
 Do not treat graph-derived paths or row co-occurrence as direct causal evidence.
 Propose a missing endpoint only if it follows clearly from the scenario
 description. Do not invent plant design details, safeguards, or causal facts.
@@ -143,8 +237,6 @@ one missing_value, or decision="abstain" with missing_value=null.
             ValueError,
             TypeError,
         ) as exc:
-            # Preserve the failure category in diagnostics without exposing
-            # provider response bodies or credentials.
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
@@ -157,7 +249,7 @@ one missing_value, or decision="abstain" with missing_value=null.
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
                 (decision.reason,) if decision.reason.strip() else (),
-                dataset_id=getattr(context, "dataset_id", "default"),
+                dataset_id=dataset_id,
             )
 
         missing = (decision.missing_value or "").strip()
@@ -166,7 +258,7 @@ one missing_value, or decision="abstain" with missing_value=null.
                 context.scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
                 (decision.reason,) if decision.reason.strip() else (),
-                dataset_id=getattr(context, "dataset_id", "default"),
+                dataset_id=dataset_id,
             )
 
         if context.missing_endpoint == "object":
@@ -180,8 +272,30 @@ one missing_value, or decision="abstain" with missing_value=null.
                 dataset_id=dataset_id,
             )
 
-        subject_type, object_type = infer_entity_types(context.predicate, subject, object_)
-        type_error = validate_relation_types(context.predicate, subject_type, object_type)
+        if expected_types:
+            type_error = self._known_entity_type_error(
+                missing,
+                scenario_entities,
+                expected_types,
+            )
+            if type_error:
+                return self._abstain(
+                    context.scenario_id,
+                    AbstentionReason.INSUFFICIENT_SUPPORT,
+                    (type_error,),
+                    dataset_id=dataset_id,
+                )
+
+        subject_type, object_type = infer_entity_types(
+            context.predicate,
+            subject,
+            object_,
+        )
+        type_error = validate_relation_types(
+            context.predicate,
+            subject_type,
+            object_type,
+        )
         if type_error:
             return self._abstain(
                 context.scenario_id,
