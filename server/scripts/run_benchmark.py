@@ -564,7 +564,14 @@ def run(
     llm_reasoner = LLMReasoner(model_name=args.model) if llm_enabled else None
     prompt_reasoner = PromptOnlyReasoner(model_name=args.model) if llm_enabled else None
     hybrid_reasoner = (
-        HybridReasoner(graph_reasoner, llm_reasoner)
+        HybridReasoner(
+            graph_reasoner,
+            llm_reasoner,
+            fallback_reasoner=PromptOnlyReasoner(
+                model_name=args.model,
+                include_graph_context=True,
+            ),
+        )
         if llm_enabled and llm_reasoner is not None
         else None
     )
