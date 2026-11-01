@@ -358,15 +358,12 @@ def get_benchmark_full_report(run_id: str) -> dict[str, str]:
             interval = f"{low:.4f}–{high:.4f}" if isinstance(low, (int, float)) and isinstance(high, (int, float)) else "Not estimable"
             mean = values.get("mean")
             sd = values.get("sample_sd")
+            mean_text = f"{mean:.4f}" if isinstance(mean, (int, float)) else "—"
+            sd_text = f"{sd:.4f}" if isinstance(sd, (int, float)) else "—"
             lines.append(
                 f"| {aggregate.get('scope', '')} | {aggregate.get('dataset', '')} | "
                 f"{aggregate.get('max_hops', '')} | {aggregate.get('method', '')} | {metric_name} | "
-                f"{values.get('n_seeds', 0)} | {mean:.4f} | "
-                f"{sd:.4f if isinstance(sd, (int, float)) else '—'} | {interval} |"
-                if isinstance(mean, (int, float)) else
-                f"| {aggregate.get('scope', '')} | {aggregate.get('dataset', '')} | "
-                f"{aggregate.get('max_hops', '')} | {aggregate.get('method', '')} | {metric_name} | "
-                f"{values.get('n_seeds', 0)} | — | — | {interval} |"
+                f"{values.get('n_seeds', 0)} | {mean_text} | {sd_text} | {interval} |"
             )
     failures = manifest.get("failures", [])
     if failures:
