@@ -239,7 +239,7 @@ export interface BenchmarkCaseResult {
 
 export interface BenchmarkRun {
   status: string;
-  dataset: "t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic";
+  dataset: string;
   seed: number;
   test_fraction: number;
   cross_validation_folds?: number;
