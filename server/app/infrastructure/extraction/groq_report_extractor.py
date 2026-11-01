@@ -41,14 +41,14 @@ class _ReportOutput(BaseModel):
 
 class GroqReportExtractor:
     """Extract scenarios and typed causal claims with exact source quotes."""
-    def __init__(self, model_name: str = "llama-3.3-70b-versatile", *, chat_model: StructuredExtractorModel | None = None):
+    def __init__(self, model_name: str = "openai/gpt-oss-120b", *, chat_model: StructuredExtractorModel | None = None):
         if chat_model is not None:
             self._model = chat_model
             return
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
             raise RuntimeError("GROQ_API_KEY is required for report extraction.")
-        self._model = ChatGroq(model=model_name, temperature=0.0, api_key=SecretStr(api_key)).with_structured_output(_ReportOutput)
+        self._model = ChatGroq(model=model_name, temperature=0.0, api_key=SecretStr(api_key)).with_structured_output(_ReportOutput, method="json_schema", strict=False)
 
     def extract(self, text: str, *, title: str) -> ExtractedReport:
         if not text.strip():
