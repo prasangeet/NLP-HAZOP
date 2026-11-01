@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from app.application.strategies import llm_reasoner, prompt_only_reasoner
 from app.infrastructure.extraction import groq_report_extractor
@@ -11,7 +11,7 @@ from app.infrastructure.extraction import groq_report_extractor
 class FakeChatGroq:
     """Capture the provider configuration without making a network request."""
 
-    instances: list["FakeChatGroq"] = []
+    instances: ClassVar[list[FakeChatGroq]] = []
 
     def __init__(self, **kwargs: Any) -> None:
         self.kwargs = kwargs
@@ -19,7 +19,7 @@ class FakeChatGroq:
         self.structured_kwargs: dict[str, Any] = {}
         self.instances.append(self)
 
-    def with_structured_output(self, schema: Any, **kwargs: Any) -> "FakeChatGroq":
+    def with_structured_output(self, schema: Any, **kwargs: Any) -> FakeChatGroq:
         self.structured_schema = schema
         self.structured_kwargs = kwargs
         return self
