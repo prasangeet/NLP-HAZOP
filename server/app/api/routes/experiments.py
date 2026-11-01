@@ -14,7 +14,9 @@ from datetime import UTC, datetime
 import re
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException\n\nfrom app.api.dependencies import get_ai_provider_factory
+from fastapi import APIRouter, HTTPException
+
+from app.api.dependencies import get_ai_provider_factory
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/experiments", tags=["experiments"])
