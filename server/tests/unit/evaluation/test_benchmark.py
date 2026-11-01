@@ -7,6 +7,7 @@ from app.domain.entities.hazop_record import (
     RelationshipOrigin,
 )
 from scripts.run_benchmark import (
+    _mean_fold_summaries,
     grouped_kfold_split,
     score_predictions,
     stable_split,
@@ -91,6 +92,42 @@ def test_grouped_kfold_rejects_more_folds_than_scenarios() -> None:
         assert "unique scenarios" in str(exc)
     else:
         raise AssertionError("Expected grouped_kfold_split to reject one scenario")
+
+
+def test_fold_summary_uses_unweighted_means_and_preserves_denominators() -> None:
+    folds = [
+        {
+            "method_summary": {
+                "graph": {
+                    "status": "evaluated",
+                    "n_evaluated": 2,
+                    "n_total_test_cases": 2,
+                    "micro_f1": 0.2,
+                    "coverage": 0.5,
+                }
+            }
+        },
+        {
+            "method_summary": {
+                "graph": {
+                    "status": "evaluated",
+                    "n_evaluated": 4,
+                    "n_total_test_cases": 4,
+                    "micro_f1": 0.8,
+                    "coverage": 1.0,
+                }
+            }
+        },
+    ]
+
+    summary = _mean_fold_summaries(folds, "method_summary")["graph"]
+
+    assert summary["micro_f1"] == 0.5
+    assert summary["coverage"] == 0.75
+    assert summary["n_folds_evaluated"] == 2
+    assert summary["n_evaluated_cases_sum"] == 6
+    assert summary["n_total_test_cases_sum"] == 6
+    assert "not independent" in summary["aggregation_note"]
 
 
 def test_held_out_target_is_stripped_of_all_answer_fields() -> None:
