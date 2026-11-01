@@ -54,8 +54,10 @@ class LLMDecision(BaseModel):
     evidence_indices: list[int] = Field(
         default_factory=list,
         description=(
-            "Zero-based indices of the evidence supporting the decision. "
-            "A proposal must select exactly one evidence item."
+            "Zero-based indices of evidence supporting the decision. "
+            "The single-link reason() mode requires exactly one index; "
+            "the set-valued reason_all() mode may select multiple distinct "
+            "missing endpoints."
         ),
     )
     confidence: float | None = Field(
