@@ -16,6 +16,7 @@ from app.domain.entities.hazop_record import (
     CausalRelation,
     RelationshipOrigin,
 )
+from app.domain.ontology.schema import infer_entity_types, validate_relation_types
 from app.domain.reasoning.models import (
     AbstentionReason,
     EvidenceContextProtocol,
@@ -64,7 +65,9 @@ class PromptOnlyReasoner:
         temperature: float = 0.0,
         *,
         chat_model: PromptOnlyChatModel | None = None,
+        include_graph_context: bool = False,
     ) -> None:
+        self._include_graph_context = include_graph_context
         if chat_model is not None:
             self._llm = chat_model
             return
@@ -90,6 +93,12 @@ class PromptOnlyReasoner:
                 dataset_id=dataset_id,
             )
 
+        graph_context = "\n".join(
+            f"- {item.subject} --{item.predicate}--> {item.object} "
+            f"(origin={item.origin.value}; evidence={item.evidence})"
+            for item in context.graph_context
+        ) if self._include_graph_context else ""
+        context_label = "Scenario and graph context" if self._include_graph_context else "Scenario context only"
         prompt = f"""
 You are a cautious assistant for missing-link research in HAZOP records.
 
@@ -99,10 +108,13 @@ Task:
 - Known endpoint: {context.known_endpoint}
 - Missing endpoint: {context.missing_endpoint}
 
-Scenario context only:
+{context_label}:
 {context.scenario_context}
 
-There is no retrieved evidence or graph context in this baseline.
+Graph relationships (if supplied):
+{graph_context or "None supplied."}
+
+Do not treat graph-derived paths or row co-occurrence as direct causal evidence.
 Propose a missing endpoint only if it follows clearly from the scenario
 description. Do not invent plant design details, safeguards, or causal facts.
 A HAZOP row association is not proof of causation. If context is inadequate
@@ -158,6 +170,16 @@ one missing_value, or decision="abstain" with missing_value=null.
                 dataset_id=dataset_id,
             )
 
+        subject_type, object_type = infer_entity_types(context.predicate, subject, object_)
+        type_error = validate_relation_types(context.predicate, subject_type, object_type)
+        if type_error:
+            return self._abstain(
+                context.scenario_id,
+                AbstentionReason.INSUFFICIENT_SUPPORT,
+                (type_error,),
+                dataset_id=dataset_id,
+            )
+
         relation = CausalRelation(
             subject=subject,
             predicate=context.predicate,
@@ -169,6 +191,8 @@ one missing_value, or decision="abstain" with missing_value=null.
             ),
             confidence=decision.confidence,
             dataset_id=dataset_id,
+            subject_type=subject_type,
+            object_type=object_type,
         )
         return ReasoningResult(
             status=ReasoningStatus.PROPOSED,
