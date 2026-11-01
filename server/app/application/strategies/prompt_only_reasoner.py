@@ -193,7 +193,12 @@ one missing_value, or decision="abstain" with missing_value=null.
             object=object_,
             origin=RelationshipOrigin.MODEL_INFERRED,
             evidence=(
-                "Prompt-only model output based solely on scenario context. "
+                "LLM-generated hypothesis based on "
+                + (
+                    "scenario and graph context. "
+                    if self._include_graph_context
+                    else "scenario context only. "
+                )
                 + decision.reason.strip()
             ),
             confidence=decision.confidence,
