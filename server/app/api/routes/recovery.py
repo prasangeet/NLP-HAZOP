@@ -38,7 +38,21 @@ def recover_missing_link(
         reasoning = factory.create_reasoning_strategy(payload.strategy).reason(context)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    validation = HazopSafetyValidator().validate_proposal(reasoning.proposed_relation) if reasoning.proposed_relation else None
+    record = repository.get_record(payload.scenario_id, dataset_id=dataset_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Scenario record not found in this dataset.")
+    validation = (
+        HazopSafetyValidator().validate_recovery_proposal(
+            reasoning.proposed_relation,
+            predicate=payload.predicate,
+            known_endpoint=payload.known_endpoint,
+            missing_endpoint=payload.missing_endpoint.value,
+            dataset_id=dataset_id,
+            record=record,
+        )
+        if reasoning.proposed_relation
+        else None
+    )
     if validation is not None and not validation.valid:
         raise HTTPException(status_code=422, detail={"message":"Reasoning proposal failed deterministic validation.","validation":validation.to_dict()})
     return {
