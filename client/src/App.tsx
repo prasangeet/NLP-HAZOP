@@ -13,6 +13,7 @@ import ReportExtraction from "@/pages/ReportExtraction";
 import KnowledgeGraph from "@/pages/KnowledgeGraph";
 import RelationshipRecovery from "@/pages/RelationshipRecovery";
 import Experiments from "@/pages/Experiments";
+import ExperimentResults from "@/pages/ExperimentResults";
 
 const pageTitles: Record<PageId, string> = {
   overview: "Overview",
@@ -21,10 +22,13 @@ const pageTitles: Record<PageId, string> = {
   "knowledge-graph": "Knowledge Graph",
   "relationship-recovery": "Relationship Recovery",
   experiments: "Experiments",
+  results: "Experiment results",
 };
 
 function Workspace() {
   const [activePage, setActivePage] = useState<PageId>("overview");
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const openResults = (runId: string) => { setSelectedRunId(runId); setActivePage("results"); };
 
   const renderPage = () => {
     switch (activePage) {
