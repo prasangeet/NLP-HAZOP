@@ -103,6 +103,48 @@ def stable_split(
     return train, test
 
 
+def grouped_kfold_split(
+    records: tuple[HazopRecord, ...],
+    *,
+    n_splits: int,
+    seed: int,
+) -> tuple[tuple[tuple[HazopRecord, ...], tuple[HazopRecord, ...]], ...]:
+    """Create deterministic scenario-grouped folds with each scenario held out once.
+
+    All rows sharing a scenario_id are assigned to the same test fold. The
+    returned pairs are (training_records, held_out_records).
+    """
+    scenario_ids = sorted(
+        {record.scenario_id for record in records},
+        key=str.casefold,
+    )
+    if n_splits < 2:
+        raise ValueError("n_splits must be at least 2")
+    if n_splits > len(scenario_ids):
+        raise ValueError(
+            "n_splits cannot exceed the number of unique scenarios"
+        )
+
+    shuffled_ids = list(scenario_ids)
+    random.Random(seed).shuffle(shuffled_ids)
+    fold_ids: list[set[str]] = [set() for _ in range(n_splits)]
+    for index, scenario_id in enumerate(shuffled_ids):
+        fold_ids[index % n_splits].add(scenario_id)
+
+    folds = []
+    for held_out_ids in fold_ids:
+        train = tuple(
+            record for record in records
+            if record.scenario_id not in held_out_ids
+        )
+        test = tuple(
+            record for record in records
+            if record.scenario_id in held_out_ids
+        )
+        folds.append((train, test))
+    return tuple(folds)
+
+
 def make_cases(records: tuple[HazopRecord, ...]) -> tuple[BenchmarkCase, ...]:
     """Make one query per listed cause; all row consequences are silver targets."""
 
