@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
+import json
 import re
 from collections import Counter
 from datetime import UTC, datetime
@@ -27,6 +28,7 @@ from app.infrastructure.graph.neo4j_graph_repository import Neo4jRepositoryError
 router = APIRouter(tags=["datasets"])
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+DATASET_FILES_ROOT = Path(__file__).resolve().parents[3] / "data" / "datasets"
 
 
 def _safe_filename(filename: str | None) -> str:
@@ -210,6 +212,13 @@ async def import_dataset(
         ) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    DATASET_FILES_ROOT.mkdir(parents=True, exist_ok=True)
+    (DATASET_FILES_ROOT / f"{selected_id}.csv").write_bytes(content)
+    (DATASET_FILES_ROOT / f"{selected_id}.json").write_text(
+        json.dumps({**metadata.to_dict(), "dataset_id": selected_id}, indent=2),
+        encoding="utf-8",
+    )
 
     return {
         "status": "imported",

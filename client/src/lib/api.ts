@@ -157,7 +157,7 @@ export const api = {
   extractReport: (file: File, datasetId: string, name?: string) =>
     request<Record<string, unknown>>("/api/v1/reports/extract", { method: "POST", body: formData(file, { dataset_id: datasetId, ...(name ? { name } : {}) }) }),
   runBenchmarkSuite: (payload: {
-    datasets: Array<"t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic">;
+    datasets: string[];
     seeds: number[];
     graph_hops: number[];
     test_fraction: number;
@@ -169,6 +169,8 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     }),
+  listBenchmarkDatasets: () =>
+    request<{ count: number; datasets: Array<{ dataset_id: string; name: string; source: "built-in" | "uploaded"; record_count?: number }> }>("/api/v1/experiments/datasets"),
   listBenchmarkRuns: () =>
     request<{ count: number; runs: BenchmarkSuiteRun[] }>("/api/v1/experiments/benchmark-runs"),
   getBenchmarkArtifact: (runId: string, dataset: string, seed: number, maxHops: number, artifact: string) =>
@@ -176,7 +178,7 @@ export const api = {
       `/api/v1/experiments/benchmark-runs/${encodeURIComponent(runId)}/${encodeURIComponent(dataset)}/${seed}/${maxHops}/${encodeURIComponent(artifact)}`,
     ),
   runBenchmark: (payload: {
-    dataset: "t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic";
+    dataset: string;
     seed: number;
     test_fraction: number;
     with_llm: boolean;
@@ -237,7 +239,7 @@ export interface BenchmarkCaseResult {
 
 export interface BenchmarkRun {
   status: string;
-  dataset: "t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic";
+  dataset: string;
   seed: number;
   test_fraction: number;
   cross_validation_folds?: number;

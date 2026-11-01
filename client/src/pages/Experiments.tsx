@@ -73,7 +73,7 @@ function ResultIcon({ status }: { status: CheckStatus }) {
   return <Activity className="size-4 text-muted-foreground" />;
 }
 
-export default function Experiments() {
+export default function Experiments({ onOpenResults }: { onOpenResults: (runId: string) => void }) {
   const activeDatasetId = useWorkspaceStore((state) => state.activeDatasetId);
   const [checks, setChecks] = useState<CheckResult[]>([
     {
@@ -110,7 +110,8 @@ export default function Experiments() {
   const [benchmarkRunning, setBenchmarkRunning] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
   const [benchmarkResult, setBenchmarkResult] = useState<BenchmarkRun | null>(null);
-  const [suiteDatasets, setSuiteDatasets] = useState<Array<"t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic">>(["t301-reconstructed", "t301-synthetic", "dwsim-synthetic"]);
+  const [suiteDatasets, setSuiteDatasets] = useState<string[]>(["t301-reconstructed"]);
+  const [benchmarkDatasets, setBenchmarkDatasets] = useState<Array<{ dataset_id: string; name: string; source: "built-in" | "uploaded"; record_count?: number }>>([]);
   const [suiteSeeds, setSuiteSeeds] = useState("42, 7, 21");
   const [suiteGraphHops, setSuiteGraphHops] = useState("2, 4");
   const [suiteRunning, setSuiteRunning] = useState(false);
@@ -126,6 +127,16 @@ export default function Experiments() {
       })
       .catch(() => {
         // History is optional; the workbench remains usable when no runs exist.
+      });
+    api.listBenchmarkDatasets()
+      .then((response) => {
+        if (active) {
+          setBenchmarkDatasets(response.datasets);
+          setSuiteDatasets((current) => current.length ? current : response.datasets.map((item) => item.dataset_id));
+        }
+      })
+      .catch(() => {
+        // Keep the runner usable for existing built-in datasets if registry lookup fails.
       });
     return () => {
       active = false;
@@ -546,8 +557,8 @@ export default function Experiments() {
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-5">
             <label className="space-y-1 text-xs"><span className="text-muted-foreground">Dataset track</span>
-              <select value={benchmarkDataset} onChange={(event) => setBenchmarkDataset(event.target.value as BenchmarkRun["dataset"])} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                <option value="t301-reconstructed">T-301 reconstructed</option><option value="t301-synthetic">T-301 synthetic continuation</option><option value="dwsim-synthetic">DWSIM synthetic</option>
+              <select value={benchmarkDataset} onChange={(event) => setBenchmarkDataset(event.target.value)} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                {benchmarkDatasets.map((dataset) => <option key={dataset.dataset_id} value={dataset.dataset_id}>{dataset.name}</option>)}
               </select>
             </label>
             <label className="space-y-1 text-xs"><span className="text-muted-foreground">Random seed</span><input type="number" min={0} max={1000000} value={benchmarkSeed} onChange={(event) => setBenchmarkSeed(Number(event.target.value))} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>
@@ -582,17 +593,14 @@ export default function Experiments() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-3">
-            {([
-              ["t301-reconstructed", "T-301 reconstructed"],
-              ["t301-synthetic", "T-301 synthetic"],
-              ["dwsim-synthetic", "DWSIM synthetic"],
-            ] as const).map(([value, label]) => (
-              <label key={value} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={suiteDatasets.includes(value)} disabled={suiteRunning}
-                  onChange={(event) => setSuiteDatasets((current) => event.target.checked ? [...current, value] : current.filter((item) => item !== value))} />
-                {label}
+            {benchmarkDatasets.map((dataset) => (
+              <label key={dataset.dataset_id} className="flex items-start gap-2 border border-border p-3 text-sm">
+                <input type="checkbox" checked={suiteDatasets.includes(dataset.dataset_id)} disabled={suiteRunning}
+                  onChange={(event) => setSuiteDatasets((current) => event.target.checked ? [...current, dataset.dataset_id] : current.filter((item) => item !== dataset.dataset_id))} />
+                <span><span className="block font-medium">{dataset.name}</span><span className="text-[10px] text-muted-foreground">{dataset.dataset_id} · {dataset.source}{dataset.record_count != null ? " · " + dataset.record_count + " scenarios" : ""}</span></span>
               </label>
             ))}
+            {benchmarkDatasets.length === 0 && <p className="text-xs text-muted-foreground">No benchmark datasets found. Import a CSV from the Datasets page and refresh this page.</p>}
           </div>
           <label className="block space-y-1 text-xs"><span className="text-muted-foreground">Random seeds (comma-separated; up to 6)</span>
             <input value={suiteSeeds} onChange={(event) => setSuiteSeeds(event.target.value)} disabled={suiteRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
@@ -644,7 +652,7 @@ export default function Experiments() {
             </div>
             {suiteResult.failures.map((failure) => <p key={failure.dataset + failure.seed + failure.max_hops} className="text-xs text-destructive">{failure.dataset} · seed {failure.seed} · {failure.max_hops} hops: {failure.error}</p>)}
           </>}
-          {savedRuns.length > 0 && <div className="space-y-1 border-t border-border pt-3"><h3 className="text-sm font-medium">Saved suite runs</h3>{savedRuns.slice(0, 5).map((run) => <div key={run.run_id} className="flex items-center justify-between gap-2 rounded-md border border-border p-2"><p className="text-xs text-muted-foreground">{run.run_id} · {run.runs.length} completed · {run.failures.length} failed</p><Button size="sm" variant="outline" onClick={() => setSuiteResult(run)}>Open results</Button></div>)}</div>}
+          {savedRuns.length > 0 && <div className="space-y-1 border-t border-border pt-3"><h3 className="text-sm font-medium">Saved suite runs</h3>{savedRuns.slice(0, 5).map((run) => <div key={run.run_id} className="flex items-center justify-between gap-2 rounded-md border border-border p-2"><p className="text-xs text-muted-foreground">{run.run_id} · {run.runs.length} completed · {run.failures.length} failed</p><Button size="sm" variant="outline" onClick={() => onOpenResults(run.run_id)}>Open results</Button></div>)}</div>}
         </CardContent>
       </Card>
 

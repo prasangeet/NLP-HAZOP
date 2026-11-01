@@ -20,8 +20,18 @@ export default function Datasets() {
   const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [viewingDataset, setViewingDataset] = useState<Dataset | null>(null);
+  const [viewingScenarios, setViewingScenarios] = useState<import("@/lib/api").Scenario[]>([]);
+  const [viewLoading, setViewLoading] = useState(false);
   const activeDatasetId = useWorkspaceStore((state) => state.activeDatasetId);
   const setActiveDataset = useWorkspaceStore((state) => state.setActiveDataset);
+
+  const viewDataset = async (dataset: Dataset) => {
+    setViewingDataset(dataset); setViewingScenarios([]); setViewLoading(true);
+    try { const result = await api.listScenarios(dataset.dataset_id); setViewingScenarios(result.scenarios); }
+    catch (err) { setError(err instanceof Error ? err.message : "Could not load dataset records."); }
+    finally { setViewLoading(false); }
+  };
 
   const loadDatasets = useCallback(async () => {
     setLoading(true);
@@ -157,15 +167,27 @@ export default function Datasets() {
             {datasets.length === 0 && !loading && <div className="border border-dashed border-border px-4 py-8 text-center"><Database className="mx-auto size-6 text-muted-foreground" /><p className="mt-2 text-xs font-medium">No imported datasets</p><p className="mt-1 text-[10px] text-muted-foreground">Import a valid CSV to make it available to other modules.</p></div>}
             {datasets.map((dataset) => {
               const active = activeDatasetId === dataset.dataset_id;
-              return <button key={dataset.dataset_id} type="button" onClick={() => setActiveDataset(dataset)} className={`w-full border p-3 text-left transition-colors hover:bg-muted/40 ${active ? "border-primary bg-muted/30" : "border-border"}`}>
-                <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-xs font-medium">{dataset.name}</p><p className="mt-1 truncate text-[10px] text-muted-foreground">{dataset.dataset_id}</p></div>{active ? <Badge><CheckCircle2 className="mr-1 size-3" />Active</Badge> : <Badge variant="outline">Select</Badge>}</div>
-                <div className="mt-3 flex gap-4 text-[10px] text-muted-foreground"><span>{dataset.record_count} scenarios</span><span>{dataset.relationship_count} relationships</span></div>
-              </button>;
+              return <div key={dataset.dataset_id} className={`space-y-2 border p-3 ${active ? "border-primary bg-muted/30" : "border-border"}`}>
+                <button type="button" onClick={() => setActiveDataset(dataset)} className="w-full text-left">
+                  <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-xs font-medium">{dataset.name}</p><p className="mt-1 truncate text-[10px] text-muted-foreground">{dataset.dataset_id}</p></div>{active ? <Badge><CheckCircle2 className="mr-1 size-3" />Active</Badge> : <Badge variant="outline">Select</Badge>}</div>
+                  <div className="mt-3 flex gap-4 text-[10px] text-muted-foreground"><span>{dataset.record_count} scenarios</span><span>{dataset.relationship_count} relationships</span></div>
+                </button>
+                <Button size="sm" variant="outline" className="w-full" onClick={() => void viewDataset(dataset)}><Eye className="size-3.5" />View records</Button>
+              </div>;
             })}
             {loading && <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground"><LoaderCircle className="size-4 animate-spin" />Loading datasets…</div>}
           </CardContent>
         </Card>
       </div>
+      {viewingDataset && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setViewingDataset(null); }}>
+        <section role="dialog" aria-modal="true" aria-labelledby="dataset-dialog-title" className="flex max-h-[85vh] w-full max-w-6xl flex-col border border-border bg-background shadow-xl">
+          <header className="flex items-start justify-between gap-3 border-b border-border p-4"><div><h2 id="dataset-dialog-title" className="text-sm font-semibold">{viewingDataset.name}</h2><p className="mt-1 text-[11px] text-muted-foreground">{viewingDataset.dataset_id} · {viewingDataset.record_count} scenarios · {viewingDataset.relationship_count} relationships</p></div><Button size="sm" variant="outline" onClick={() => setViewingDataset(null)}>Close</Button></header>
+          <div className="min-h-0 flex-1 overflow-auto p-4">
+            {viewLoading ? <div className="flex items-center gap-2 py-10 text-xs text-muted-foreground"><LoaderCircle className="size-4 animate-spin"/>Loading records…</div> : viewingScenarios.length === 0 ? <p className="py-10 text-center text-xs text-muted-foreground">No scenario records returned.</p> : <div className="overflow-x-auto border border-border"><table className="w-full min-w-[900px] text-left text-[11px]"><thead className="sticky top-0 bg-muted"><tr>{["Scenario","Equipment","Deviation","Causes","Consequences","Safeguards","Recommendations"].map((h)=><th key={h} className="p-3 font-medium">{h}</th>)}</tr></thead><tbody>{viewingScenarios.map((record,index)=><tr key={record.scenario_id || index} className="border-t border-border align-top"><td className="p-3 font-medium">{record.scenario_id}</td><td className="p-3">{record.equipment || "—"}</td><td className="p-3">{record.deviation || "—"}</td><td className="p-3">{record.causes?.join(" · ") || "—"}</td><td className="p-3">{record.consequences?.join(" · ") || "—"}</td><td className="p-3">{record.safeguards?.join(" · ") || "—"}</td><td className="p-3">{record.recommendations?.join(" · ") || "—"}</td></tr>)}</tbody></table></div>}
+            <p className="mt-3 text-[10px] text-muted-foreground">The API currently returns up to 500 scenarios per request.</p>
+          </div>
+        </section>
+      </div>}
     </div>
   );
 }
