@@ -30,11 +30,14 @@ class BenchmarkRequest(BaseModel):
     test_fraction: float = Field(default=0.2, gt=0.0, lt=1.0)
     with_llm: bool = False
     max_llm_cases: int = Field(default=15, ge=0, le=100)
+    cross_validation_folds: int = Field(default=0, ge=0, le=10)
 
 
 @router.post("/benchmark", summary="Run the reproducible HAZOP recovery benchmark")
 def run_benchmark(payload: BenchmarkRequest) -> dict[str, object]:
-    """Run the existing benchmark script and return its real artifacts."""
+    """Run the holdout or scenario-grouped cross-validation benchmark."""
+    if payload.cross_validation_folds == 1:
+        raise HTTPException(status_code=422, detail="cross_validation_folds must be 0 or between 2 and 10.")
     if not BENCHMARK_SCRIPT.is_file():
         raise HTTPException(status_code=503, detail="Benchmark script is not available in this installation.")
 
@@ -51,6 +54,8 @@ def run_benchmark(payload: BenchmarkRequest) -> dict[str, object]:
             "--output-dir",
             output,
         ]
+        if payload.cross_validation_folds >= 2:
+            command.extend(["--cross-validation-folds", str(payload.cross_validation_folds)])
         if payload.with_llm:
             command.extend(["--with-llm", "--max-llm-cases", str(payload.max_llm_cases)])
 
@@ -89,6 +94,7 @@ def run_benchmark(payload: BenchmarkRequest) -> dict[str, object]:
             "dataset": payload.dataset,
             "seed": payload.seed,
             "test_fraction": payload.test_fraction,
+            "cross_validation_folds": payload.cross_validation_folds,
             "method_summary": results.get("method_summary", {}),
             "matched_case_summary": results.get("matched_case_summary", {}),
             "metadata": results.get("metadata", {}),
