@@ -557,8 +557,8 @@ export default function Experiments({ onOpenResults }: { onOpenResults: (runId: 
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-5">
             <label className="space-y-1 text-xs"><span className="text-muted-foreground">Dataset track</span>
-              <select value={benchmarkDataset} onChange={(event) => setBenchmarkDataset(event.target.value as BenchmarkRun["dataset"])} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
-                <option value="t301-reconstructed">T-301 reconstructed</option><option value="t301-synthetic">T-301 synthetic continuation</option><option value="dwsim-synthetic">DWSIM synthetic</option>
+              <select value={benchmarkDataset} onChange={(event) => setBenchmarkDataset(event.target.value)} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                {benchmarkDatasets.map((dataset) => <option key={dataset.dataset_id} value={dataset.dataset_id}>{dataset.name}</option>)}
               </select>
             </label>
             <label className="space-y-1 text-xs"><span className="text-muted-foreground">Random seed</span><input type="number" min={0} max={1000000} value={benchmarkSeed} onChange={(event) => setBenchmarkSeed(Number(event.target.value))} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>
