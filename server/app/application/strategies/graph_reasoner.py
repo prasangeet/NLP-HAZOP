@@ -379,38 +379,44 @@ class GraphReasoner:
                         item.predicate.strip().casefold()
                         for item in next_path.edges
                     ]
-                    if direction == "object":
-                        valid_chain = (
-                            predicates == [
+                    association_query = (
+                        context.predicate.strip().casefold()
+                        == "co_listed_with_consequence"
+                    )
+                    if association_query and direction == "object":
+                        valid_chain = predicates in (
+                            [
                                 "causes_deviation",
                                 "leads_to_consequence",
-                            ]
-                            or predicates == [
+                            ],
+                            [
                                 "causes_deviation",
                                 "leads_to",
                                 "leads_to_consequence",
-                            ]
-                            or predicates == [
-                                "leads_to",
-                                "leads_to_consequence",
-                            ]
+                            ],
                         )
+                    elif association_query:
+                        valid_chain = predicates in (
+                            [
+                                "leads_to_consequence",
+                                "causes_deviation",
+                            ],
+                            [
+                                "leads_to_consequence",
+                                "leads_to",
+                                "causes_deviation",
+                            ],
+                        )
+                    elif direction == "object":
+                        valid_chain = predicates == [
+                            "leads_to",
+                            "leads_to_consequence",
+                        ]
                     else:
-                        valid_chain = (
-                            predicates == [
-                                "leads_to_consequence",
-                                "causes_deviation",
-                            ]
-                            or predicates == [
-                                "leads_to_consequence",
-                                "leads_to",
-                                "causes_deviation",
-                            ]
-                            or predicates == [
-                                "leads_to_consequence",
-                                "leads_to",
-                            ]
-                        )
+                        valid_chain = predicates == [
+                            "leads_to_consequence",
+                            "leads_to",
+                        ]
                     if valid_chain:
                         candidates.append(next_path)
 
