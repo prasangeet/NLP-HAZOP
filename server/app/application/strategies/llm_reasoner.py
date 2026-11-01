@@ -321,12 +321,12 @@ class LLMReasoner:
         evidence_blocks: list[str] = []
         for index, item in enumerate(evidence_items):
             evidence_blocks.append(
-                f"[{index}]\\nSubject: {item.subject}\\n"
-                f"Predicate: {item.predicate}\\nObject: {item.object}\\n"
-                f"Subject type: {getattr(item.subject_type, 'value', item.subject_type)}\\n"
-                f"Object type: {getattr(item.object_type, 'value', item.object_type)}\\n"
-                f"Origin: {item.origin.value}\\nEvidence: {item.evidence}\\n"
-                f"Source ID: {item.source_id or 'Not specified'}\\n"
+                f"[{index}]\nSubject: {item.subject}\n"
+                f"Predicate: {item.predicate}\nObject: {item.object}\n"
+                f"Subject type: {getattr(item.subject_type, 'value', item.subject_type)}\n"
+                f"Object type: {getattr(item.object_type, 'value', item.object_type)}\n"
+                f"Origin: {item.origin.value}\nEvidence: {item.evidence}\n"
+                f"Source ID: {item.source_id or 'Not specified'}\n"
                 f"Provenance note: {getattr(item, 'relevance_note', 'Not specified')}"
             )
         return f"""
