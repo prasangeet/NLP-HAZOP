@@ -6,7 +6,7 @@ from dataclasses import replace
 
 from app.application.strategies.retrieval.models import RetrievalScope
 from app.application.use_cases.build_evidence_context import EvidenceItem
-from app.domain.entities.hazop_record import RelationshipOrigin
+from app.domain.entities.hazop_record import CausalRelation, RelationshipOrigin
 from app.domain.reasoning.models import (
     ReasoningResult,
     ReasoningStatus,
@@ -32,7 +32,7 @@ class HybridReasoner:
         self._llm_reasoner = llm_reasoner
         self._fallback_reasoner = fallback_reasoner
 
-    def reason_all(self, context) -> tuple:
+    def reason_all(self, context) -> tuple[CausalRelation, ...]:
         """Adjudicate multiple candidates for row-level association recovery.
 
         This set-valued path is separate from reason(), which remains the
