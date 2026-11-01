@@ -65,10 +65,31 @@ class HybridReasoner:
                 )
             )
 
-        if not candidates:
+        dataset_id = getattr(context, "dataset_id", "default")
+        known_endpoint = context.known_endpoint.strip().casefold()
+        compatible_candidates = [
+            item
+            for item in candidates
+            if getattr(item, "dataset_id", "default") == dataset_id
+            and item.predicate.strip().casefold()
+            == context.predicate.strip().casefold()
+            and bool(item.evidence.strip())
+            and (
+                item.subject.strip().casefold() == known_endpoint
+                if context.missing_endpoint == "object"
+                else item.object.strip().casefold() == known_endpoint
+            )
+            and (
+                item.origin != RelationshipOrigin.EXPERT
+                or getattr(item, "is_expert_verified", False)
+            )
+        ]
+
+        if not compatible_candidates:
             if self._fallback_reasoner is not None:
-                # Do not silently stop when retrieval finds no matching edge:
-                # invoke the generative LLM path with scenario and graph context.
+                # Retrieval may return rows that are irrelevant to this exact
+                # query. Treat "no compatible evidence" like an empty result
+                # and invoke generative recovery with scenario + graph context.
                 return self._fallback_reasoner.reason(
                     replace(context, evidence_items=())
                 )
@@ -76,6 +97,6 @@ class HybridReasoner:
 
         adjudication_context = replace(
             context,
-            evidence_items=tuple(candidates),
+            evidence_items=tuple(compatible_candidates),
         )
         return self._llm_reasoner.reason(adjudication_context)
