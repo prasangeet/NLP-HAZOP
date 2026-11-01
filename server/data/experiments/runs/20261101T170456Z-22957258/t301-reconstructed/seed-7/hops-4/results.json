@@ -1,0 +1,3404 @@
+{
+  "metadata": {
+    "project": "NLP-HAZOP",
+    "protocol_version": "1.0",
+    "repository_commit": "32cac98c68abfb00372a2ce0da2946aeb4b93714",
+    "python_version": "3.11.9",
+    "platform": "Linux-7.2.6-arch2-1-x86_64-with-glibc2.44",
+    "dataset": "t301-reconstructed",
+    "dataset_path": "/mnt/volume/Projects/BTech-Project/NLP-HAZOP/data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
+    "dataset_sha256": "1c8713c2b6fbc9cdf2e22e64a307fdb64f073158a78679bdc23ad803a7d2725e",
+    "dataset_rows": 40,
+    "train_scenarios": 32,
+    "test_scenarios": 8,
+    "test_queries": 24,
+    "seed": 7,
+    "test_fraction": 0.2,
+    "top_k": 10,
+    "max_graph_hops": 4,
+    "tfidf_index_build_ms": 1.3863570056855679,
+    "method": "scenario-level holdout; target labels and target graph edges removed from index",
+    "label_status": "silver_row_association",
+    "label_warning": "Labels are cause/consequence values co-listed in the same source or synthetic worksheet row. They are not independent causal ground truth and none of the supplied rows is expert-validated.",
+    "record_type_counts": {
+      "source_reconstructed": 40
+    },
+    "validation_note_counts": {},
+    "llm_requested": false,
+    "llm_enabled": false,
+    "llm_model": null,
+    "llm_max_cases": 15,
+    "llm_calls_per_evaluated_case_max": 2,
+    "cost_measurement": "not captured; cost_usd remains null",
+    "created_at": "2026-11-01T17:05:01.181642+00:00",
+    "comparison_case_count": 15,
+    "comparison_case_ids": [
+      "T301-006::cause-01",
+      "T301-011::cause-01",
+      "T301-011::cause-02",
+      "T301-013::cause-01",
+      "T301-016::cause-01",
+      "T301-016::cause-02",
+      "T301-016::cause-03",
+      "T301-020::cause-01",
+      "T301-020::cause-02",
+      "T301-020::cause-03",
+      "T301-020::cause-04",
+      "T301-020::cause-05",
+      "T301-020::cause-06",
+      "T301-022::cause-01",
+      "T301-022::cause-02"
+    ],
+    "comparison_case_selection": "first N cases in deterministic scenario/cause order; N equals max_llm_cases"
+  },
+  "method_summary": {
+    "prompt_only_llm": {
+      "status": "disabled_or_call_cap_zero",
+      "n_evaluated": 0,
+      "n_total_test_cases": 24
+    },
+    "tfidf_vector_retrieval": {
+      "status": "evaluated",
+      "n_evaluated": 24,
+      "micro_precision": 0.3953488372093023,
+      "micro_recall": 0.44155844155844154,
+      "micro_f1": 0.4171779141104294,
+      "macro_precision": 0.412202380952381,
+      "macro_recall": 0.4027777777777777,
+      "macro_f1": 0.3951449013949013,
+      "hit_at_1": 0.20833333333333334,
+      "mrr": 0.4770833333333333,
+      "coverage": 0.9583333333333334,
+      "abstention_rate": 0.04166666666666663,
+      "mean_candidates": 3.5833333333333335,
+      "evidence_text_rate": 1.0,
+      "non_model_origin_rate": 1.0,
+      "source_or_expert_origin_rate": 0.0,
+      "mean_latency_ms": 0.21137725101046576,
+      "origin_counts": {
+        "retrieval_inferred": 86
+      },
+      "cost_usd": null,
+      "cost_note": "Not captured by the current provider wrapper.",
+      "n_total_test_cases": 24
+    },
+    "graph_reasoning": {
+      "status": "evaluated",
+      "n_evaluated": 24,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0,
+      "micro_f1": 0.0,
+      "macro_precision": 0.0,
+      "macro_recall": 0.0,
+      "macro_f1": 0.0,
+      "hit_at_1": 0.0,
+      "mrr": 0.0,
+      "coverage": 0.0,
+      "abstention_rate": 1.0,
+      "mean_candidates": 0.0,
+      "evidence_text_rate": 0.0,
+      "non_model_origin_rate": 0.0,
+      "source_or_expert_origin_rate": 0.0,
+      "mean_latency_ms": 1.7404837920670009,
+      "origin_counts": {},
+      "cost_usd": null,
+      "cost_note": "Not captured by the current provider wrapper.",
+      "n_total_test_cases": 24
+    },
+    "graph_tfidf_union": {
+      "status": "evaluated",
+      "n_evaluated": 24,
+      "micro_precision": 0.3953488372093023,
+      "micro_recall": 0.44155844155844154,
+      "micro_f1": 0.4171779141104294,
+      "macro_precision": 0.412202380952381,
+      "macro_recall": 0.4027777777777777,
+      "macro_f1": 0.3951449013949013,
+      "hit_at_1": 0.20833333333333334,
+      "mrr": 0.4770833333333333,
+      "coverage": 0.9583333333333334,
+      "abstention_rate": 0.04166666666666663,
+      "mean_candidates": 3.5833333333333335,
+      "evidence_text_rate": 1.0,
+      "non_model_origin_rate": 1.0,
+      "source_or_expert_origin_rate": 0.0,
+      "mean_latency_ms": 1.9518610430774668,
+      "origin_counts": {
+        "retrieval_inferred": 86
+      },
+      "cost_usd": null,
+      "cost_note": "Not captured by the current provider wrapper.",
+      "n_total_test_cases": 24
+    },
+    "hybrid_graph_vector_llm": {
+      "status": "disabled_or_call_cap_zero",
+      "n_evaluated": 0,
+      "n_total_test_cases": 24
+    }
+  },
+  "matched_case_summary": {
+    "prompt_only_llm": {
+      "status": "not_evaluated_on_comparison_cases",
+      "n_evaluated": 0,
+      "n_total_comparison_cases": 15
+    },
+    "tfidf_vector_retrieval": {
+      "status": "evaluated",
+      "n_evaluated": 15,
+      "micro_precision": 0.40816326530612246,
+      "micro_recall": 0.4,
+      "micro_f1": 0.4040404040404041,
+      "macro_precision": 0.41619047619047617,
+      "macro_recall": 0.3777777777777777,
+      "macro_f1": 0.3878835978835979,
+      "hit_at_1": 0.2,
+      "mrr": 0.491111111111111,
+      "coverage": 0.9333333333333333,
+      "abstention_rate": 0.06666666666666665,
+      "mean_candidates": 3.2666666666666666,
+      "evidence_text_rate": 1.0,
+      "non_model_origin_rate": 1.0,
+      "source_or_expert_origin_rate": 0.0,
+      "mean_latency_ms": 0.24419926921837032,
+      "origin_counts": {
+        "retrieval_inferred": 49
+      },
+      "cost_usd": null,
+      "cost_note": "Not captured by the current provider wrapper.",
+      "n_total_comparison_cases": 15
+    },
+    "graph_reasoning": {
+      "status": "evaluated",
+      "n_evaluated": 15,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0,
+      "micro_f1": 0.0,
+      "macro_precision": 0.0,
+      "macro_recall": 0.0,
+      "macro_f1": 0.0,
+      "hit_at_1": 0.0,
+      "mrr": 0.0,
+      "coverage": 0.0,
+      "abstention_rate": 1.0,
+      "mean_candidates": 0.0,
+      "evidence_text_rate": 0.0,
+      "non_model_origin_rate": 0.0,
+      "source_or_expert_origin_rate": 0.0,
+      "mean_latency_ms": 2.050606800670115,
+      "origin_counts": {},
+      "cost_usd": null,
+      "cost_note": "Not captured by the current provider wrapper.",
+      "n_total_comparison_cases": 15
+    },
+    "graph_tfidf_union": {
+      "status": "evaluated",
+      "n_evaluated": 15,
+      "micro_precision": 0.40816326530612246,
+      "micro_recall": 0.4,
+      "micro_f1": 0.4040404040404041,
+      "macro_precision": 0.41619047619047617,
+      "macro_recall": 0.3777777777777777,
+      "macro_f1": 0.3878835978835979,
+      "hit_at_1": 0.2,
+      "mrr": 0.491111111111111,
+      "coverage": 0.9333333333333333,
+      "abstention_rate": 0.06666666666666665,
+      "mean_candidates": 3.2666666666666666,
+      "evidence_text_rate": 1.0,
+      "non_model_origin_rate": 1.0,
+      "source_or_expert_origin_rate": 0.0,
+      "mean_latency_ms": 2.294806069888485,
+      "origin_counts": {
+        "retrieval_inferred": 49
+      },
+      "cost_usd": null,
+      "cost_note": "Not captured by the current provider wrapper.",
+      "n_total_comparison_cases": 15
+    },
+    "hybrid_graph_vector_llm": {
+      "status": "not_evaluated_on_comparison_cases",
+      "n_evaluated": 0,
+      "n_total_comparison_cases": 15
+    }
+  },
+  "cases": [
+    {
+      "case_id": "T301-006::cause-01",
+      "scenario_id": "T301-006",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "MalfunctionFlowController",
+      "gold_values": [
+        "Overfilling",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-006::cause-01",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-005",
+              "evidence": "TF-IDF row candidate from scenario T301-005; the source row lists retrieved anchor 'MalfunctionFlowController' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MalfunctionFlowController'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8383984437318406,
+              "scenario_id": "T301-005",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-005",
+              "evidence": "TF-IDF row candidate from scenario T301-005; the source row lists retrieved anchor 'MalfunctionFlowController' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MalfunctionFlowController'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8383984437318406,
+              "scenario_id": "T301-005",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Overfilling",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-005",
+              "evidence": "TF-IDF row candidate from scenario T301-005; the source row lists retrieved anchor 'MalfunctionFlowController' and candidate endpoint 'Overfilling' in its cause/consequence fields. The query endpoint was 'MalfunctionFlowController'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8383984437318406,
+              "scenario_id": "T301-005",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "EmptyingOfContainer",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-010",
+              "evidence": "TF-IDF row candidate from scenario T301-010; the source row lists retrieved anchor 'MalfunctionFlowController' and candidate endpoint 'EmptyingOfContainer' in its cause/consequence fields. The query endpoint was 'MalfunctionFlowController'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8374221456288934,
+              "scenario_id": "T301-010",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ProductionDowntime",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-010",
+              "evidence": "TF-IDF row candidate from scenario T301-010; the source row lists retrieved anchor 'MalfunctionFlowController' and candidate endpoint 'ProductionDowntime' in its cause/consequence fields. The query endpoint was 'MalfunctionFlowController'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8374221456288934,
+              "scenario_id": "T301-010",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.36272400757297873,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-006::cause-01",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 2.6748719974420965,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-006::cause-01",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-005",
+              "evidence": "TF-IDF row candidate from scenario T301-005; the source row lists retrieved anchor 'MalfunctionFlowController' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MalfunctionFlowController'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8383984437318406,
+              "scenario_id": "T301-005",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-005",
+              "evidence": "TF-IDF row candidate from scenario T301-005; the source row lists retrieved anchor 'MalfunctionFlowController' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MalfunctionFlowController'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8383984437318406,
+              "scenario_id": "T301-005",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Overfilling",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-005",
+              "evidence": "TF-IDF row candidate from scenario T301-005; the source row lists retrieved anchor 'MalfunctionFlowController' and candidate endpoint 'Overfilling' in its cause/consequence fields. The query endpoint was 'MalfunctionFlowController'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8383984437318406,
+              "scenario_id": "T301-005",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "EmptyingOfContainer",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-010",
+              "evidence": "TF-IDF row candidate from scenario T301-010; the source row lists retrieved anchor 'MalfunctionFlowController' and candidate endpoint 'EmptyingOfContainer' in its cause/consequence fields. The query endpoint was 'MalfunctionFlowController'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8374221456288934,
+              "scenario_id": "T301-010",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ProductionDowntime",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-010",
+              "evidence": "TF-IDF row candidate from scenario T301-010; the source row lists retrieved anchor 'MalfunctionFlowController' and candidate endpoint 'ProductionDowntime' in its cause/consequence fields. The query endpoint was 'MalfunctionFlowController'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8374221456288934,
+              "scenario_id": "T301-010",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 3.037596005015075,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-011::cause-01",
+      "scenario_id": "T301-011",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "OperationalError",
+      "gold_values": [
+        "PumpRunningDry",
+        "PumpBreakdown",
+        "ProductionDowntime"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-011::cause-01",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "EmptyingOfContainer",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-012",
+              "evidence": "TF-IDF row candidate from scenario T301-012; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'EmptyingOfContainer' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8067421428062178,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ProductionDowntime",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-012",
+              "evidence": "TF-IDF row candidate from scenario T301-012; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'ProductionDowntime' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8067421428062178,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-003",
+              "evidence": "TF-IDF row candidate from scenario T301-003; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8058403997916365,
+              "scenario_id": "T301-003",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-003",
+              "evidence": "TF-IDF row candidate from scenario T301-003; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8058403997916365,
+              "scenario_id": "T301-003",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Overfilling",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-003",
+              "evidence": "TF-IDF row candidate from scenario T301-003; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'Overfilling' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8058403997916365,
+              "scenario_id": "T301-003",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-004",
+              "evidence": "TF-IDF row candidate from scenario T301-004; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'Explosion' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8034982260261582,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-004",
+              "evidence": "TF-IDF row candidate from scenario T301-004; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'FormationOfExAtmosphere' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8034982260261582,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.48809500003699213,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-011::cause-01",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 2.6565850130282342,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-011::cause-01",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "EmptyingOfContainer",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-012",
+              "evidence": "TF-IDF row candidate from scenario T301-012; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'EmptyingOfContainer' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8067421428062178,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ProductionDowntime",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-012",
+              "evidence": "TF-IDF row candidate from scenario T301-012; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'ProductionDowntime' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8067421428062178,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-003",
+              "evidence": "TF-IDF row candidate from scenario T301-003; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8058403997916365,
+              "scenario_id": "T301-003",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-003",
+              "evidence": "TF-IDF row candidate from scenario T301-003; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8058403997916365,
+              "scenario_id": "T301-003",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Overfilling",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-003",
+              "evidence": "TF-IDF row candidate from scenario T301-003; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'Overfilling' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8058403997916365,
+              "scenario_id": "T301-003",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-004",
+              "evidence": "TF-IDF row candidate from scenario T301-004; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'Explosion' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8034982260261582,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-004",
+              "evidence": "TF-IDF row candidate from scenario T301-004; the source row lists retrieved anchor 'OperationalError' and candidate endpoint 'FormationOfExAtmosphere' in its cause/consequence fields. The query endpoint was 'OperationalError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8034982260261582,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 3.1446800130652264,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-011::cause-02",
+      "scenario_id": "T301-011",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "LossOfInflow",
+      "gold_values": [
+        "PumpRunningDry",
+        "PumpBreakdown",
+        "ProductionDowntime"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-011::cause-02",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "EmptyingOfContainer",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-012",
+              "evidence": "TF-IDF row candidate from scenario T301-012; the source row lists retrieved anchor 'LossOfInflow' and candidate endpoint 'EmptyingOfContainer' in its cause/consequence fields. The query endpoint was 'LossOfInflow'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8438600508795325,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ProductionDowntime",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-012",
+              "evidence": "TF-IDF row candidate from scenario T301-012; the source row lists retrieved anchor 'LossOfInflow' and candidate endpoint 'ProductionDowntime' in its cause/consequence fields. The query endpoint was 'LossOfInflow'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8438600508795325,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.2518419933039695,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-011::cause-02",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 2.2576820047106594,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-011::cause-02",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "EmptyingOfContainer",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-012",
+              "evidence": "TF-IDF row candidate from scenario T301-012; the source row lists retrieved anchor 'LossOfInflow' and candidate endpoint 'EmptyingOfContainer' in its cause/consequence fields. The query endpoint was 'LossOfInflow'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8438600508795325,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ProductionDowntime",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-012",
+              "evidence": "TF-IDF row candidate from scenario T301-012; the source row lists retrieved anchor 'LossOfInflow' and candidate endpoint 'ProductionDowntime' in its cause/consequence fields. The query endpoint was 'LossOfInflow'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8438600508795325,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 2.509523998014629,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-013::cause-01",
+      "scenario_id": "T301-013",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "Contaminants",
+      "gold_values": [
+        "PoorProductQuality",
+        "NoSafetyConsequence"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-013::cause-01",
+          "gold_values": [
+            "PoorProductQuality",
+            "NoSafetyConsequence"
+          ],
+          "predictions": [],
+          "latency_ms": 0.029724003979936242,
+          "status": "no_candidates"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-013::cause-01",
+          "gold_values": [
+            "PoorProductQuality",
+            "NoSafetyConsequence"
+          ],
+          "predictions": [],
+          "latency_ms": 2.194373999373056,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-013::cause-01",
+          "gold_values": [
+            "PoorProductQuality",
+            "NoSafetyConsequence"
+          ],
+          "predictions": [],
+          "latency_ms": 2.2240980033529922,
+          "status": "no_candidates"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-016::cause-01",
+      "scenario_id": "T301-016",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "CondensationAirHumidity",
+      "gold_values": [
+        "DrainlineFracture",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-016::cause-01",
+          "gold_values": [
+            "DrainlineFracture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "DrainlineFracture",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'CondensationAirHumidity' and candidate endpoint 'DrainlineFracture' in its cause/consequence fields. The query endpoint was 'CondensationAirHumidity'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'CondensationAirHumidity' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'CondensationAirHumidity'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'CondensationAirHumidity' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'CondensationAirHumidity'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.24423300055786967,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-016::cause-01",
+          "gold_values": [
+            "DrainlineFracture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 2.2382240131264552,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-016::cause-01",
+          "gold_values": [
+            "DrainlineFracture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "DrainlineFracture",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'CondensationAirHumidity' and candidate endpoint 'DrainlineFracture' in its cause/consequence fields. The query endpoint was 'CondensationAirHumidity'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'CondensationAirHumidity' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'CondensationAirHumidity'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'CondensationAirHumidity' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'CondensationAirHumidity'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 2.482457013684325,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-016::cause-02",
+      "scenario_id": "T301-016",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "IntroductionOfWater",
+      "gold_values": [
+        "DrainlineFracture",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-016::cause-02",
+          "gold_values": [
+            "DrainlineFracture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "DrainlineFracture",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'IntroductionOfWater' and candidate endpoint 'DrainlineFracture' in its cause/consequence fields. The query endpoint was 'IntroductionOfWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'IntroductionOfWater' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'IntroductionOfWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'IntroductionOfWater' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'IntroductionOfWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.25010800163727254,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-016::cause-02",
+          "gold_values": [
+            "DrainlineFracture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 2.262937996420078,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-016::cause-02",
+          "gold_values": [
+            "DrainlineFracture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "DrainlineFracture",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'IntroductionOfWater' and candidate endpoint 'DrainlineFracture' in its cause/consequence fields. The query endpoint was 'IntroductionOfWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'IntroductionOfWater' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'IntroductionOfWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'IntroductionOfWater' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'IntroductionOfWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 2.5130459980573505,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-016::cause-03",
+      "scenario_id": "T301-016",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "ContaminationByWater",
+      "gold_values": [
+        "DrainlineFracture",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-016::cause-03",
+          "gold_values": [
+            "DrainlineFracture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "DrainlineFracture",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'ContaminationByWater' and candidate endpoint 'DrainlineFracture' in its cause/consequence fields. The query endpoint was 'ContaminationByWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'ContaminationByWater' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'ContaminationByWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'ContaminationByWater' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'ContaminationByWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.24592800764366984,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-016::cause-03",
+          "gold_values": [
+            "DrainlineFracture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 2.3379359918180853,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-016::cause-03",
+          "gold_values": [
+            "DrainlineFracture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "DrainlineFracture",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'ContaminationByWater' and candidate endpoint 'DrainlineFracture' in its cause/consequence fields. The query endpoint was 'ContaminationByWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'ContaminationByWater' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'ContaminationByWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-015",
+              "evidence": "TF-IDF row candidate from scenario T301-015; the source row lists retrieved anchor 'ContaminationByWater' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'ContaminationByWater'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8191265787431666,
+              "scenario_id": "T301-015",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 2.583863999461755,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-020::cause-01",
+      "scenario_id": "T301-020",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "Corrosion",
+      "gold_values": [
+        "PoolFormation",
+        "PumpBreakdown",
+        "ProductionDowntime"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-020::cause-01",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.26987500314135104,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-020::cause-01",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 2.275890001328662,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-020::cause-01",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 2.545765004470013,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-020::cause-02",
+      "scenario_id": "T301-020",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "Erosion",
+      "gold_values": [
+        "PoolFormation",
+        "PumpBreakdown",
+        "ProductionDowntime"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-020::cause-02",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.2686179941520095,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-020::cause-02",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 2.2640929964836687,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-020::cause-02",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 2.532710990635678,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-020::cause-03",
+      "scenario_id": "T301-020",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "LeakyConnections",
+      "gold_values": [
+        "PoolFormation",
+        "PumpBreakdown",
+        "ProductionDowntime"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-020::cause-03",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.26138999965041876,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-020::cause-03",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 1.4674510020995513,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-020::cause-03",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.72884100174997,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-020::cause-04",
+      "scenario_id": "T301-020",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "MaterialDefect",
+      "gold_values": [
+        "PoolFormation",
+        "PumpBreakdown",
+        "ProductionDowntime"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-020::cause-04",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.14699400344397873,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-020::cause-04",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 1.1941789998672903,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-020::cause-04",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.341173003311269,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-020::cause-05",
+      "scenario_id": "T301-020",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "MechanicalDamage",
+      "gold_values": [
+        "PoolFormation",
+        "PumpBreakdown",
+        "ProductionDowntime"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-020::cause-05",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'AbnormalEvaporation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'ExceedingAllowablePressure' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.1714080135570839,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-020::cause-05",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 1.216242992086336,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-020::cause-05",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'AbnormalEvaporation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'ExceedingAllowablePressure' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.38765100564342,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-020::cause-06",
+      "scenario_id": "T301-020",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "ExternalLeakage",
+      "gold_values": [
+        "PoolFormation",
+        "PumpBreakdown",
+        "ProductionDowntime"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-020::cause-06",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.14849600847810507,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-020::cause-06",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 2.102775004459545,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-020::cause-06",
+          "gold_values": [
+            "PoolFormation",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 2.25127101293765,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-022::cause-01",
+      "scenario_id": "T301-022",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "Corrosion",
+      "gold_values": [
+        "PoolFormation",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-022::cause-01",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.2636379940668121,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-022::cause-01",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 2.2613140026805922,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-022::cause-01",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Corrosion' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'Corrosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 2.5249519967474043,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-022::cause-02",
+      "scenario_id": "T301-022",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "Erosion",
+      "gold_values": [
+        "PoolFormation",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-022::cause-02",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.259916007053107,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-022::cause-02",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 1.3545459951274097,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-022::cause-02",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'Erosion' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'Erosion'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.6144620021805167,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-022::cause-03",
+      "scenario_id": "T301-022",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "LeakyConnections",
+      "gold_values": [
+        "PoolFormation",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-022::cause-03",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.15078799333423376,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-022::cause-03",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 1.2252020096639171,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-022::cause-03",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'LeakyConnections' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'LeakyConnections'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.3759900029981509,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-022::cause-04",
+      "scenario_id": "T301-022",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "MaterialDefect",
+      "gold_values": [
+        "PoolFormation",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-022::cause-04",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.14795899915043265,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-022::cause-04",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 1.182681997306645,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-022::cause-04",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MaterialDefect' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'MaterialDefect'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.3306409964570776,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-022::cause-05",
+      "scenario_id": "T301-022",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "MechanicalDamage",
+      "gold_values": [
+        "PoolFormation",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-022::cause-05",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'AbnormalEvaporation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'ExceedingAllowablePressure' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.17128999752458185,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-022::cause-05",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 1.2784159916918725,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-022::cause-05",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'AbnormalEvaporation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'ExceedingAllowablePressure' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.4497059892164543,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-022::cause-06",
+      "scenario_id": "T301-022",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "ExternalLeakage",
+      "gold_values": [
+        "PoolFormation",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-022::cause-06",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.14256399299483746,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-022::cause-06",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 1.198994999867864,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-022::cause-06",
+          "gold_values": [
+            "PoolFormation",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'ExternalLeakage' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'ExternalLeakage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8207598375851592,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.3415589928627014,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-031::cause-01",
+      "scenario_id": "T301-031",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "FaultyInstallation",
+      "gold_values": [
+        "CollapseOfEnclosure",
+        "LossOfPrimaryContainment",
+        "Fire"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-031::cause-01",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "CollapseOfEnclosure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'FaultyInstallation' and candidate endpoint 'CollapseOfEnclosure' in its cause/consequence fields. The query endpoint was 'FaultyInstallation'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'FaultyInstallation' and candidate endpoint 'Explosion' in its cause/consequence fields. The query endpoint was 'FaultyInstallation'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'FaultyInstallation' and candidate endpoint 'FormationOfExAtmosphere' in its cause/consequence fields. The query endpoint was 'FaultyInstallation'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'FaultyInstallation' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'FaultyInstallation'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.1501629885751754,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-031::cause-01",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 1.23388999782037,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-031::cause-01",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "CollapseOfEnclosure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'FaultyInstallation' and candidate endpoint 'CollapseOfEnclosure' in its cause/consequence fields. The query endpoint was 'FaultyInstallation'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'FaultyInstallation' and candidate endpoint 'Explosion' in its cause/consequence fields. The query endpoint was 'FaultyInstallation'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'FaultyInstallation' and candidate endpoint 'FormationOfExAtmosphere' in its cause/consequence fields. The query endpoint was 'FaultyInstallation'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'FaultyInstallation' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'FaultyInstallation'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.3840529863955453,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-031::cause-02",
+      "scenario_id": "T301-031",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "HumanError",
+      "gold_values": [
+        "CollapseOfEnclosure",
+        "LossOfPrimaryContainment",
+        "Fire"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-031::cause-02",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "EmptyingOfContainer",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-009",
+              "evidence": "TF-IDF row candidate from scenario T301-009; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'EmptyingOfContainer' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8169062079759998,
+              "scenario_id": "T301-009",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ProductionDowntime",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-009",
+              "evidence": "TF-IDF row candidate from scenario T301-009; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'ProductionDowntime' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8169062079759998,
+              "scenario_id": "T301-009",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "CollapseOfEnclosure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'CollapseOfEnclosure' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8126949554771878,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'Explosion' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8126949554771878,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'FormationOfExAtmosphere' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8126949554771878,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8126949554771878,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PumpBreakdown",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-008",
+              "evidence": "TF-IDF row candidate from scenario T301-008; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'PumpBreakdown' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8111169479688372,
+              "scenario_id": "T301-008",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PumpRunningDry",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-008",
+              "evidence": "TF-IDF row candidate from scenario T301-008; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'PumpRunningDry' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8111169479688372,
+              "scenario_id": "T301-008",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.22050400730222464,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-031::cause-02",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 1.2607219978235662,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-031::cause-02",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "EmptyingOfContainer",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-009",
+              "evidence": "TF-IDF row candidate from scenario T301-009; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'EmptyingOfContainer' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8169062079759998,
+              "scenario_id": "T301-009",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ProductionDowntime",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-009",
+              "evidence": "TF-IDF row candidate from scenario T301-009; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'ProductionDowntime' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8169062079759998,
+              "scenario_id": "T301-009",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "CollapseOfEnclosure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'CollapseOfEnclosure' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8126949554771878,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'Explosion' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8126949554771878,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'FormationOfExAtmosphere' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8126949554771878,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8126949554771878,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PumpBreakdown",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-008",
+              "evidence": "TF-IDF row candidate from scenario T301-008; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'PumpBreakdown' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8111169479688372,
+              "scenario_id": "T301-008",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PumpRunningDry",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-008",
+              "evidence": "TF-IDF row candidate from scenario T301-008; the source row lists retrieved anchor 'HumanError' and candidate endpoint 'PumpRunningDry' in its cause/consequence fields. The query endpoint was 'HumanError'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8111169479688372,
+              "scenario_id": "T301-008",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.4812260051257908,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-031::cause-03",
+      "scenario_id": "T301-031",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "ObstructedVentPath",
+      "gold_values": [
+        "CollapseOfEnclosure",
+        "LossOfPrimaryContainment",
+        "Fire"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-031::cause-03",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "CollapseOfEnclosure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'ObstructedVentPath' and candidate endpoint 'CollapseOfEnclosure' in its cause/consequence fields. The query endpoint was 'ObstructedVentPath'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'ObstructedVentPath' and candidate endpoint 'Explosion' in its cause/consequence fields. The query endpoint was 'ObstructedVentPath'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'ObstructedVentPath' and candidate endpoint 'FormationOfExAtmosphere' in its cause/consequence fields. The query endpoint was 'ObstructedVentPath'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'ObstructedVentPath' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'ObstructedVentPath'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.1393429993186146,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-031::cause-03",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 1.2138099991716444,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-031::cause-03",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "CollapseOfEnclosure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'ObstructedVentPath' and candidate endpoint 'CollapseOfEnclosure' in its cause/consequence fields. The query endpoint was 'ObstructedVentPath'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'ObstructedVentPath' and candidate endpoint 'Explosion' in its cause/consequence fields. The query endpoint was 'ObstructedVentPath'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'ObstructedVentPath' and candidate endpoint 'FormationOfExAtmosphere' in its cause/consequence fields. The query endpoint was 'ObstructedVentPath'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-032",
+              "evidence": "TF-IDF row candidate from scenario T301-032; the source row lists retrieved anchor 'ObstructedVentPath' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'ObstructedVentPath'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8325929190258897,
+              "scenario_id": "T301-032",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.353152998490259,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-036::cause-01",
+      "scenario_id": "T301-036",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "MechanicalDamage",
+      "gold_values": [
+        "ExceedingFlashPoint"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-036::cause-01",
+          "gold_values": [
+            "ExceedingFlashPoint"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'AbnormalEvaporation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'ExceedingAllowablePressure' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.1699150016065687,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-036::cause-01",
+          "gold_values": [
+            "ExceedingFlashPoint"
+          ],
+          "predictions": [],
+          "latency_ms": 1.2009549973299727,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-036::cause-01",
+          "gold_values": [
+            "ExceedingFlashPoint"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'AbnormalEvaporation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'ExceedingAllowablePressure' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.826623833764433,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'Fire' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'LossOfPrimaryContainment' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PoolFormation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-021",
+              "evidence": "TF-IDF row candidate from scenario T301-021; the source row lists retrieved anchor 'MechanicalDamage' and candidate endpoint 'PoolFormation' in its cause/consequence fields. The query endpoint was 'MechanicalDamage'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8132163385940528,
+              "scenario_id": "T301-021",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.3708699989365414,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    },
+    {
+      "case_id": "T301-036::cause-02",
+      "scenario_id": "T301-036",
+      "dataset_id": "t301-reconstructed",
+      "record_type": "source_reconstructed",
+      "known_endpoint": "HeatInputByRecirculationPump",
+      "gold_values": [
+        "ExceedingFlashPoint"
+      ],
+      "silver_label_definition": "Consequences co-listed in the same held-out worksheet row; not independently expert-validated.",
+      "methods": {
+        "tfidf_vector_retrieval": {
+          "case_id": "T301-036::cause-02",
+          "gold_values": [
+            "ExceedingFlashPoint"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'HeatInputByRecirculationPump' and candidate endpoint 'AbnormalEvaporation' in its cause/consequence fields. The query endpoint was 'HeatInputByRecirculationPump'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8357672265257323,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'HeatInputByRecirculationPump' and candidate endpoint 'ExceedingAllowablePressure' in its cause/consequence fields. The query endpoint was 'HeatInputByRecirculationPump'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8357672265257323,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.11753900616895407,
+          "status": "candidates_found"
+        },
+        "graph_reasoning": {
+          "case_id": "T301-036::cause-02",
+          "gold_values": [
+            "ExceedingFlashPoint"
+          ],
+          "predictions": [],
+          "latency_ms": 1.2178370088804513,
+          "status": "insufficient_support"
+        },
+        "graph_tfidf_union": {
+          "case_id": "T301-036::cause-02",
+          "gold_values": [
+            "ExceedingFlashPoint"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'HeatInputByRecirculationPump' and candidate endpoint 'AbnormalEvaporation' in its cause/consequence fields. The query endpoint was 'HeatInputByRecirculationPump'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8357672265257323,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "retrieval_inferred",
+              "source_id": "t301-reconstructed:single-2020-t301:T301-035",
+              "evidence": "TF-IDF row candidate from scenario T301-035; the source row lists retrieved anchor 'HeatInputByRecirculationPump' and candidate endpoint 'ExceedingAllowablePressure' in its cause/consequence fields. The query endpoint was 'HeatInputByRecirculationPump'. Underlying row origin: reconstructed. This is co-occurrence-based retrieval, not a directly documented causal edge. Provenance: Single et al. (2020), T-301 hexane case; reconstructed from reported scenario chains",
+              "scope": "cross_scenario",
+              "relevance_score": 0.8357672265257323,
+              "scenario_id": "T301-035",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.3353760150494054,
+          "status": "candidates_found"
+        },
+        "prompt_only_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_disabled",
+          "predictions": [],
+          "latency_ms": 0.0
+        }
+      }
+    }
+  ]
+}

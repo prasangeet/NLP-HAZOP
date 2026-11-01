@@ -1,0 +1,11 @@
+scope,method,status,n_evaluated,n_total_test_cases,micro_precision,micro_recall,micro_f1,macro_f1,hit_at_1,mrr,coverage,abstention_rate,mean_candidates,evidence_text_rate,non_model_origin_rate,source_or_expert_origin_rate,mean_latency_ms,cost_usd
+full_test,prompt_only_llm,disabled_or_call_cap_zero,0,19,,,,,,,,,,,,,,
+full_test,tfidf_vector_retrieval,evaluated,19,19,0.26804123711340205,0.4727272727272727,0.3421052631578947,0.2968178020809599,0.15789473684210525,0.34561403508771926,0.8947368421052632,0.10526315789473684,5.105263157894737,1.0,1.0,0.0,0.3444314214376439,
+full_test,graph_reasoning,evaluated,19,19,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,2.5228144735784124,
+full_test,graph_tfidf_union,evaluated,19,19,0.26804123711340205,0.4727272727272727,0.3421052631578947,0.2968178020809599,0.15789473684210525,0.34561403508771926,0.8947368421052632,0.10526315789473684,5.105263157894737,1.0,1.0,0.0,2.867245895016056,
+full_test,hybrid_graph_vector_llm,disabled_or_call_cap_zero,0,19,,,,,,,,,,,,,,
+matched_cases,prompt_only_llm,not_evaluated_on_comparison_cases,0,,,,,,,,,,,,,,,
+matched_cases,tfidf_vector_retrieval,evaluated,15,,0.3333333333333333,0.5531914893617021,0.4159999999999999,0.37596921596921595,0.2,0.43777777777777777,0.8666666666666667,0.1333333333333333,5.2,1.0,1.0,0.0,0.3357118005321051,
+matched_cases,graph_reasoning,evaluated,15,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,2.5338693987578154,
+matched_cases,graph_tfidf_union,evaluated,15,,0.3333333333333333,0.5531914893617021,0.4159999999999999,0.37596921596921595,0.2,0.43777777777777777,0.8666666666666667,0.1333333333333333,5.2,1.0,1.0,0.0,2.8695811992899203,
+matched_cases,hybrid_graph_vector_llm,not_evaluated_on_comparison_cases,0,,,,,,,,,,,,,,,

@@ -1,0 +1,11 @@
+scope,method,status,n_evaluated,n_total_test_cases,micro_precision,micro_recall,micro_f1,macro_f1,hit_at_1,mrr,coverage,abstention_rate,mean_candidates,evidence_text_rate,non_model_origin_rate,source_or_expert_origin_rate,mean_latency_ms,cost_usd
+full_test,prompt_only_llm,disabled_or_call_cap_zero,0,24,,,,,,,,,,,,,,
+full_test,tfidf_vector_retrieval,evaluated,24,24,0.3953488372093023,0.44155844155844154,0.4171779141104294,0.3951449013949013,0.20833333333333334,0.4770833333333333,0.9583333333333334,0.04166666666666663,3.5833333333333335,1.0,1.0,0.0,0.17180970583770735,
+full_test,graph_reasoning,evaluated,24,24,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.3704330413020216,
+full_test,graph_tfidf_union,evaluated,24,24,0.3953488372093023,0.44155844155844154,0.4171779141104294,0.3951449013949013,0.20833333333333334,0.4770833333333333,0.9583333333333334,0.04166666666666663,3.5833333333333335,1.0,1.0,0.0,1.5422427471397289,
+full_test,hybrid_graph_vector_llm,disabled_or_call_cap_zero,0,24,,,,,,,,,,,,,,
+matched_cases,prompt_only_llm,not_evaluated_on_comparison_cases,0,,,,,,,,,,,,,,,
+matched_cases,tfidf_vector_retrieval,evaluated,15,,0.40816326530612246,0.4,0.4040404040404041,0.3878835978835979,0.2,0.491111111111111,0.9333333333333333,0.06666666666666665,3.2666666666666666,1.0,1.0,0.0,0.16182713055362305,
+matched_cases,graph_reasoning,evaluated,15,,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.3565159994565572,
+matched_cases,graph_tfidf_union,evaluated,15,,0.40816326530612246,0.4,0.4040404040404041,0.3878835978835979,0.2,0.491111111111111,0.9333333333333333,0.06666666666666665,3.2666666666666666,1.0,1.0,0.0,1.5183431300101802,
+matched_cases,hybrid_graph_vector_llm,not_evaluated_on_comparison_cases,0,,,,,,,,,,,,,,,

@@ -1,0 +1,2204 @@
+{
+  "run_id": "20261101T170456Z-22957258",
+  "created_at": "2026-11-01T17:05:03.423102+00:00",
+  "protocol_version": "1.0",
+  "label_status": "silver_row_association",
+  "label_warning": "Co-listed row associations are not expert-validated causal ground truth.",
+  "datasets": [
+    "t301-reconstructed"
+  ],
+  "seeds": [
+    42,
+    7,
+    21
+  ],
+  "graph_hops": [
+    2,
+    4
+  ],
+  "test_fraction": 0.2,
+  "with_llm": false,
+  "runs": [
+    {
+      "dataset": "t301-reconstructed",
+      "seed": 42,
+      "max_hops": 2,
+      "status": "completed",
+      "metadata": {
+        "project": "NLP-HAZOP",
+        "protocol_version": "1.0",
+        "repository_commit": "32cac98c68abfb00372a2ce0da2946aeb4b93714",
+        "python_version": "3.11.9",
+        "platform": "Linux-7.2.6-arch2-1-x86_64-with-glibc2.44",
+        "dataset": "t301-reconstructed",
+        "dataset_path": "/mnt/volume/Projects/BTech-Project/NLP-HAZOP/data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
+        "dataset_sha256": "1c8713c2b6fbc9cdf2e22e64a307fdb64f073158a78679bdc23ad803a7d2725e",
+        "dataset_rows": 40,
+        "train_scenarios": 32,
+        "test_scenarios": 8,
+        "test_queries": 19,
+        "seed": 42,
+        "test_fraction": 0.2,
+        "top_k": 10,
+        "max_graph_hops": 2,
+        "tfidf_index_build_ms": 0.8348359988303855,
+        "method": "scenario-level holdout; target labels and target graph edges removed from index",
+        "label_status": "silver_row_association",
+        "label_warning": "Labels are cause/consequence values co-listed in the same source or synthetic worksheet row. They are not independent causal ground truth and none of the supplied rows is expert-validated.",
+        "record_type_counts": {
+          "source_reconstructed": 40
+        },
+        "validation_note_counts": {},
+        "llm_requested": false,
+        "llm_enabled": false,
+        "llm_model": null,
+        "llm_max_cases": 15,
+        "llm_calls_per_evaluated_case_max": 2,
+        "cost_measurement": "not captured; cost_usd remains null",
+        "created_at": "2026-11-01T17:04:58.320760+00:00",
+        "comparison_case_count": 15,
+        "comparison_case_ids": [
+          "T301-004::cause-01",
+          "T301-004::cause-02",
+          "T301-004::cause-03",
+          "T301-010::cause-01",
+          "T301-011::cause-01",
+          "T301-011::cause-02",
+          "T301-012::cause-01",
+          "T301-012::cause-02",
+          "T301-025::cause-01",
+          "T301-025::cause-02",
+          "T301-026::cause-01",
+          "T301-026::cause-02",
+          "T301-031::cause-01",
+          "T301-031::cause-02",
+          "T301-031::cause-03"
+        ],
+        "comparison_case_selection": "first N cases in deterministic scenario/cause order; N equals max_llm_cases"
+      },
+      "method_summary": {
+        "prompt_only_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 19
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 19,
+          "micro_precision": 0.26804123711340205,
+          "micro_recall": 0.4727272727272727,
+          "micro_f1": 0.3421052631578947,
+          "macro_precision": 0.24655388471177944,
+          "macro_recall": 0.4078947368421053,
+          "macro_f1": 0.2968178020809599,
+          "hit_at_1": 0.15789473684210525,
+          "mrr": 0.34561403508771926,
+          "coverage": 0.8947368421052632,
+          "abstention_rate": 0.10526315789473684,
+          "mean_candidates": 5.105263157894737,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.19051484368422902,
+          "origin_counts": {
+            "retrieval_inferred": 97
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 19
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 19,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.39176063117032,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 19
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 19,
+          "micro_precision": 0.26804123711340205,
+          "micro_recall": 0.4727272727272727,
+          "micro_f1": 0.3421052631578947,
+          "macro_precision": 0.24655388471177944,
+          "macro_recall": 0.4078947368421053,
+          "macro_f1": 0.2968178020809599,
+          "hit_at_1": 0.15789473684210525,
+          "mrr": 0.34561403508771926,
+          "coverage": 0.8947368421052632,
+          "abstention_rate": 0.10526315789473684,
+          "mean_candidates": 5.105263157894737,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.582275474854549,
+          "origin_counts": {
+            "retrieval_inferred": 97
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 19
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 19
+        }
+      },
+      "matched_case_summary": {
+        "prompt_only_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.3333333333333333,
+          "micro_recall": 0.5531914893617021,
+          "micro_f1": 0.4159999999999999,
+          "macro_precision": 0.3123015873015873,
+          "macro_recall": 0.5166666666666667,
+          "macro_f1": 0.37596921596921595,
+          "hit_at_1": 0.2,
+          "mrr": 0.43777777777777777,
+          "coverage": 0.8666666666666667,
+          "abstention_rate": 0.1333333333333333,
+          "mean_candidates": 5.2,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.18698593485169113,
+          "origin_counts": {
+            "retrieval_inferred": 78
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.3418989333634574,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.3333333333333333,
+          "micro_recall": 0.5531914893617021,
+          "micro_f1": 0.4159999999999999,
+          "macro_precision": 0.3123015873015873,
+          "macro_recall": 0.5166666666666667,
+          "macro_f1": 0.37596921596921595,
+          "hit_at_1": 0.2,
+          "mrr": 0.43777777777777777,
+          "coverage": 0.8666666666666667,
+          "abstention_rate": 0.1333333333333333,
+          "mean_candidates": 5.2,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.5288848682151486,
+          "origin_counts": {
+            "retrieval_inferred": 78
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        }
+      },
+      "case_count": 19,
+      "artifacts": {
+        "results_json": "results.json",
+        "summary_csv": "summary.csv",
+        "predictions_csv": "predictions.csv",
+        "report_md": "report.md"
+      }
+    },
+    {
+      "dataset": "t301-reconstructed",
+      "seed": 42,
+      "max_hops": 4,
+      "status": "completed",
+      "metadata": {
+        "project": "NLP-HAZOP",
+        "protocol_version": "1.0",
+        "repository_commit": "32cac98c68abfb00372a2ce0da2946aeb4b93714",
+        "python_version": "3.11.9",
+        "platform": "Linux-7.2.6-arch2-1-x86_64-with-glibc2.44",
+        "dataset": "t301-reconstructed",
+        "dataset_path": "/mnt/volume/Projects/BTech-Project/NLP-HAZOP/data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
+        "dataset_sha256": "1c8713c2b6fbc9cdf2e22e64a307fdb64f073158a78679bdc23ad803a7d2725e",
+        "dataset_rows": 40,
+        "train_scenarios": 32,
+        "test_scenarios": 8,
+        "test_queries": 19,
+        "seed": 42,
+        "test_fraction": 0.2,
+        "top_k": 10,
+        "max_graph_hops": 4,
+        "tfidf_index_build_ms": 1.4461890095844865,
+        "method": "scenario-level holdout; target labels and target graph edges removed from index",
+        "label_status": "silver_row_association",
+        "label_warning": "Labels are cause/consequence values co-listed in the same source or synthetic worksheet row. They are not independent causal ground truth and none of the supplied rows is expert-validated.",
+        "record_type_counts": {
+          "source_reconstructed": 40
+        },
+        "validation_note_counts": {},
+        "llm_requested": false,
+        "llm_enabled": false,
+        "llm_model": null,
+        "llm_max_cases": 15,
+        "llm_calls_per_evaluated_case_max": 2,
+        "cost_measurement": "not captured; cost_usd remains null",
+        "created_at": "2026-11-01T17:04:59.292686+00:00",
+        "comparison_case_count": 15,
+        "comparison_case_ids": [
+          "T301-004::cause-01",
+          "T301-004::cause-02",
+          "T301-004::cause-03",
+          "T301-010::cause-01",
+          "T301-011::cause-01",
+          "T301-011::cause-02",
+          "T301-012::cause-01",
+          "T301-012::cause-02",
+          "T301-025::cause-01",
+          "T301-025::cause-02",
+          "T301-026::cause-01",
+          "T301-026::cause-02",
+          "T301-031::cause-01",
+          "T301-031::cause-02",
+          "T301-031::cause-03"
+        ],
+        "comparison_case_selection": "first N cases in deterministic scenario/cause order; N equals max_llm_cases"
+      },
+      "method_summary": {
+        "prompt_only_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 19
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 19,
+          "micro_precision": 0.26804123711340205,
+          "micro_recall": 0.4727272727272727,
+          "micro_f1": 0.3421052631578947,
+          "macro_precision": 0.24655388471177944,
+          "macro_recall": 0.4078947368421053,
+          "macro_f1": 0.2968178020809599,
+          "hit_at_1": 0.15789473684210525,
+          "mrr": 0.34561403508771926,
+          "coverage": 0.8947368421052632,
+          "abstention_rate": 0.10526315789473684,
+          "mean_candidates": 5.105263157894737,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.3444314214376439,
+          "origin_counts": {
+            "retrieval_inferred": 97
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 19
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 19,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 2.5228144735784124,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 19
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 19,
+          "micro_precision": 0.26804123711340205,
+          "micro_recall": 0.4727272727272727,
+          "micro_f1": 0.3421052631578947,
+          "macro_precision": 0.24655388471177944,
+          "macro_recall": 0.4078947368421053,
+          "macro_f1": 0.2968178020809599,
+          "hit_at_1": 0.15789473684210525,
+          "mrr": 0.34561403508771926,
+          "coverage": 0.8947368421052632,
+          "abstention_rate": 0.10526315789473684,
+          "mean_candidates": 5.105263157894737,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 2.867245895016056,
+          "origin_counts": {
+            "retrieval_inferred": 97
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 19
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 19
+        }
+      },
+      "matched_case_summary": {
+        "prompt_only_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.3333333333333333,
+          "micro_recall": 0.5531914893617021,
+          "micro_f1": 0.4159999999999999,
+          "macro_precision": 0.3123015873015873,
+          "macro_recall": 0.5166666666666667,
+          "macro_f1": 0.37596921596921595,
+          "hit_at_1": 0.2,
+          "mrr": 0.43777777777777777,
+          "coverage": 0.8666666666666667,
+          "abstention_rate": 0.1333333333333333,
+          "mean_candidates": 5.2,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.3357118005321051,
+          "origin_counts": {
+            "retrieval_inferred": 78
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 2.5338693987578154,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.3333333333333333,
+          "micro_recall": 0.5531914893617021,
+          "micro_f1": 0.4159999999999999,
+          "macro_precision": 0.3123015873015873,
+          "macro_recall": 0.5166666666666667,
+          "macro_f1": 0.37596921596921595,
+          "hit_at_1": 0.2,
+          "mrr": 0.43777777777777777,
+          "coverage": 0.8666666666666667,
+          "abstention_rate": 0.1333333333333333,
+          "mean_candidates": 5.2,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 2.8695811992899203,
+          "origin_counts": {
+            "retrieval_inferred": 78
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        }
+      },
+      "case_count": 19,
+      "artifacts": {
+        "results_json": "results.json",
+        "summary_csv": "summary.csv",
+        "predictions_csv": "predictions.csv",
+        "report_md": "report.md"
+      }
+    },
+    {
+      "dataset": "t301-reconstructed",
+      "seed": 7,
+      "max_hops": 2,
+      "status": "completed",
+      "metadata": {
+        "project": "NLP-HAZOP",
+        "protocol_version": "1.0",
+        "repository_commit": "32cac98c68abfb00372a2ce0da2946aeb4b93714",
+        "python_version": "3.11.9",
+        "platform": "Linux-7.2.6-arch2-1-x86_64-with-glibc2.44",
+        "dataset": "t301-reconstructed",
+        "dataset_path": "/mnt/volume/Projects/BTech-Project/NLP-HAZOP/data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
+        "dataset_sha256": "1c8713c2b6fbc9cdf2e22e64a307fdb64f073158a78679bdc23ad803a7d2725e",
+        "dataset_rows": 40,
+        "train_scenarios": 32,
+        "test_scenarios": 8,
+        "test_queries": 24,
+        "seed": 7,
+        "test_fraction": 0.2,
+        "top_k": 10,
+        "max_graph_hops": 2,
+        "tfidf_index_build_ms": 0.8366010006284341,
+        "method": "scenario-level holdout; target labels and target graph edges removed from index",
+        "label_status": "silver_row_association",
+        "label_warning": "Labels are cause/consequence values co-listed in the same source or synthetic worksheet row. They are not independent causal ground truth and none of the supplied rows is expert-validated.",
+        "record_type_counts": {
+          "source_reconstructed": 40
+        },
+        "validation_note_counts": {},
+        "llm_requested": false,
+        "llm_enabled": false,
+        "llm_model": null,
+        "llm_max_cases": 15,
+        "llm_calls_per_evaluated_case_max": 2,
+        "cost_measurement": "not captured; cost_usd remains null",
+        "created_at": "2026-11-01T17:05:00.198386+00:00",
+        "comparison_case_count": 15,
+        "comparison_case_ids": [
+          "T301-006::cause-01",
+          "T301-011::cause-01",
+          "T301-011::cause-02",
+          "T301-013::cause-01",
+          "T301-016::cause-01",
+          "T301-016::cause-02",
+          "T301-016::cause-03",
+          "T301-020::cause-01",
+          "T301-020::cause-02",
+          "T301-020::cause-03",
+          "T301-020::cause-04",
+          "T301-020::cause-05",
+          "T301-020::cause-06",
+          "T301-022::cause-01",
+          "T301-022::cause-02"
+        ],
+        "comparison_case_selection": "first N cases in deterministic scenario/cause order; N equals max_llm_cases"
+      },
+      "method_summary": {
+        "prompt_only_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 24
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.3953488372093023,
+          "micro_recall": 0.44155844155844154,
+          "micro_f1": 0.4171779141104294,
+          "macro_precision": 0.412202380952381,
+          "macro_recall": 0.4027777777777777,
+          "macro_f1": 0.3951449013949013,
+          "hit_at_1": 0.20833333333333334,
+          "mrr": 0.4770833333333333,
+          "coverage": 0.9583333333333334,
+          "abstention_rate": 0.04166666666666663,
+          "mean_candidates": 3.5833333333333335,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.17180970583770735,
+          "origin_counts": {
+            "retrieval_inferred": 86
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.3704330413020216,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.3953488372093023,
+          "micro_recall": 0.44155844155844154,
+          "micro_f1": 0.4171779141104294,
+          "macro_precision": 0.412202380952381,
+          "macro_recall": 0.4027777777777777,
+          "macro_f1": 0.3951449013949013,
+          "hit_at_1": 0.20833333333333334,
+          "mrr": 0.4770833333333333,
+          "coverage": 0.9583333333333334,
+          "abstention_rate": 0.04166666666666663,
+          "mean_candidates": 3.5833333333333335,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.5422427471397289,
+          "origin_counts": {
+            "retrieval_inferred": 86
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 24
+        }
+      },
+      "matched_case_summary": {
+        "prompt_only_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.40816326530612246,
+          "micro_recall": 0.4,
+          "micro_f1": 0.4040404040404041,
+          "macro_precision": 0.41619047619047617,
+          "macro_recall": 0.3777777777777777,
+          "macro_f1": 0.3878835978835979,
+          "hit_at_1": 0.2,
+          "mrr": 0.491111111111111,
+          "coverage": 0.9333333333333333,
+          "abstention_rate": 0.06666666666666665,
+          "mean_candidates": 3.2666666666666666,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.16182713055362305,
+          "origin_counts": {
+            "retrieval_inferred": 49
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.3565159994565572,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.40816326530612246,
+          "micro_recall": 0.4,
+          "micro_f1": 0.4040404040404041,
+          "macro_precision": 0.41619047619047617,
+          "macro_recall": 0.3777777777777777,
+          "macro_f1": 0.3878835978835979,
+          "hit_at_1": 0.2,
+          "mrr": 0.491111111111111,
+          "coverage": 0.9333333333333333,
+          "abstention_rate": 0.06666666666666665,
+          "mean_candidates": 3.2666666666666666,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.5183431300101802,
+          "origin_counts": {
+            "retrieval_inferred": 49
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        }
+      },
+      "case_count": 24,
+      "artifacts": {
+        "results_json": "results.json",
+        "summary_csv": "summary.csv",
+        "predictions_csv": "predictions.csv",
+        "report_md": "report.md"
+      }
+    },
+    {
+      "dataset": "t301-reconstructed",
+      "seed": 7,
+      "max_hops": 4,
+      "status": "completed",
+      "metadata": {
+        "project": "NLP-HAZOP",
+        "protocol_version": "1.0",
+        "repository_commit": "32cac98c68abfb00372a2ce0da2946aeb4b93714",
+        "python_version": "3.11.9",
+        "platform": "Linux-7.2.6-arch2-1-x86_64-with-glibc2.44",
+        "dataset": "t301-reconstructed",
+        "dataset_path": "/mnt/volume/Projects/BTech-Project/NLP-HAZOP/data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
+        "dataset_sha256": "1c8713c2b6fbc9cdf2e22e64a307fdb64f073158a78679bdc23ad803a7d2725e",
+        "dataset_rows": 40,
+        "train_scenarios": 32,
+        "test_scenarios": 8,
+        "test_queries": 24,
+        "seed": 7,
+        "test_fraction": 0.2,
+        "top_k": 10,
+        "max_graph_hops": 4,
+        "tfidf_index_build_ms": 1.3863570056855679,
+        "method": "scenario-level holdout; target labels and target graph edges removed from index",
+        "label_status": "silver_row_association",
+        "label_warning": "Labels are cause/consequence values co-listed in the same source or synthetic worksheet row. They are not independent causal ground truth and none of the supplied rows is expert-validated.",
+        "record_type_counts": {
+          "source_reconstructed": 40
+        },
+        "validation_note_counts": {},
+        "llm_requested": false,
+        "llm_enabled": false,
+        "llm_model": null,
+        "llm_max_cases": 15,
+        "llm_calls_per_evaluated_case_max": 2,
+        "cost_measurement": "not captured; cost_usd remains null",
+        "created_at": "2026-11-01T17:05:01.181642+00:00",
+        "comparison_case_count": 15,
+        "comparison_case_ids": [
+          "T301-006::cause-01",
+          "T301-011::cause-01",
+          "T301-011::cause-02",
+          "T301-013::cause-01",
+          "T301-016::cause-01",
+          "T301-016::cause-02",
+          "T301-016::cause-03",
+          "T301-020::cause-01",
+          "T301-020::cause-02",
+          "T301-020::cause-03",
+          "T301-020::cause-04",
+          "T301-020::cause-05",
+          "T301-020::cause-06",
+          "T301-022::cause-01",
+          "T301-022::cause-02"
+        ],
+        "comparison_case_selection": "first N cases in deterministic scenario/cause order; N equals max_llm_cases"
+      },
+      "method_summary": {
+        "prompt_only_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 24
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.3953488372093023,
+          "micro_recall": 0.44155844155844154,
+          "micro_f1": 0.4171779141104294,
+          "macro_precision": 0.412202380952381,
+          "macro_recall": 0.4027777777777777,
+          "macro_f1": 0.3951449013949013,
+          "hit_at_1": 0.20833333333333334,
+          "mrr": 0.4770833333333333,
+          "coverage": 0.9583333333333334,
+          "abstention_rate": 0.04166666666666663,
+          "mean_candidates": 3.5833333333333335,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.21137725101046576,
+          "origin_counts": {
+            "retrieval_inferred": 86
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.7404837920670009,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.3953488372093023,
+          "micro_recall": 0.44155844155844154,
+          "micro_f1": 0.4171779141104294,
+          "macro_precision": 0.412202380952381,
+          "macro_recall": 0.4027777777777777,
+          "macro_f1": 0.3951449013949013,
+          "hit_at_1": 0.20833333333333334,
+          "mrr": 0.4770833333333333,
+          "coverage": 0.9583333333333334,
+          "abstention_rate": 0.04166666666666663,
+          "mean_candidates": 3.5833333333333335,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.9518610430774668,
+          "origin_counts": {
+            "retrieval_inferred": 86
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 24
+        }
+      },
+      "matched_case_summary": {
+        "prompt_only_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.40816326530612246,
+          "micro_recall": 0.4,
+          "micro_f1": 0.4040404040404041,
+          "macro_precision": 0.41619047619047617,
+          "macro_recall": 0.3777777777777777,
+          "macro_f1": 0.3878835978835979,
+          "hit_at_1": 0.2,
+          "mrr": 0.491111111111111,
+          "coverage": 0.9333333333333333,
+          "abstention_rate": 0.06666666666666665,
+          "mean_candidates": 3.2666666666666666,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.24419926921837032,
+          "origin_counts": {
+            "retrieval_inferred": 49
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 2.050606800670115,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.40816326530612246,
+          "micro_recall": 0.4,
+          "micro_f1": 0.4040404040404041,
+          "macro_precision": 0.41619047619047617,
+          "macro_recall": 0.3777777777777777,
+          "macro_f1": 0.3878835978835979,
+          "hit_at_1": 0.2,
+          "mrr": 0.491111111111111,
+          "coverage": 0.9333333333333333,
+          "abstention_rate": 0.06666666666666665,
+          "mean_candidates": 3.2666666666666666,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 2.294806069888485,
+          "origin_counts": {
+            "retrieval_inferred": 49
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        }
+      },
+      "case_count": 24,
+      "artifacts": {
+        "results_json": "results.json",
+        "summary_csv": "summary.csv",
+        "predictions_csv": "predictions.csv",
+        "report_md": "report.md"
+      }
+    },
+    {
+      "dataset": "t301-reconstructed",
+      "seed": 21,
+      "max_hops": 2,
+      "status": "completed",
+      "metadata": {
+        "project": "NLP-HAZOP",
+        "protocol_version": "1.0",
+        "repository_commit": "32cac98c68abfb00372a2ce0da2946aeb4b93714",
+        "python_version": "3.11.9",
+        "platform": "Linux-7.2.6-arch2-1-x86_64-with-glibc2.44",
+        "dataset": "t301-reconstructed",
+        "dataset_path": "/mnt/volume/Projects/BTech-Project/NLP-HAZOP/data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
+        "dataset_sha256": "1c8713c2b6fbc9cdf2e22e64a307fdb64f073158a78679bdc23ad803a7d2725e",
+        "dataset_rows": 40,
+        "train_scenarios": 32,
+        "test_scenarios": 8,
+        "test_queries": 24,
+        "seed": 21,
+        "test_fraction": 0.2,
+        "top_k": 10,
+        "max_graph_hops": 2,
+        "tfidf_index_build_ms": 0.8402859966736287,
+        "method": "scenario-level holdout; target labels and target graph edges removed from index",
+        "label_status": "silver_row_association",
+        "label_warning": "Labels are cause/consequence values co-listed in the same source or synthetic worksheet row. They are not independent causal ground truth and none of the supplied rows is expert-validated.",
+        "record_type_counts": {
+          "source_reconstructed": 40
+        },
+        "validation_note_counts": {},
+        "llm_requested": false,
+        "llm_enabled": false,
+        "llm_model": null,
+        "llm_max_cases": 15,
+        "llm_calls_per_evaluated_case_max": 2,
+        "cost_measurement": "not captured; cost_usd remains null",
+        "created_at": "2026-11-01T17:05:02.209547+00:00",
+        "comparison_case_count": 15,
+        "comparison_case_ids": [
+          "T301-004::cause-01",
+          "T301-004::cause-02",
+          "T301-004::cause-03",
+          "T301-007::cause-01",
+          "T301-007::cause-02",
+          "T301-013::cause-01",
+          "T301-015::cause-01",
+          "T301-015::cause-02",
+          "T301-015::cause-03",
+          "T301-021::cause-01",
+          "T301-021::cause-02",
+          "T301-021::cause-03",
+          "T301-021::cause-04",
+          "T301-021::cause-05",
+          "T301-021::cause-06"
+        ],
+        "comparison_case_selection": "first N cases in deterministic scenario/cause order; N equals max_llm_cases"
+      },
+      "method_summary": {
+        "prompt_only_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 24
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.34782608695652173,
+          "micro_recall": 0.3950617283950617,
+          "micro_f1": 0.36994219653179194,
+          "macro_precision": 0.3279761904761905,
+          "macro_recall": 0.38888888888888884,
+          "macro_f1": 0.34710197210197213,
+          "hit_at_1": 0.5416666666666666,
+          "mrr": 0.6701388888888888,
+          "coverage": 0.9166666666666666,
+          "abstention_rate": 0.08333333333333337,
+          "mean_candidates": 3.8333333333333335,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.32619358171359636,
+          "origin_counts": {
+            "retrieval_inferred": 92
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 2.5870424154466796,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.34782608695652173,
+          "micro_recall": 0.3950617283950617,
+          "micro_f1": 0.36994219653179194,
+          "macro_precision": 0.3279761904761905,
+          "macro_recall": 0.38888888888888884,
+          "macro_f1": 0.34710197210197213,
+          "hit_at_1": 0.5416666666666666,
+          "mrr": 0.6701388888888888,
+          "coverage": 0.9166666666666666,
+          "abstention_rate": 0.08333333333333337,
+          "mean_candidates": 3.8333333333333335,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 2.913235997160276,
+          "origin_counts": {
+            "retrieval_inferred": 92
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 24
+        }
+      },
+      "matched_case_summary": {
+        "prompt_only_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.32727272727272727,
+          "micro_recall": 0.3829787234042553,
+          "micro_f1": 0.35294117647058826,
+          "macro_precision": 0.3047619047619048,
+          "macro_recall": 0.36666666666666653,
+          "macro_f1": 0.3267917267917268,
+          "hit_at_1": 0.5333333333333333,
+          "mrr": 0.6333333333333333,
+          "coverage": 0.8666666666666667,
+          "abstention_rate": 0.1333333333333333,
+          "mean_candidates": 3.6666666666666665,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.30226799911664176,
+          "origin_counts": {
+            "retrieval_inferred": 55
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 2.556300931610167,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.32727272727272727,
+          "micro_recall": 0.3829787234042553,
+          "micro_f1": 0.35294117647058826,
+          "macro_precision": 0.3047619047619048,
+          "macro_recall": 0.36666666666666653,
+          "macro_f1": 0.3267917267917268,
+          "hit_at_1": 0.5333333333333333,
+          "mrr": 0.6333333333333333,
+          "coverage": 0.8666666666666667,
+          "abstention_rate": 0.1333333333333333,
+          "mean_candidates": 3.6666666666666665,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 2.858568930726809,
+          "origin_counts": {
+            "retrieval_inferred": 55
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        }
+      },
+      "case_count": 24,
+      "artifacts": {
+        "results_json": "results.json",
+        "summary_csv": "summary.csv",
+        "predictions_csv": "predictions.csv",
+        "report_md": "report.md"
+      }
+    },
+    {
+      "dataset": "t301-reconstructed",
+      "seed": 21,
+      "max_hops": 4,
+      "status": "completed",
+      "metadata": {
+        "project": "NLP-HAZOP",
+        "protocol_version": "1.0",
+        "repository_commit": "32cac98c68abfb00372a2ce0da2946aeb4b93714",
+        "python_version": "3.11.9",
+        "platform": "Linux-7.2.6-arch2-1-x86_64-with-glibc2.44",
+        "dataset": "t301-reconstructed",
+        "dataset_path": "/mnt/volume/Projects/BTech-Project/NLP-HAZOP/data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
+        "dataset_sha256": "1c8713c2b6fbc9cdf2e22e64a307fdb64f073158a78679bdc23ad803a7d2725e",
+        "dataset_rows": 40,
+        "train_scenarios": 32,
+        "test_scenarios": 8,
+        "test_queries": 24,
+        "seed": 21,
+        "test_fraction": 0.2,
+        "top_k": 10,
+        "max_graph_hops": 4,
+        "tfidf_index_build_ms": 0.8281339978566393,
+        "method": "scenario-level holdout; target labels and target graph edges removed from index",
+        "label_status": "silver_row_association",
+        "label_warning": "Labels are cause/consequence values co-listed in the same source or synthetic worksheet row. They are not independent causal ground truth and none of the supplied rows is expert-validated.",
+        "record_type_counts": {
+          "source_reconstructed": 40
+        },
+        "validation_note_counts": {},
+        "llm_requested": false,
+        "llm_enabled": false,
+        "llm_model": null,
+        "llm_max_cases": 15,
+        "llm_calls_per_evaluated_case_max": 2,
+        "cost_measurement": "not captured; cost_usd remains null",
+        "created_at": "2026-11-01T17:05:03.318598+00:00",
+        "comparison_case_count": 15,
+        "comparison_case_ids": [
+          "T301-004::cause-01",
+          "T301-004::cause-02",
+          "T301-004::cause-03",
+          "T301-007::cause-01",
+          "T301-007::cause-02",
+          "T301-013::cause-01",
+          "T301-015::cause-01",
+          "T301-015::cause-02",
+          "T301-015::cause-03",
+          "T301-021::cause-01",
+          "T301-021::cause-02",
+          "T301-021::cause-03",
+          "T301-021::cause-04",
+          "T301-021::cause-05",
+          "T301-021::cause-06"
+        ],
+        "comparison_case_selection": "first N cases in deterministic scenario/cause order; N equals max_llm_cases"
+      },
+      "method_summary": {
+        "prompt_only_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 24
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.34782608695652173,
+          "micro_recall": 0.3950617283950617,
+          "micro_f1": 0.36994219653179194,
+          "macro_precision": 0.3279761904761905,
+          "macro_recall": 0.38888888888888884,
+          "macro_f1": 0.34710197210197213,
+          "hit_at_1": 0.5416666666666666,
+          "mrr": 0.6701388888888888,
+          "coverage": 0.9166666666666666,
+          "abstention_rate": 0.08333333333333337,
+          "mean_candidates": 3.8333333333333335,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.17026095762654828,
+          "origin_counts": {
+            "retrieval_inferred": 92
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.2999647903294924,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 24,
+          "micro_precision": 0.34782608695652173,
+          "micro_recall": 0.3950617283950617,
+          "micro_f1": 0.36994219653179194,
+          "macro_precision": 0.3279761904761905,
+          "macro_recall": 0.38888888888888884,
+          "macro_f1": 0.34710197210197213,
+          "hit_at_1": 0.5416666666666666,
+          "mrr": 0.6701388888888888,
+          "coverage": 0.9166666666666666,
+          "abstention_rate": 0.08333333333333337,
+          "mean_candidates": 3.8333333333333335,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.4702257479560406,
+          "origin_counts": {
+            "retrieval_inferred": 92
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_test_cases": 24
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "disabled_or_call_cap_zero",
+          "n_evaluated": 0,
+          "n_total_test_cases": 24
+        }
+      },
+      "matched_case_summary": {
+        "prompt_only_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        },
+        "tfidf_vector_retrieval": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.32727272727272727,
+          "micro_recall": 0.3829787234042553,
+          "micro_f1": 0.35294117647058826,
+          "macro_precision": 0.3047619047619048,
+          "macro_recall": 0.36666666666666653,
+          "macro_f1": 0.3267917267917268,
+          "hit_at_1": 0.5333333333333333,
+          "mrr": 0.6333333333333333,
+          "coverage": 0.8666666666666667,
+          "abstention_rate": 0.1333333333333333,
+          "mean_candidates": 3.6666666666666665,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 0.16259073260395476,
+          "origin_counts": {
+            "retrieval_inferred": 55
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_reasoning": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.0,
+          "micro_recall": 0.0,
+          "micro_f1": 0.0,
+          "macro_precision": 0.0,
+          "macro_recall": 0.0,
+          "macro_f1": 0.0,
+          "hit_at_1": 0.0,
+          "mrr": 0.0,
+          "coverage": 0.0,
+          "abstention_rate": 1.0,
+          "mean_candidates": 0.0,
+          "evidence_text_rate": 0.0,
+          "non_model_origin_rate": 0.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.3091525974838685,
+          "origin_counts": {},
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "graph_tfidf_union": {
+          "status": "evaluated",
+          "n_evaluated": 15,
+          "micro_precision": 0.32727272727272727,
+          "micro_recall": 0.3829787234042553,
+          "micro_f1": 0.35294117647058826,
+          "macro_precision": 0.3047619047619048,
+          "macro_recall": 0.36666666666666653,
+          "macro_f1": 0.3267917267917268,
+          "hit_at_1": 0.5333333333333333,
+          "mrr": 0.6333333333333333,
+          "coverage": 0.8666666666666667,
+          "abstention_rate": 0.1333333333333333,
+          "mean_candidates": 3.6666666666666665,
+          "evidence_text_rate": 1.0,
+          "non_model_origin_rate": 1.0,
+          "source_or_expert_origin_rate": 0.0,
+          "mean_latency_ms": 1.471743330087823,
+          "origin_counts": {
+            "retrieval_inferred": 55
+          },
+          "cost_usd": null,
+          "cost_note": "Not captured by the current provider wrapper.",
+          "n_total_comparison_cases": 15
+        },
+        "hybrid_graph_vector_llm": {
+          "status": "not_evaluated_on_comparison_cases",
+          "n_evaluated": 0,
+          "n_total_comparison_cases": 15
+        }
+      },
+      "case_count": 24,
+      "artifacts": {
+        "results_json": "results.json",
+        "summary_csv": "summary.csv",
+        "predictions_csv": "predictions.csv",
+        "report_md": "report.md"
+      }
+    }
+  ],
+  "failures": [],
+  "aggregate_summary": {
+    "full_test|t301-reconstructed|hops=2|tfidf_vector_retrieval": {
+      "scope": "full_test",
+      "dataset": "t301-reconstructed",
+      "max_hops": 2,
+      "method": "tfidf_vector_retrieval",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.33707205375974203,
+          "sample_sd": 0.06433151003235114,
+          "ci95_low": 0.17725082538726028,
+          "ci95_high": 0.4968932821322238,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.4364491475602586,
+          "sample_sd": 0.03908404863847346,
+          "ci95_low": 0.33935115219174605,
+          "ci95_high": 0.5335471429287711,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.376408457933372,
+          "sample_sd": 0.03795174742545397,
+          "ci95_low": 0.2821234817316942,
+          "ci95_high": 0.4706934341350498,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.3463548918592778,
+          "sample_sd": 0.04916780665781413,
+          "ci95_low": 0.22420543115983416,
+          "ci95_high": 0.46850435255872147,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.9232456140350878,
+          "sample_sd": 0.03230464882161457,
+          "ci95_low": 0.8429899406610954,
+          "ci95_high": 1.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 0.07675438596491228,
+          "sample_sd": 0.03230464882161457,
+          "ci95_low": 0.0,
+          "ci95_high": 0.15701005933890466,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 0.22950604374517758,
+          "sample_sd": 0.08425455800287698,
+          "ci95_low": 0.020189226073267286,
+          "ci95_high": 0.4388228614170879,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    },
+    "full_test|t301-reconstructed|hops=2|graph_reasoning": {
+      "scope": "full_test",
+      "dataset": "t301-reconstructed",
+      "max_hops": 2,
+      "method": "graph_reasoning",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 1.0,
+          "sample_sd": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 1.783078695973007,
+          "sample_sd": 0.6963346632150765,
+          "ci95_low": 0.05314788636809209,
+          "ci95_high": 3.513009505577922,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    },
+    "full_test|t301-reconstructed|hops=2|graph_tfidf_union": {
+      "scope": "full_test",
+      "dataset": "t301-reconstructed",
+      "max_hops": 2,
+      "method": "graph_tfidf_union",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.33707205375974203,
+          "sample_sd": 0.06433151003235114,
+          "ci95_low": 0.17725082538726028,
+          "ci95_high": 0.4968932821322238,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.4364491475602586,
+          "sample_sd": 0.03908404863847346,
+          "ci95_low": 0.33935115219174605,
+          "ci95_high": 0.5335471429287711,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.376408457933372,
+          "sample_sd": 0.03795174742545397,
+          "ci95_low": 0.2821234817316942,
+          "ci95_high": 0.4706934341350498,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.3463548918592778,
+          "sample_sd": 0.04916780665781413,
+          "ci95_low": 0.22420543115983416,
+          "ci95_high": 0.46850435255872147,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.9232456140350878,
+          "sample_sd": 0.03230464882161457,
+          "ci95_low": 0.8429899406610954,
+          "ci95_high": 1.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 0.07675438596491228,
+          "sample_sd": 0.03230464882161457,
+          "ci95_low": 0.0,
+          "ci95_high": 0.15701005933890466,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 2.0125847397181844,
+          "sample_sd": 0.7802436609618097,
+          "ci95_low": 0.07419560098897526,
+          "ci95_high": 3.9509738784473933,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    },
+    "matched_cases|t301-reconstructed|hops=2|tfidf_vector_retrieval": {
+      "scope": "matched_cases",
+      "dataset": "t301-reconstructed",
+      "max_hops": 2,
+      "method": "tfidf_vector_retrieval",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.3562564419707277,
+          "sample_sd": 0.04505464979371582,
+          "ci95_low": 0.24432545402558933,
+          "ci95_high": 0.46818742991586604,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.4453900709219858,
+          "sample_sd": 0.09374588165593366,
+          "ci95_low": 0.21249359525122735,
+          "ci95_high": 0.6782865465927442,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.3909938601703307,
+          "sample_sd": 0.03349273109860827,
+          "ci95_low": 0.3077865886009716,
+          "ci95_high": 0.47420113173968986,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.36354818021484686,
+          "sample_sd": 0.03238465339145897,
+          "ci95_low": 0.28309374843114965,
+          "ci95_high": 0.44400261199854407,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.888888888888889,
+          "sample_sd": 0.03849001794597504,
+          "ci95_low": 0.7932666666666668,
+          "ci95_high": 0.9845111111111111,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 0.11111111111111109,
+          "sample_sd": 0.03849001794597504,
+          "ci95_low": 0.015488888888888885,
+          "ci95_high": 0.2067333333333333,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 0.21702702150731867,
+          "sample_sd": 0.07488497550424895,
+          "ci95_low": 0.030987415632784093,
+          "ci95_high": 0.4030666273818533,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    },
+    "matched_cases|t301-reconstructed|hops=2|graph_reasoning": {
+      "scope": "matched_cases",
+      "dataset": "t301-reconstructed",
+      "max_hops": 2,
+      "method": "graph_reasoning",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 1.0,
+          "sample_sd": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 1.7515719548100606,
+          "sample_sd": 0.6969540581929359,
+          "ci95_low": 0.020102358595606384,
+          "ci95_high": 3.483041551024515,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    },
+    "matched_cases|t301-reconstructed|hops=2|graph_tfidf_union": {
+      "scope": "matched_cases",
+      "dataset": "t301-reconstructed",
+      "max_hops": 2,
+      "method": "graph_tfidf_union",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.3562564419707277,
+          "sample_sd": 0.04505464979371582,
+          "ci95_low": 0.24432545402558933,
+          "ci95_high": 0.46818742991586604,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.4453900709219858,
+          "sample_sd": 0.09374588165593366,
+          "ci95_low": 0.21249359525122735,
+          "ci95_high": 0.6782865465927442,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.3909938601703307,
+          "sample_sd": 0.03349273109860827,
+          "ci95_low": 0.3077865886009716,
+          "ci95_high": 0.47420113173968986,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.36354818021484686,
+          "sample_sd": 0.03238465339145897,
+          "ci95_low": 0.28309374843114965,
+          "ci95_high": 0.44400261199854407,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.888888888888889,
+          "sample_sd": 0.03849001794597504,
+          "ci95_low": 0.7932666666666668,
+          "ci95_high": 0.9845111111111111,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 0.11111111111111109,
+          "sample_sd": 0.03849001794597504,
+          "ci95_low": 0.015488888888888885,
+          "ci95_high": 0.2067333333333333,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 1.968598976317379,
+          "sample_sd": 0.7707546119711107,
+          "ci95_low": 0.05378384455641183,
+          "ci95_high": 3.8834141080783464,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    },
+    "full_test|t301-reconstructed|hops=4|tfidf_vector_retrieval": {
+      "scope": "full_test",
+      "dataset": "t301-reconstructed",
+      "max_hops": 4,
+      "method": "tfidf_vector_retrieval",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.33707205375974203,
+          "sample_sd": 0.06433151003235114,
+          "ci95_low": 0.17725082538726028,
+          "ci95_high": 0.4968932821322238,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.4364491475602586,
+          "sample_sd": 0.03908404863847346,
+          "ci95_low": 0.33935115219174605,
+          "ci95_high": 0.5335471429287711,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.376408457933372,
+          "sample_sd": 0.03795174742545397,
+          "ci95_low": 0.2821234817316942,
+          "ci95_high": 0.4706934341350498,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.3463548918592778,
+          "sample_sd": 0.04916780665781413,
+          "ci95_low": 0.22420543115983416,
+          "ci95_high": 0.46850435255872147,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.9232456140350878,
+          "sample_sd": 0.03230464882161457,
+          "ci95_low": 0.8429899406610954,
+          "ci95_high": 1.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 0.07675438596491228,
+          "sample_sd": 0.03230464882161457,
+          "ci95_low": 0.0,
+          "ci95_high": 0.15701005933890466,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 0.24202321002488594,
+          "sample_sd": 0.09103965465102656,
+          "ci95_low": 0.015849917502813587,
+          "ci95_high": 0.4681965025469583,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    },
+    "full_test|t301-reconstructed|hops=4|graph_reasoning": {
+      "scope": "full_test",
+      "dataset": "t301-reconstructed",
+      "max_hops": 4,
+      "method": "graph_reasoning",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 1.0,
+          "sample_sd": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 1.854421018658302,
+          "sample_sd": 0.6193356163325213,
+          "ci95_low": 0.31578188322817,
+          "ci95_high": 3.3930601540884338,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    },
+    "full_test|t301-reconstructed|hops=4|graph_tfidf_union": {
+      "scope": "full_test",
+      "dataset": "t301-reconstructed",
+      "max_hops": 4,
+      "method": "graph_tfidf_union",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.33707205375974203,
+          "sample_sd": 0.06433151003235114,
+          "ci95_low": 0.17725082538726028,
+          "ci95_high": 0.4968932821322238,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.4364491475602586,
+          "sample_sd": 0.03908404863847346,
+          "ci95_low": 0.33935115219174605,
+          "ci95_high": 0.5335471429287711,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.376408457933372,
+          "sample_sd": 0.03795174742545397,
+          "ci95_low": 0.2821234817316942,
+          "ci95_high": 0.4706934341350498,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.3463548918592778,
+          "sample_sd": 0.04916780665781413,
+          "ci95_low": 0.22420543115983416,
+          "ci95_high": 0.46850435255872147,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.9232456140350878,
+          "sample_sd": 0.03230464882161457,
+          "ci95_low": 0.8429899406610954,
+          "ci95_high": 1.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 0.07675438596491228,
+          "sample_sd": 0.03230464882161457,
+          "ci95_low": 0.0,
+          "ci95_high": 0.15701005933890466,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 2.0964442286831875,
+          "sample_sd": 0.7096439572016524,
+          "ci95_low": 0.3334486315016192,
+          "ci95_high": 3.8594398258647558,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    },
+    "matched_cases|t301-reconstructed|hops=4|tfidf_vector_retrieval": {
+      "scope": "matched_cases",
+      "dataset": "t301-reconstructed",
+      "max_hops": 4,
+      "method": "tfidf_vector_retrieval",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.3562564419707277,
+          "sample_sd": 0.04505464979371582,
+          "ci95_low": 0.24432545402558933,
+          "ci95_high": 0.46818742991586604,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.4453900709219858,
+          "sample_sd": 0.09374588165593366,
+          "ci95_low": 0.21249359525122735,
+          "ci95_high": 0.6782865465927442,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.3909938601703307,
+          "sample_sd": 0.03349273109860827,
+          "ci95_low": 0.3077865886009716,
+          "ci95_high": 0.47420113173968986,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.36354818021484686,
+          "sample_sd": 0.03238465339145897,
+          "ci95_low": 0.28309374843114965,
+          "ci95_high": 0.44400261199854407,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.888888888888889,
+          "sample_sd": 0.03849001794597504,
+          "ci95_low": 0.7932666666666668,
+          "ci95_high": 0.9845111111111111,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 0.11111111111111109,
+          "sample_sd": 0.03849001794597504,
+          "ci95_low": 0.015488888888888885,
+          "ci95_high": 0.2067333333333333,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 0.24750060078481007,
+          "sample_sd": 0.08660773714125942,
+          "ci95_low": 0.03233769026838776,
+          "ci95_high": 0.4626635113012324,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    },
+    "matched_cases|t301-reconstructed|hops=4|graph_reasoning": {
+      "scope": "matched_cases",
+      "dataset": "t301-reconstructed",
+      "max_hops": 4,
+      "method": "graph_reasoning",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.0,
+          "sample_sd": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 1.0,
+          "sample_sd": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 1.9645429323039332,
+          "sample_sd": 0.6168776644597255,
+          "ci95_low": 0.4320101806256069,
+          "ci95_high": 3.4970756839822594,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    },
+    "matched_cases|t301-reconstructed|hops=4|graph_tfidf_union": {
+      "scope": "matched_cases",
+      "dataset": "t301-reconstructed",
+      "max_hops": 4,
+      "method": "graph_tfidf_union",
+      "metrics": {
+        "micro_precision": {
+          "n_seeds": 3,
+          "mean": 0.3562564419707277,
+          "sample_sd": 0.04505464979371582,
+          "ci95_low": 0.24432545402558933,
+          "ci95_high": 0.46818742991586604,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_recall": {
+          "n_seeds": 3,
+          "mean": 0.4453900709219858,
+          "sample_sd": 0.09374588165593366,
+          "ci95_low": 0.21249359525122735,
+          "ci95_high": 0.6782865465927442,
+          "interval_method": "Student-t 95% CI"
+        },
+        "micro_f1": {
+          "n_seeds": 3,
+          "mean": 0.3909938601703307,
+          "sample_sd": 0.03349273109860827,
+          "ci95_low": 0.3077865886009716,
+          "ci95_high": 0.47420113173968986,
+          "interval_method": "Student-t 95% CI"
+        },
+        "macro_f1": {
+          "n_seeds": 3,
+          "mean": 0.36354818021484686,
+          "sample_sd": 0.03238465339145897,
+          "ci95_low": 0.28309374843114965,
+          "ci95_high": 0.44400261199854407,
+          "interval_method": "Student-t 95% CI"
+        },
+        "coverage": {
+          "n_seeds": 3,
+          "mean": 0.888888888888889,
+          "sample_sd": 0.03849001794597504,
+          "ci95_low": 0.7932666666666668,
+          "ci95_high": 0.9845111111111111,
+          "interval_method": "Student-t 95% CI"
+        },
+        "abstention_rate": {
+          "n_seeds": 3,
+          "mean": 0.11111111111111109,
+          "sample_sd": 0.03849001794597504,
+          "ci95_low": 0.015488888888888885,
+          "ci95_high": 0.2067333333333333,
+          "interval_method": "Student-t 95% CI"
+        },
+        "mean_latency_ms": {
+          "n_seeds": 3,
+          "mean": 2.212043533088743,
+          "sample_sd": 0.7025844470716751,
+          "ci95_low": 0.4665861466551202,
+          "ci95_high": 3.9575009195223654,
+          "interval_method": "Student-t 95% CI"
+        }
+      }
+    }
+  }
+}
