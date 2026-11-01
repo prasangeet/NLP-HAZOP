@@ -25,8 +25,8 @@ class FakePromptModel:
 def make_context(scenario_context: str) -> EvidenceContext:
     return EvidenceContext(
         scenario_id="HELD-OUT-001",
-        predicate="causes",
-        known_endpoint="Inlet valve fails open",
+        predicate="co_listed_with_consequence",
+        known_endpoint="Pump failure",
         missing_endpoint="object",
         status=RecoveryStatus.NO_CANDIDATES,
         evidence_items=(),

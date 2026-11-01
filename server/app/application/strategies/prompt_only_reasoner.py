@@ -1,4 +1,4 @@
-"""Prompt-only LLM baseline without retrieval or graph evidence."""
+"""LLM endpoint generation from scenario context, optionally graph-grounded."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from app.domain.entities.hazop_record import (
     CausalRelation,
     RelationshipOrigin,
 )
+from app.domain.ontology.schema import infer_entity_types, validate_relation_types
 from app.domain.reasoning.models import (
     AbstentionReason,
     EvidenceContextProtocol,
@@ -64,32 +65,47 @@ class PromptOnlyReasoner:
         temperature: float = 0.0,
         *,
         chat_model: PromptOnlyChatModel | None = None,
+        include_graph_context: bool = False,
     ) -> None:
-        if chat_model is not None:
-            self._llm = chat_model
-            return
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            raise RuntimeError(
-                f"GROQ_API_KEY was not found. Add it to {ENV_FILE}."
-            )
-        self._llm: PromptOnlyChatModel = ChatGroq(
-            model=model_name,
-            temperature=temperature,
-            api_key=SecretStr(api_key),
-        ).with_structured_output(PromptOnlyDecision)
+        self._include_graph_context = include_graph_context
+        self._model_name = model_name
+        self._temperature = temperature
+        self._llm: PromptOnlyChatModel | None = chat_model
+
+    def _get_chat_model(self) -> PromptOnlyChatModel:
+        """Create the provider only when a generation request is actually made."""
+        if self._llm is None:
+            api_key = os.getenv("GROQ_API_KEY")
+            if not api_key:
+                raise RuntimeError(
+                    f"GROQ_API_KEY was not found. Add it to {ENV_FILE}."
+                )
+            self._llm = ChatGroq(
+                model=self._model_name,
+                temperature=self._temperature,
+                api_key=SecretStr(api_key),
+            ).with_structured_output(PromptOnlyDecision)
+        return self._llm
 
     def reason(self, context: EvidenceContextProtocol) -> ReasoningResult:
         """Return a model-inferred candidate or abstain."""
 
         dataset_id = getattr(context, "dataset_id", "default")
-        if not context.scenario_context.strip():
+        if not context.scenario_context.strip() and not (
+            self._include_graph_context and context.graph_context
+        ):
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.NO_EVIDENCE,
                 dataset_id=dataset_id,
             )
 
+        graph_context = "\n".join(
+            f"- {item.subject} --{item.predicate}--> {item.object} "
+            f"(origin={item.origin.value}; evidence={item.evidence})"
+            for item in context.graph_context
+        ) if self._include_graph_context else ""
+        context_label = "Scenario and graph context" if self._include_graph_context else "Scenario context only"
         prompt = f"""
 You are a cautious assistant for missing-link research in HAZOP records.
 
@@ -99,10 +115,13 @@ Task:
 - Known endpoint: {context.known_endpoint}
 - Missing endpoint: {context.missing_endpoint}
 
-Scenario context only:
+{context_label}:
 {context.scenario_context}
 
-There is no retrieved evidence or graph context in this baseline.
+Graph relationships (if supplied):
+{graph_context or "None supplied."}
+
+Do not treat graph-derived paths or row co-occurrence as direct causal evidence.
 Propose a missing endpoint only if it follows clearly from the scenario
 description. Do not invent plant design details, safeguards, or causal facts.
 A HAZOP row association is not proof of causation. If context is inadequate
@@ -111,7 +130,7 @@ one missing_value, or decision="abstain" with missing_value=null.
 """.strip()
 
         try:
-            response = self._llm.invoke(prompt)
+            response = self._get_chat_model().invoke(prompt)
             decision = (
                 response
                 if isinstance(response, PromptOnlyDecision)
@@ -158,17 +177,34 @@ one missing_value, or decision="abstain" with missing_value=null.
                 dataset_id=dataset_id,
             )
 
+        subject_type, object_type = infer_entity_types(context.predicate, subject, object_)
+        type_error = validate_relation_types(context.predicate, subject_type, object_type)
+        if type_error:
+            return self._abstain(
+                context.scenario_id,
+                AbstentionReason.INSUFFICIENT_SUPPORT,
+                (type_error,),
+                dataset_id=dataset_id,
+            )
+
         relation = CausalRelation(
             subject=subject,
             predicate=context.predicate,
             object=object_,
             origin=RelationshipOrigin.MODEL_INFERRED,
             evidence=(
-                "Prompt-only model output based solely on scenario context. "
+                "LLM-generated hypothesis based on "
+                + (
+                    "scenario and graph context. "
+                    if self._include_graph_context
+                    else "scenario context only. "
+                )
                 + decision.reason.strip()
             ),
             confidence=decision.confidence,
             dataset_id=dataset_id,
+            subject_type=subject_type,
+            object_type=object_type,
         )
         return ReasoningResult(
             status=ReasoningStatus.PROPOSED,

@@ -26,9 +26,11 @@ class HybridReasoner:
         self,
         graph_reasoner: ReasoningStrategy,
         llm_reasoner: ReasoningStrategy,
+        fallback_reasoner: ReasoningStrategy | None = None,
     ) -> None:
         self._graph_reasoner = graph_reasoner
         self._llm_reasoner = llm_reasoner
+        self._fallback_reasoner = fallback_reasoner
 
     def reason(self, context) -> ReasoningResult:
         graph_context = replace(context, evidence_items=())
@@ -64,6 +66,12 @@ class HybridReasoner:
             )
 
         if not candidates:
+            if self._fallback_reasoner is not None:
+                # Do not silently stop when retrieval finds no matching edge:
+                # invoke the generative LLM path with scenario and graph context.
+                return self._fallback_reasoner.reason(
+                    replace(context, evidence_items=())
+                )
             return graph_result
 
         adjudication_context = replace(

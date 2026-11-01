@@ -106,7 +106,7 @@ export default function Experiments({ onOpenResults }: { onOpenResults: (runId: 
   const [benchmarkSeed, setBenchmarkSeed] = useState(42);
   const [benchmarkTestFraction, setBenchmarkTestFraction] = useState(0.2);
   const [benchmarkCvFolds, setBenchmarkCvFolds] = useState(0);
-  const [benchmarkWithLlm, setBenchmarkWithLlm] = useState(false);
+  const [benchmarkWithLlm, setBenchmarkWithLlm] = useState(true);
   const [benchmarkRunning, setBenchmarkRunning] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
   const [benchmarkResult, setBenchmarkResult] = useState<BenchmarkRun | null>(null);

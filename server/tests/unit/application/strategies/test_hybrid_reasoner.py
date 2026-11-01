@@ -131,3 +131,29 @@ def test_returns_graph_abstention_when_neither_retrieval_nor_path_exists() -> No
     assert result.status == ReasoningStatus.ABSTAINED
     assert result.abstention_reason == AbstentionReason.NO_EVIDENCE
     assert adjudicator.context is None
+
+
+
+def test_hybrid_uses_generative_llm_fallback_when_retrieval_is_empty() -> None:
+    context = EvidenceContext(
+        scenario_id="HELD-OUT-001",
+        predicate="co_listed_with_consequence",
+        known_endpoint="Pump failure",
+        missing_endpoint="object",
+        status=RecoveryStatus.NO_CANDIDATES,
+        evidence_items=(),
+        graph_context=(),
+        scenario_context="Equipment: P-101 | Deviation: No feed flow | Cause: Pump failure",
+    )
+    fallback = CapturingReasoner()
+
+    result = HybridReasoner(
+        graph_reasoner=GraphReasoner(),
+        llm_reasoner=CapturingReasoner(),
+        fallback_reasoner=fallback,
+    ).reason(context)
+
+    assert result.status == ReasoningStatus.ABSTAINED
+    assert fallback.context is not None
+    assert fallback.context.scenario_context == context.scenario_context
+    assert fallback.context.evidence_items == ()

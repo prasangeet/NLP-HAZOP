@@ -15,6 +15,8 @@ import re
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
+
+from app.api.dependencies import get_ai_provider_factory
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/experiments", tags=["experiments"])
@@ -54,6 +56,11 @@ class BenchmarkRequest(BaseModel):
 @router.post("/benchmark", summary="Run the reproducible HAZOP recovery benchmark")
 def run_benchmark(payload: BenchmarkRequest) -> dict[str, object]:
     """Run the holdout or scenario-grouped cross-validation benchmark."""
+    if payload.with_llm and get_ai_provider_factory() is None:
+        raise HTTPException(
+            status_code=503,
+            detail="LLM evaluation was requested but GROQ_API_KEY is not configured. Add it to server/.env or the repository-root .env and restart the API.",
+        )
     if payload.cross_validation_folds == 1:
         raise HTTPException(status_code=422, detail="cross_validation_folds must be 0 or between 2 and 10.")
     if not BENCHMARK_SCRIPT.is_file():
@@ -237,6 +244,11 @@ def aggregate_suite_metrics(completed_runs: list[dict[str, object]]) -> dict[str
 @router.post("/benchmark-suite", summary="Run a reproducible multi-dataset, multi-seed benchmark suite")
 def run_benchmark_suite(payload: BenchmarkSuiteRequest) -> dict[str, object]:
     """Execute a bounded matrix of real benchmark runs and persist immutable artifacts."""
+    if payload.with_llm and get_ai_provider_factory() is None:
+        raise HTTPException(
+            status_code=503,
+            detail="LLM evaluation was requested but GROQ_API_KEY is not configured. Add it to server/.env or the repository-root .env and restart the API.",
+        )
     if not BENCHMARK_SCRIPT.is_file():
         raise HTTPException(status_code=503, detail="Benchmark script is not available.")
     if len(set(payload.datasets)) != len(payload.datasets):

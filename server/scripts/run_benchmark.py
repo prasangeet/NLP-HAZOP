@@ -54,7 +54,7 @@ from app.infrastructure.graph.in_memory_graph_repository import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-PROTOCOL_VERSION = "1.1"
+PROTOCOL_VERSION = "1.2"
 DATASET_PATHS = {
     "t301-reconstructed": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
     "t301-synthetic": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
@@ -564,7 +564,14 @@ def run(
     llm_reasoner = LLMReasoner(model_name=args.model) if llm_enabled else None
     prompt_reasoner = PromptOnlyReasoner(model_name=args.model) if llm_enabled else None
     hybrid_reasoner = (
-        HybridReasoner(graph_reasoner, llm_reasoner)
+        HybridReasoner(
+            graph_reasoner,
+            llm_reasoner,
+            fallback_reasoner=PromptOnlyReasoner(
+                model_name=args.model,
+                include_graph_context=True,
+            ),
+        )
         if llm_enabled and llm_reasoner is not None
         else None
     )
