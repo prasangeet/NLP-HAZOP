@@ -263,9 +263,18 @@ class LLMReasoner:
         )
         try:
             response = self._llm.invoke(prompt)
-            decision = (response if isinstance(response, LLMDecision)
-                        else LLMDecision.model_validate(response))
-        except (APIError, OutputParserException, ValidationError, ValueError, TypeError):
+            decision = (
+                response
+                if isinstance(response, LLMDecision)
+                else LLMDecision.model_validate(response)
+            )
+        except (
+            APIError,
+            OutputParserException,
+            ValidationError,
+            ValueError,
+            TypeError,
+        ):
             return ()
         if decision.decision != "propose":
             return ()
@@ -277,13 +286,20 @@ class LLMReasoner:
         seen_endpoints: set[str] = set()
         seen_indices: set[int] = set()
         for index in decision.evidence_indices:
-            if (isinstance(index, bool) or not isinstance(index, int)
-                or index in seen_indices or not 0 <= index < len(eligible_items)):
+            if (
+                isinstance(index, bool)
+                or not isinstance(index, int)
+                or index in seen_indices
+                or not 0 <= index < len(eligible_items)
+            ):
                 continue
             seen_indices.add(index)
             selected = eligible_items[index]
-            endpoint = (selected.object if context.missing_endpoint == "object"
-                        else selected.subject)
+            endpoint = (
+                selected.object
+                if context.missing_endpoint == "object"
+                else selected.subject
+            )
             normalized_endpoint = endpoint.strip().casefold()
             if not normalized_endpoint or normalized_endpoint in seen_endpoints:
                 continue
@@ -297,25 +313,41 @@ class LLMReasoner:
                 type_error = "Invalid endpoint type."
             if type_error is not None:
                 continue
-            if subject_type not in relation_spec.subject_types or object_type not in relation_spec.object_types:
+            if (
+                subject_type not in relation_spec.subject_types
+                or object_type not in relation_spec.object_types
+            ):
                 continue
             seen_endpoints.add(normalized_endpoint)
-            relations.append(CausalRelation(
-                subject=selected.subject, predicate=selected.predicate,
-                object=selected.object, origin=selected.origin,
-                evidence=selected.evidence, confidence=decision.confidence,
-                source_id=selected.source_id,
-                dataset_id=getattr(selected, "dataset_id", dataset_id),
-                is_expert_verified=getattr(selected, "is_expert_verified", False),
-                subject_type=subject_type, object_type=object_type,
-                source_location=getattr(selected, "source_location", None),
-            ))
+            relations.append(
+                CausalRelation(
+                    subject=selected.subject,
+                    predicate=selected.predicate,
+                    object=selected.object,
+                    origin=selected.origin,
+                    evidence=selected.evidence,
+                    confidence=decision.confidence,
+                    source_id=selected.source_id,
+                    dataset_id=getattr(selected, "dataset_id", dataset_id),
+                    is_expert_verified=getattr(
+                        selected, "is_expert_verified", False
+                    ),
+                    subject_type=subject_type,
+                    object_type=object_type,
+                    source_location=getattr(selected, "source_location", None),
+                )
+            )
         return tuple(relations)
 
     @staticmethod
     def _build_association_prompt(
-        evidence_items: Sequence[EvidenceItemProtocol], *, predicate: str,
-        known_endpoint: str, missing_endpoint: str, scenario_context: str = "",
+        evidence_items: Sequence[EvidenceItemProtocol],
+        *,
+        predicate: str,
+        known_endpoint: str,
+        missing_endpoint: str,
+        scenario_context: str = "",
+
     ) -> str:
         """Build a set-valued prompt for row association recovery."""
         evidence_blocks: list[str] = []
