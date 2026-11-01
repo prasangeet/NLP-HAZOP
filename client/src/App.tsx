@@ -43,7 +43,9 @@ function Workspace() {
       case "relationship-recovery":
         return <RelationshipRecovery />;
       case "experiments":
-        return <Experiments />;
+        return <Experiments onOpenResults={openResults} />;
+      case "results":
+        return <ExperimentResults runId={selectedRunId} onOpenRun={setSelectedRunId} />;
     }
   };
 
