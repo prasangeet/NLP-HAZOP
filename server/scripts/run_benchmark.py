@@ -829,6 +829,13 @@ def _mean_fold_summaries(
             "n_evaluated_cases_sum": sum(
                 int(item.get("n_evaluated", 0)) for item in evaluated
             ),
+            "n_total_test_cases_sum": sum(
+                int(item.get("n_total_test_cases", 0)) for item in evaluated
+            ),
+            "n_total_comparison_cases_sum": sum(
+                int(item.get("n_total_comparison_cases", 0))
+                for item in evaluated
+            ),
         }
         for metric in metric_names:
             values = [
