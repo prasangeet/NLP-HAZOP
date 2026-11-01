@@ -12,6 +12,7 @@ import uuid
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
+import re
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
@@ -22,10 +23,27 @@ SERVER_ROOT = Path(__file__).resolve().parents[3]
 REPOSITORY_ROOT = SERVER_ROOT.parent
 BENCHMARK_SCRIPT = SERVER_ROOT / "scripts" / "run_benchmark.py"
 RUNS_ROOT = SERVER_ROOT / "data" / "experiments" / "runs"
+DATASET_FILES_ROOT = SERVER_ROOT / "data" / "datasets"
+BUILTIN_DATASETS = {
+    "t301-reconstructed": "T-301 reconstructed",
+    "t301-synthetic": "T-301 synthetic",
+    "dwsim-synthetic": "DWSIM synthetic",
+}
+
+
+def _dataset_path(dataset_id: str) -> Path | None:
+    if dataset_id in BUILTIN_DATASETS:
+        return None
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", dataset_id):
+        raise HTTPException(status_code=422, detail="Invalid dataset ID.")
+    path = DATASET_FILES_ROOT / f"{dataset_id}.csv"
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail=f"Benchmark dataset not found: {dataset_id}")
+    return path
 
 
 class BenchmarkRequest(BaseModel):
-    dataset: Literal["t301-reconstructed", "t301-synthetic", "dwsim-synthetic"] = "t301-reconstructed"
+    dataset: str = "t301-reconstructed"
     seed: int = Field(default=42, ge=0, le=1000000)
     test_fraction: float = Field(default=0.2, gt=0.0, lt=1.0)
     with_llm: bool = False
@@ -41,6 +59,7 @@ def run_benchmark(payload: BenchmarkRequest) -> dict[str, object]:
     if not BENCHMARK_SCRIPT.is_file():
         raise HTTPException(status_code=503, detail="Benchmark script is not available in this installation.")
 
+    dataset_path = _dataset_path(payload.dataset)
     with tempfile.TemporaryDirectory(prefix="nlp-hazop-benchmark-") as output:
         command = [
             sys.executable,
@@ -54,6 +73,8 @@ def run_benchmark(payload: BenchmarkRequest) -> dict[str, object]:
             "--output-dir",
             output,
         ]
+        if dataset_path is not None:
+            command.extend(["--dataset-path", str(dataset_path)])
         if payload.cross_validation_folds >= 2:
             command.extend(["--cross-validation-folds", str(payload.cross_validation_folds)])
         if payload.with_llm:
@@ -113,7 +134,7 @@ def run_benchmark(payload: BenchmarkRequest) -> dict[str, object]:
 
 
 class BenchmarkSuiteRequest(BaseModel):
-    datasets: list[Literal["t301-reconstructed", "t301-synthetic", "dwsim-synthetic"]] = Field(
+    datasets: list[str] = Field(
         default_factory=lambda: ["t301-reconstructed"]
     )
     seeds: list[int] = Field(default_factory=lambda: [42], min_length=1, max_length=6)
@@ -128,11 +149,14 @@ def _execute_benchmark(
     max_llm_cases: int, max_hops: int, output: Path,
 ) -> dict[str, object]:
     output.mkdir(parents=True, exist_ok=True)
+    dataset_path = _dataset_path(dataset)
     command = [
         sys.executable, str(BENCHMARK_SCRIPT),
         "--dataset", dataset, "--seed", str(seed),
         "--test-fraction", str(test_fraction), "--max-hops", str(max_hops), "--output-dir", str(output),
     ]
+    if dataset_path is not None:
+        command.extend(["--dataset-path", str(dataset_path)])
     if with_llm:
         command.extend(["--with-llm", "--max-llm-cases", str(max_llm_cases)])
     environment = os.environ.copy()
@@ -217,6 +241,8 @@ def run_benchmark_suite(payload: BenchmarkSuiteRequest) -> dict[str, object]:
         raise HTTPException(status_code=503, detail="Benchmark script is not available.")
     if len(set(payload.datasets)) != len(payload.datasets):
         raise HTTPException(status_code=422, detail="Dataset selections must be unique.")
+    for dataset_id in payload.datasets:
+        _dataset_path(dataset_id)
     if len(set(payload.seeds)) != len(payload.seeds) or any(seed < 0 or seed > 1_000_000 for seed in payload.seeds):
         raise HTTPException(status_code=422, detail="Seeds must be unique integers between 0 and 1000000.")
     if len(set(payload.graph_hops)) != len(payload.graph_hops) or any(hops < 2 or hops > 8 for hops in payload.graph_hops):
@@ -252,6 +278,27 @@ def run_benchmark_suite(payload: BenchmarkSuiteRequest) -> dict[str, object]:
     }
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return manifest
+
+
+@router.get("/datasets", summary="List datasets available to benchmark experiments")
+def list_benchmark_datasets() -> dict[str, object]:
+    datasets = [
+        {"dataset_id": dataset_id, "name": name, "source": "built-in"}
+        for dataset_id, name in BUILTIN_DATASETS.items()
+    ]
+    DATASET_FILES_ROOT.mkdir(parents=True, exist_ok=True)
+    for metadata_path in sorted(DATASET_FILES_ROOT.glob("*.json")):
+        try:
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            datasets.append({
+                "dataset_id": metadata["dataset_id"],
+                "name": metadata.get("name", metadata["dataset_id"]),
+                "source": "uploaded",
+                "record_count": metadata.get("record_count", 0),
+            })
+        except (OSError, json.JSONDecodeError, KeyError):
+            continue
+    return {"count": len(datasets), "datasets": datasets}
 
 
 @router.get("/benchmark-runs", summary="List persisted benchmark suite runs")
