@@ -162,10 +162,12 @@ class EvidenceContext:
     graph_context: tuple[EvidenceItem, ...] = ()
     scenario_context: str = ""
     dataset_id: str = "default"
+    scenario_entities: tuple[tuple[str, EntityType], ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "evidence_items", tuple(self.evidence_items))
         object.__setattr__(self, "graph_context", tuple(self.graph_context))
+        object.__setattr__(self, "scenario_entities", tuple(self.scenario_entities))
 
     @property
     def is_empty(self) -> bool:
@@ -183,11 +185,15 @@ class EvidenceContext:
             "evidence_items": [item.to_dict() for item in self.evidence_items],
             "graph_context": [item.to_dict() for item in self.graph_context],
             "scenario_context": self.scenario_context,
+            "scenario_entities": [
+                {"value": value, "type": entity_type.value}
+                for value, entity_type in self.scenario_entities
+            ],
         }
 
 
 class BuildEvidenceContext:
-    """Construct reasoning context from missing-link recovery results."""
+    """Construct provenance-aware reasoning context from recovery results."""
 
     def execute(
         self,
@@ -220,4 +226,5 @@ class BuildEvidenceContext:
             graph_context=graph_context,
             scenario_context=recovery_result.scenario_context,
             dataset_id=request.dataset_id,
+            scenario_entities=recovery_result.scenario_entities,
         )
