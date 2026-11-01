@@ -68,19 +68,24 @@ class PromptOnlyReasoner:
         include_graph_context: bool = False,
     ) -> None:
         self._include_graph_context = include_graph_context
-        if chat_model is not None:
-            self._llm = chat_model
-            return
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            raise RuntimeError(
-                f"GROQ_API_KEY was not found. Add it to {ENV_FILE}."
-            )
-        self._llm: PromptOnlyChatModel = ChatGroq(
-            model=model_name,
-            temperature=temperature,
-            api_key=SecretStr(api_key),
-        ).with_structured_output(PromptOnlyDecision)
+        self._model_name = model_name
+        self._temperature = temperature
+        self._llm: PromptOnlyChatModel | None = chat_model
+
+    def _get_chat_model(self) -> PromptOnlyChatModel:
+        """Create the provider only when a generation request is actually made."""
+        if self._llm is None:
+            api_key = os.getenv("GROQ_API_KEY")
+            if not api_key:
+                raise RuntimeError(
+                    f"GROQ_API_KEY was not found. Add it to {ENV_FILE}."
+                )
+            self._llm = ChatGroq(
+                model=self._model_name,
+                temperature=self._temperature,
+                api_key=SecretStr(api_key),
+            ).with_structured_output(PromptOnlyDecision)
+        return self._llm
 
     def reason(self, context: EvidenceContextProtocol) -> ReasoningResult:
         """Return a model-inferred candidate or abstain."""
@@ -125,7 +130,7 @@ one missing_value, or decision="abstain" with missing_value=null.
 """.strip()
 
         try:
-            response = self._llm.invoke(prompt)
+            response = self._get_chat_model().invoke(prompt)
             decision = (
                 response
                 if isinstance(response, PromptOnlyDecision)
