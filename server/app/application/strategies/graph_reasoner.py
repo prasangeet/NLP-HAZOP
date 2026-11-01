@@ -164,9 +164,18 @@ class GraphReasoner:
             object=object_,
             origin=RelationshipOrigin.GRAPH_INFERRED,
             evidence=(
+                (
+                "Row-association candidate inferred by typed graph "
+                f"composition. {path_evidence} The endpoints are co-listed "
+                "through a reconstructed relationship path; this does not "
+                "establish an independently validated causal assertion."
+                if context.predicate.strip().casefold()
+                == "co_listed_with_consequence"
+                else
                 "Indirect causal reachability inferred by typed graph "
                 f"composition. {path_evidence} This is not evidence that "
                 "the endpoints are an immediate/direct cause-effect pair."
+            )
             ),
             confidence=None,
             source_id=(
@@ -362,21 +371,48 @@ class GraphReasoner:
                 )
 
                 if len(next_path.edges) >= 2:
-                    # Only compose the canonical propagation chain:
-                    # Deviation -> Effect -> Consequence. Do not turn a
-                    # cause-to-deviation path into an invented direct cause
-                    # to consequence relationship.
+                    # Compose only explicitly typed propagation paths.
+                    # T-301 rows without an intermediate-effect column encode
+                    # Cause -> Deviation -> Consequence (2 edges). Datasets
+                    # with an explicit effect encode the 3-edge variant.
+                    # These paths support a row-association candidate; they
+                    # do not create a direct causal edge between endpoints.
                     predicates = [
                         item.predicate.strip().casefold()
                         for item in next_path.edges
                     ]
-                    valid_chain = (
-                        predicates[0] == "leads_to"
-                        and predicates[-1] == "leads_to_consequence"
-                        if direction == "object"
-                        else predicates[0] == "leads_to_consequence"
-                        and predicates[-1] == "leads_to"
-                    )
+                    if direction == "object":
+                        valid_chain = (
+                            predicates == [
+                                "causes_deviation",
+                                "leads_to_consequence",
+                            ]
+                            or predicates == [
+                                "causes_deviation",
+                                "leads_to",
+                                "leads_to_consequence",
+                            ]
+                            or predicates == [
+                                "leads_to",
+                                "leads_to_consequence",
+                            ]
+                        )
+                    else:
+                        valid_chain = (
+                            predicates == [
+                                "leads_to_consequence",
+                                "causes_deviation",
+                            ]
+                            or predicates == [
+                                "leads_to_consequence",
+                                "leads_to",
+                                "causes_deviation",
+                            ]
+                            or predicates == [
+                                "leads_to_consequence",
+                                "leads_to",
+                            ]
+                        )
                     if valid_chain:
                         candidates.append(next_path)
 
