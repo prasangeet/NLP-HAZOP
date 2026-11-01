@@ -103,6 +103,48 @@ def stable_split(
     return train, test
 
 
+def grouped_kfold_split(
+    records: tuple[HazopRecord, ...],
+    *,
+    n_splits: int,
+    seed: int,
+) -> tuple[tuple[tuple[HazopRecord, ...], tuple[HazopRecord, ...]], ...]:
+    """Create deterministic scenario-grouped folds with each scenario held out once.
+
+    All rows sharing a scenario_id are assigned to the same test fold. The
+    returned pairs are (training_records, held_out_records).
+    """
+    scenario_ids = sorted(
+        {record.scenario_id for record in records},
+        key=str.casefold,
+    )
+    if n_splits < 2:
+        raise ValueError("n_splits must be at least 2")
+    if n_splits > len(scenario_ids):
+        raise ValueError(
+            "n_splits cannot exceed the number of unique scenarios"
+        )
+
+    shuffled_ids = list(scenario_ids)
+    random.Random(seed).shuffle(shuffled_ids)
+    fold_ids: list[set[str]] = [set() for _ in range(n_splits)]
+    for index, scenario_id in enumerate(shuffled_ids):
+        fold_ids[index % n_splits].add(scenario_id)
+
+    folds = []
+    for held_out_ids in fold_ids:
+        train = tuple(
+            record for record in records
+            if record.scenario_id not in held_out_ids
+        )
+        test = tuple(
+            record for record in records
+            if record.scenario_id in held_out_ids
+        )
+        folds.append((train, test))
+    return tuple(folds)
+
+
 def make_cases(records: tuple[HazopRecord, ...]) -> tuple[BenchmarkCase, ...]:
     """Make one query per listed cause; all row consequences are silver targets."""
 
@@ -377,6 +419,21 @@ def score_predictions(
     }
 
 
+def merge_candidate_predictions(
+    graph_predictions: list[dict[str, Any]],
+    retrieval_predictions: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Union graph and retrieval candidates without changing their provenance."""
+    merged = list(graph_predictions)
+    seen = {normalize(item["value"]) for item in merged}
+    for item in retrieval_predictions:
+        normalized = normalize(item["value"])
+        if normalized and normalized not in seen:
+            merged.append(item)
+            seen.add(normalized)
+    return merged
+
+
 def _run_recovery(
     use_case: RecoverMissingLink,
     builder: BuildEvidenceContext,
@@ -410,10 +467,43 @@ def _run_recovery(
     return predictions, latency_ms, status
 
 
-def run(args: argparse.Namespace) -> dict[str, Any]:
+def build_matched_case_summary(
+    method_cases: dict[str, list[dict[str, Any]]],
+    comparison_case_ids: set[str],
+) -> dict[str, dict[str, Any]]:
+    """Score every available method on the same preselected case IDs."""
+    summaries: dict[str, dict[str, Any]] = {}
+    for method, evaluated_cases in method_cases.items():
+        matched = [
+            case for case in evaluated_cases
+            if case["case_id"] in comparison_case_ids
+        ]
+        if matched:
+            summaries[method] = {
+                "status": "evaluated",
+                **score_predictions(matched),
+                "n_total_comparison_cases": len(comparison_case_ids),
+            }
+        else:
+            summaries[method] = {
+                "status": "not_evaluated_on_comparison_cases",
+                "n_evaluated": 0,
+                "n_total_comparison_cases": len(comparison_case_ids),
+            }
+    return summaries
+
+
+def run(
+    args: argparse.Namespace,
+    *,
+    records_override: tuple[HazopRecord, ...] | None = None,
+    split_override: tuple[
+        tuple[HazopRecord, ...], tuple[HazopRecord, ...]
+    ] | None = None,
+) -> dict[str, Any]:
     selected_path = Path(args.dataset_path).resolve() if args.dataset_path else None
-    records = load_dataset(args.dataset, selected_path)
-    train, test = stable_split(
+    records = records_override or load_dataset(args.dataset, selected_path)
+    train, test = split_override or stable_split(
         records,
         test_fraction=args.test_fraction,
         seed=args.seed,
@@ -467,6 +557,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "prompt_only_llm": [],
         "tfidf_vector_retrieval": [],
         "graph_reasoning": [],
+        "graph_tfidf_union": [],
         "hybrid_graph_vector_llm": [],
     }
 
@@ -526,6 +617,28 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         }
         method_cases["graph_reasoning"].append(graph_case)
         case_result["methods"]["graph_reasoning"] = graph_case
+
+        # Deterministic component ablation: union the graph reasoner's
+        # proposal with TF-IDF candidates. Retrieval-inferred candidates are
+        # deliberately not re-labelled as graph facts or passed through the
+        # graph path validator.
+        graph_vector_predictions = merge_candidate_predictions(
+            graph_predictions,
+            vector_predictions,
+        )
+        graph_vector_case = {
+            "case_id": case.case_id,
+            "gold_values": list(case.gold_values),
+            "predictions": graph_vector_predictions,
+            "latency_ms": graph_latency + vector_latency,
+            "status": (
+                "candidates_found"
+                if graph_vector_predictions
+                else "no_candidates"
+            ),
+        }
+        method_cases["graph_tfidf_union"].append(graph_vector_case)
+        case_result["methods"]["graph_tfidf_union"] = graph_vector_case
 
         # LLM methods are evaluated on the same deterministic capped subset.
         if llm_enabled and case.case_id in llm_case_ids:
@@ -663,10 +776,141 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "created_at": datetime.now(UTC).isoformat(),
     }
 
+    comparison_case_ids = {
+        case.case_id for case in cases[: args.max_llm_cases]
+    }
+    matched_case_summary = build_matched_case_summary(
+        method_cases,
+        comparison_case_ids,
+    )
+    metadata["comparison_case_count"] = len(comparison_case_ids)
+    metadata["comparison_case_ids"] = sorted(comparison_case_ids)
+    metadata["comparison_case_selection"] = (
+        "first N cases in deterministic scenario/cause order; "
+        "N equals max_llm_cases"
+    )
+
     return {
         "metadata": metadata,
         "method_summary": method_summary,
+        "matched_case_summary": matched_case_summary,
         "cases": per_case,
+    }
+
+
+def _mean_fold_summaries(
+    fold_results: list[dict[str, Any]],
+    summary_key: str,
+) -> dict[str, dict[str, Any]]:
+    """Average fold metrics descriptively; folds are not independent samples."""
+    metric_names = (
+        "micro_precision", "micro_recall", "micro_f1", "macro_f1",
+        "coverage", "abstention_rate", "mean_latency_ms",
+    )
+    methods = {
+        method
+        for result in fold_results
+        for method in result.get(summary_key, {})
+    }
+    summaries: dict[str, dict[str, Any]] = {}
+    for method in sorted(methods):
+        fold_metrics = [
+            result.get(summary_key, {}).get(method, {})
+            for result in fold_results
+        ]
+        evaluated = [
+            item for item in fold_metrics
+            if item.get("status") == "evaluated"
+        ]
+        summary: dict[str, Any] = {
+            "status": "evaluated" if evaluated else "not_evaluated",
+            "n_folds_total": len(fold_results),
+            "n_folds_evaluated": len(evaluated),
+            "n_evaluated_cases_sum": sum(
+                int(item.get("n_evaluated", 0)) for item in evaluated
+            ),
+            "n_total_test_cases_sum": sum(
+                int(item.get("n_total_test_cases", 0)) for item in evaluated
+            ),
+            "n_total_comparison_cases_sum": sum(
+                int(item.get("n_total_comparison_cases", 0))
+                for item in evaluated
+            ),
+        }
+        for metric in metric_names:
+            values = [
+                float(item[metric])
+                for item in evaluated
+                if isinstance(item.get(metric), (int, float))
+            ]
+            summary[metric] = sum(values) / len(values) if values else None
+            summary[f"{metric}_fold_values"] = values
+        summary["aggregation_note"] = (
+            "Unweighted arithmetic mean of fold metrics; descriptive only. "
+            "Fold training sets overlap and folds are not independent samples."
+        )
+        summaries[method] = summary
+    return summaries
+
+
+def run_grouped_cross_validation(args: argparse.Namespace) -> dict[str, Any]:
+    """Execute the benchmark once per scenario-grouped held-out fold."""
+    selected_path = Path(args.dataset_path).resolve() if args.dataset_path else None
+    records = load_dataset(args.dataset, selected_path)
+    folds = grouped_kfold_split(
+        records,
+        n_splits=args.cross_validation_folds,
+        seed=args.seed,
+    )
+    fold_results: list[dict[str, Any]] = []
+    all_cases: list[dict[str, Any]] = []
+    for fold_index, split in enumerate(folds, start=1):
+        result = run(
+            args,
+            records_override=records,
+            split_override=split,
+        )
+        fold_results.append(result)
+        for case in result["cases"]:
+            all_cases.append({"fold": fold_index, **case})
+
+    first_metadata = fold_results[0]["metadata"]
+    metadata = {
+        **first_metadata,
+        "evaluation_protocol": "scenario_grouped_k_fold_cross_validation",
+        "method": "scenario-grouped K-fold; each held-out scenario has target labels and graph edges removed from the fold index",
+        "cross_validation_folds": len(folds),
+        "fold_scenario_counts": [
+            {
+                "fold": index,
+                "train_scenarios": result["metadata"]["train_scenarios"],
+                "test_scenarios": result["metadata"]["test_scenarios"],
+                "test_queries": result["metadata"]["test_queries"],
+            }
+            for index, result in enumerate(fold_results, start=1)
+        ],
+        "seed": args.seed,
+        "fold_aggregation": (
+            "Unweighted arithmetic mean of fold-level metrics; descriptive "
+            "only because fold training sets overlap."
+        ),
+    }
+    return {
+        "metadata": metadata,
+        "method_summary": _mean_fold_summaries(fold_results, "method_summary"),
+        "matched_case_summary": _mean_fold_summaries(
+            fold_results, "matched_case_summary"
+        ),
+        "fold_results": [
+            {
+                "fold": index,
+                "metadata": result["metadata"],
+                "method_summary": result["method_summary"],
+                "matched_case_summary": result["matched_case_summary"],
+            }
+            for index, result in enumerate(fold_results, start=1)
+        ],
+        "cases": all_cases,
     }
 
 
@@ -684,6 +928,7 @@ def write_outputs(
     summary_path = output_dir / "summary.csv"
     with summary_path.open("w", encoding="utf-8", newline="") as handle:
         fieldnames = [
+            "scope",
             "method",
             "status",
             "n_evaluated",
@@ -705,17 +950,22 @@ def write_outputs(
         ]
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
-        for method, metrics in result["method_summary"].items():
-            writer.writerow(
-                {
-                    "method": method,
-                    **{
-                        field: metrics.get(field)
-                        for field in fieldnames
-                        if field != "method"
-                    },
-                }
-            )
+        for scope, summaries in (
+            ("full_test", result["method_summary"]),
+            ("matched_cases", result.get("matched_case_summary", {})),
+        ):
+            for method, metrics in summaries.items():
+                writer.writerow(
+                    {
+                        "scope": scope,
+                        "method": method,
+                        **{
+                            field: metrics.get(field)
+                            for field in fieldnames
+                            if field not in {"scope", "method"}
+                        },
+                    }
+                )
 
     report_path = output_dir / "report.md"
     metadata = result["metadata"]
@@ -741,7 +991,7 @@ def write_outputs(
         "|---|---|---:|---:|---:|---:|---:|",
     ]
     def format_metric(value: Any) -> str:
-        return "{:.4f}".format(value) if isinstance(value, (int, float)) else "not reported"
+        return f"{value:.4f}" if isinstance(value, (int, float)) else "not reported"
 
     for method, metrics in result["method_summary"].items():
         lines.append(
@@ -754,6 +1004,27 @@ def write_outputs(
                 format_metric(metrics.get("coverage")),
                 format_metric(metrics.get("abstention_rate")),
                 format_metric(metrics.get("mean_latency_ms")),
+            )
+        )
+    lines.extend([
+        "",
+        "## Matched-case comparison",
+        "",
+        "- Comparison subset size: {}".format(metadata.get("comparison_case_count", 0)),
+        "- Selection: {}".format(metadata.get("comparison_case_selection", "not recorded")),
+        "",
+        "| Method | Status | Evaluated / matched | Micro F1 | Coverage |",
+        "|---|---|---:|---:|---:|",
+    ])
+    for method, metrics in result.get("matched_case_summary", {}).items():
+        lines.append(
+            "| {} | {} | {} / {} | {} | {} |".format(
+                method,
+                metrics.get("status", "unknown"),
+                metrics.get("n_evaluated", 0),
+                metrics.get("n_total_comparison_cases", 0),
+                format_metric(metrics.get("micro_f1")),
+                format_metric(metrics.get("coverage")),
             )
         )
     lines.extend([
@@ -772,6 +1043,7 @@ def write_outputs(
     with predictions_path.open("w", encoding="utf-8", newline="") as handle:
         fieldnames = [
             "case_id",
+            "fold",
             "scenario_id",
             "record_type",
             "known_endpoint",
@@ -789,6 +1061,7 @@ def write_outputs(
                 writer.writerow(
                     {
                         "case_id": case["case_id"],
+                        "fold": case.get("fold", ""),
                         "scenario_id": case["scenario_id"],
                         "record_type": case["record_type"],
                         "known_endpoint": case["known_endpoint"],
@@ -821,6 +1094,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--max-hops", type=int, default=4)
+    parser.add_argument(
+        "--cross-validation-folds", type=int, default=0,
+        help="Run scenario-grouped K-fold cross-validation instead of one holdout; 0 disables it.",
+    )
     parser.add_argument("--limit-cases", type=int, default=None)
     parser.add_argument("--with-llm", action="store_true")
     parser.add_argument("--max-llm-cases", type=int, default=15)
@@ -834,12 +1111,18 @@ def parse_args() -> argparse.Namespace:
         parser.error("--top-k must be >= 1")
     if args.max_hops < 2:
         parser.error("--max-hops must be >= 2")
+    if args.cross_validation_folds == 1 or args.cross_validation_folds < 0:
+        parser.error("--cross-validation-folds must be 0 or >= 2")
     return args
 
 
 def main() -> None:
     args = parse_args()
-    result = run(args)
+    result = (
+        run_grouped_cross_validation(args)
+        if args.cross_validation_folds >= 2
+        else run(args)
+    )
     output_dir = (
         Path(args.output_dir).resolve()
         if args.output_dir

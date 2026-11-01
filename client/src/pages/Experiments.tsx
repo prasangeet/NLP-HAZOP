@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
   CheckCircle2,
@@ -24,7 +24,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import PageHeader from "@/components/layout/PageHeader";
-import { api, type BenchmarkRun, type RecoveryResponse } from "@/lib/api";
+import { api, type BenchmarkRun, type BenchmarkSuiteRun, type RecoveryResponse } from "@/lib/api";
 import { useWorkspaceStore } from "@/lib/workspace-store";
 
 type CheckStatus = "idle" | "running" | "passed" | "warning" | "failed";
@@ -53,7 +53,11 @@ const strategyLabels = {
   hybrid: "Hybrid",
 } as const;
 
-function formatBenchmarkMetric(value: number | null | undefined): string {\n  return value == null || !Number.isFinite(value) ? "—" : value.toFixed(3);\n}\n\nfunction StatusBadge({ status }: { status: CheckStatus }) {
+function formatBenchmarkMetric(value: number | null | undefined): string {
+  return value == null || !Number.isFinite(value) ? "—" : value.toFixed(3);
+}
+
+function StatusBadge({ status }: { status: CheckStatus }) {
   if (status === "passed") return <Badge variant="secondary">Passed</Badge>;
   if (status === "failed") return <Badge variant="destructive">Failed</Badge>;
   if (status === "warning") return <Badge variant="outline">Warning</Badge>;
@@ -101,10 +105,34 @@ export default function Experiments() {
   const [benchmarkDataset, setBenchmarkDataset] = useState<BenchmarkRun["dataset"]>("t301-reconstructed");
   const [benchmarkSeed, setBenchmarkSeed] = useState(42);
   const [benchmarkTestFraction, setBenchmarkTestFraction] = useState(0.2);
+  const [benchmarkCvFolds, setBenchmarkCvFolds] = useState(0);
   const [benchmarkWithLlm, setBenchmarkWithLlm] = useState(false);
   const [benchmarkRunning, setBenchmarkRunning] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
   const [benchmarkResult, setBenchmarkResult] = useState<BenchmarkRun | null>(null);
+  const [suiteDatasets, setSuiteDatasets] = useState<Array<"t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic">>(["t301-reconstructed", "t301-synthetic", "dwsim-synthetic"]);
+  const [suiteSeeds, setSuiteSeeds] = useState("42, 7, 21");
+  const [suiteGraphHops, setSuiteGraphHops] = useState("2, 4");
+  const [suiteRunning, setSuiteRunning] = useState(false);
+  const [suiteError, setSuiteError] = useState<string | null>(null);
+  const [suiteResult, setSuiteResult] = useState<BenchmarkSuiteRun | null>(null);
+  const [savedRuns, setSavedRuns] = useState<BenchmarkSuiteRun[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    api.listBenchmarkRuns()
+      .then((response) => {
+        if (active) setSavedRuns(response.runs);
+      })
+      .catch(() => {
+        // History is optional; the workbench remains usable when no runs exist.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+
 
   const runResearchBenchmark = async () => {
     if (benchmarkRunning) return;
@@ -118,6 +146,7 @@ export default function Experiments() {
         test_fraction: benchmarkTestFraction,
         with_llm: benchmarkWithLlm,
         max_llm_cases: 15,
+        cross_validation_folds: benchmarkCvFolds,
       });
       setBenchmarkResult(result);
     } catch (error) {
@@ -125,6 +154,35 @@ export default function Experiments() {
     } finally {
       setBenchmarkRunning(false);
     }
+  };
+
+  const downloadSuiteArtifact = async (run: BenchmarkSuiteRun["runs"][number], artifact: "report.md" | "summary.csv" | "predictions.csv") => {
+    if (!suiteResult) return;
+    try {
+      const response = await api.getBenchmarkArtifact(suiteResult.run_id, run.dataset, run.seed, run.max_hops, artifact);
+      const mimeType = artifact.endsWith(".csv") ? "text/csv" : "text/markdown";
+      downloadBenchmarkArtifact("hazop-" + run.dataset + "-seed-" + run.seed + "-hops-" + run.max_hops + "-" + artifact.replace(".", "-"), response.content, mimeType);
+    } catch (error) {
+      setSuiteError(error instanceof Error ? error.message : "Could not retrieve the saved artifact.");
+    }
+  };
+  const runBenchmarkSuite = async () => {
+    if (suiteRunning) return;
+    const seeds = suiteSeeds.split(",").map((value) => Number(value.trim()));
+    const graphHops = suiteGraphHops.split(",").map((value) => Number(value.trim()));
+    if (!suiteDatasets.length || !seeds.length || seeds.some((seed) => !Number.isInteger(seed) || seed < 0 || seed > 1000000) || new Set(seeds).size !== seeds.length || !graphHops.length || graphHops.some((hops) => !Number.isInteger(hops) || hops < 2 || hops > 8) || new Set(graphHops).size !== graphHops.length || suiteDatasets.length * seeds.length * graphHops.length > 18) {
+      setSuiteError("Use unique seeds (0–1000000), unique graph-hop values (2–8), and no more than 18 total runs.");
+      return;
+    }
+    setSuiteRunning(true); setSuiteError(null); setSuiteResult(null);
+    try {
+      const result = await api.runBenchmarkSuite({ datasets: suiteDatasets, seeds, graph_hops: graphHops, test_fraction: benchmarkTestFraction, with_llm: benchmarkWithLlm, max_llm_cases: 15 });
+      setSuiteResult(result);
+      const history = await api.listBenchmarkRuns();
+      setSavedRuns(history.runs);
+    } catch (error) {
+      setSuiteError(error instanceof Error ? error.message : "Benchmark suite failed.");
+    } finally { setSuiteRunning(false); }
   };
 
   const downloadBenchmarkArtifact = (filename: string, content: string, mimeType: string) => {
@@ -472,9 +530,6 @@ export default function Experiments() {
         </CardContent>
       </Card>
 
-      <section className="space-y-3">
-        <div>
-
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -489,7 +544,7 @@ export default function Experiments() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-5">
             <label className="space-y-1 text-xs"><span className="text-muted-foreground">Dataset track</span>
               <select value={benchmarkDataset} onChange={(event) => setBenchmarkDataset(event.target.value as BenchmarkRun["dataset"])} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
                 <option value="t301-reconstructed">T-301 reconstructed</option><option value="t301-synthetic">T-301 synthetic continuation</option><option value="dwsim-synthetic">DWSIM synthetic</option>
@@ -497,21 +552,99 @@ export default function Experiments() {
             </label>
             <label className="space-y-1 text-xs"><span className="text-muted-foreground">Random seed</span><input type="number" min={0} max={1000000} value={benchmarkSeed} onChange={(event) => setBenchmarkSeed(Number(event.target.value))} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>
             <label className="space-y-1 text-xs"><span className="text-muted-foreground">Test split (%)</span><input type="number" min={5} max={50} step={5} value={Math.round(benchmarkTestFraction * 100)} onChange={(event) => setBenchmarkTestFraction(Number(event.target.value) / 100)} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" /></label>
+            <label className="space-y-1 text-xs"><span className="text-muted-foreground">Grouped CV folds (0 = holdout)</span><select value={benchmarkCvFolds} onChange={(event) => setBenchmarkCvFolds(Number(event.target.value))} disabled={benchmarkRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"><option value={0}>Single holdout</option><option value={2}>2 folds</option><option value={3}>3 folds</option><option value={4}>4 folds</option><option value={5}>5 folds</option></select></label>
             <label className="flex items-center gap-2 self-end pb-2 text-sm"><input type="checkbox" checked={benchmarkWithLlm} onChange={(event) => setBenchmarkWithLlm(event.target.checked)} disabled={benchmarkRunning} />Include LLM methods</label>
           </div>
           {benchmarkError && <p className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive" role="alert">{benchmarkError}</p>}
           {benchmarkResult && <div className="space-y-4 border-t border-border pt-4">
-            <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-medium">Run completed · {benchmarkResult.dataset}</p><p className="text-xs text-muted-foreground">Seed {benchmarkResult.seed} · {Math.round(benchmarkResult.test_fraction * 100)}% test split · {benchmarkResult.cases.length} test cases</p></div>
+            <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-medium">Run completed · {benchmarkResult.dataset}</p><p className="text-xs text-muted-foreground">Seed {benchmarkResult.seed} · {benchmarkResult.cross_validation_folds && benchmarkResult.cross_validation_folds >= 2 ? `${benchmarkResult.cross_validation_folds}-fold scenario-grouped CV` : `${Math.round(benchmarkResult.test_fraction * 100)}% test split`} · {benchmarkResult.cases.length} evaluated cases</p></div>
               <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => downloadBenchmarkArtifact("hazop-benchmark-report.md", benchmarkResult.artifacts.report_md, "text/markdown")}>Download report</Button><Button variant="outline" size="sm" onClick={() => downloadBenchmarkArtifact("hazop-benchmark-summary.csv", benchmarkResult.artifacts.summary_csv, "text/csv")}>Download summary CSV</Button><Button variant="outline" size="sm" onClick={() => downloadBenchmarkArtifact("hazop-benchmark-predictions.csv", benchmarkResult.artifacts.predictions_csv, "text/csv")}>Download predictions CSV</Button></div>
             </div>
-            <div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[760px] text-left text-xs"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 font-medium">Method</th><th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Evaluated</th><th className="p-3 font-medium">Micro F1</th><th className="p-3 font-medium">Precision</th><th className="p-3 font-medium">Recall</th><th className="p-3 font-medium">Coverage</th><th className="p-3 font-medium">Abstention</th><th className="p-3 font-medium">Latency</th></tr></thead>
+            {benchmarkResult.fold_results && benchmarkResult.fold_results.length > 0 && <div className="space-y-2 border-t border-border pt-4"><div><h3 className="text-sm font-semibold">Fold-level results</h3><p className="text-xs text-muted-foreground">Each fold holds out complete scenarios. Aggregate values above are unweighted fold means, descriptive only; folds share overlapping training data and are not independent samples.</p></div><div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[680px] text-left text-xs"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3">Fold</th><th className="p-3">Train scenarios</th><th className="p-3">Test scenarios</th><th className="p-3">Queries</th><th className="p-3">Method</th><th className="p-3">Micro F1</th><th className="p-3">Coverage</th></tr></thead><tbody>{benchmarkResult.fold_results.flatMap((fold) => Object.entries(fold.method_summary).map(([method, metrics]) => <tr key={fold.fold + method} className="border-t border-border"><td className="p-3">{fold.fold}</td><td className="p-3">{String(fold.metadata.train_scenarios ?? "—")}</td><td className="p-3">{String(fold.metadata.test_scenarios ?? "—")}</td><td className="p-3">{String(fold.metadata.test_queries ?? "—")}</td><td className="p-3">{method}</td><td className="p-3">{formatBenchmarkMetric(metrics.micro_f1)}</td><td className="p-3">{formatBenchmarkMetric(metrics.coverage)}</td></tr>))}</tbody></table></div></div>}<div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[760px] text-left text-xs"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 font-medium">Method</th><th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Evaluated</th><th className="p-3 font-medium">Micro F1</th><th className="p-3 font-medium">Precision</th><th className="p-3 font-medium">Recall</th><th className="p-3 font-medium">Coverage</th><th className="p-3 font-medium">Abstention</th><th className="p-3 font-medium">Latency</th></tr></thead>
               <tbody>{Object.entries(benchmarkResult.method_summary).map(([method, metrics]) => <tr key={method} className="border-t border-border"><td className="p-3 font-medium">{method}</td><td className="p-3"><Badge variant={metrics.status === "completed" || metrics.status === "ok" ? "secondary" : "outline"}>{metrics.status ?? "reported"}</Badge></td><td className="p-3 tabular-nums">{metrics.n_evaluated ?? 0} / {metrics.n_total_test_cases ?? benchmarkResult.cases.length}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.micro_f1)}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.micro_precision)}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.micro_recall)}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.coverage)}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.abstention_rate)}</td><td className="p-3 tabular-nums">{metrics.mean_latency_ms == null ? "—" : metrics.mean_latency_ms.toFixed(1) + " ms"}</td></tr>)}</tbody></table></div>
+            <div className="space-y-2 border-t border-border pt-4">
+              <div><h3 className="text-sm font-semibold">Matched-case comparison</h3><p className="text-xs text-muted-foreground">Every method below is scored on the same deterministic subset of {String(benchmarkResult.metadata.comparison_case_count ?? 0)} case IDs. Use this table—not the full-test table—to compare methods when LLM calls are capped.</p></div>
+              <div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[640px] text-left text-xs"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-3 font-medium">Method</th><th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Evaluated / matched</th><th className="p-3 font-medium">Micro F1</th><th className="p-3 font-medium">Coverage</th><th className="p-3 font-medium">Latency</th></tr></thead><tbody>{Object.entries(benchmarkResult.matched_case_summary ?? {}).map(([method, metrics]) => <tr key={method} className="border-t border-border"><td className="p-3 font-medium">{method}</td><td className="p-3">{metrics.status}</td><td className="p-3 tabular-nums">{metrics.n_evaluated ?? 0} / {String(metrics.n_total_comparison_cases ?? 0)}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.micro_f1)}</td><td className="p-3 tabular-nums">{formatBenchmarkMetric(metrics.coverage)}</td><td className="p-3 tabular-nums">{metrics.mean_latency_ms == null ? "—" : metrics.mean_latency_ms.toFixed(1) + " ms"}</td></tr>)}</tbody></table></div>
+            </div>
             <div className="space-y-2"><h3 className="text-sm font-semibold">Per-case predictions</h3><p className="text-xs text-muted-foreground">Expand a test case to inspect its silver target and each method’s predictions. Targets are derived from co-listed row fields.</p>
-              <div className="space-y-2">{benchmarkResult.cases.map((item) => <details key={item.case_id} className="rounded-md border border-border px-3 py-2"><summary className="cursor-pointer text-xs font-medium">{item.case_id} · {item.known_endpoint}</summary><div className="mt-3 space-y-2 text-xs"><p><span className="text-muted-foreground">Silver target:</span> {item.gold_values.join(" · ") || "None"}</p>
+              <div className="space-y-2">{benchmarkResult.cases.map((item) => <details key={(item.fold ?? 0) + "-" + item.case_id} className="rounded-md border border-border px-3 py-2"><summary className="cursor-pointer text-xs font-medium">{item.fold ? "Fold " + item.fold + " · " : ""}{item.case_id} · {item.known_endpoint}</summary><div className="mt-3 space-y-2 text-xs"><p><span className="text-muted-foreground">Silver target:</span> {item.gold_values.join(" · ") || "None"}</p>
                 {Object.entries(item.methods).map(([method, result]) => <div key={method} className="rounded-md bg-muted/30 p-2"><p className="font-medium">{method} · {result.status ?? "unknown"} · {result.latency_ms == null ? "latency unavailable" : result.latency_ms.toFixed(1) + " ms"}</p><p className="mt-1 text-muted-foreground">Predictions: {(result.predictions ?? []).map((prediction) => prediction.value).join(" · ") || "No candidates / abstained"}</p>{(result.predictions ?? []).some((prediction) => prediction.evidence) && <ul className="mt-1 list-disc pl-4 text-muted-foreground">{(result.predictions ?? []).filter((prediction) => prediction.evidence).map((prediction, index) => <li key={method + "-" + index}>{prediction.evidence}</li>)}</ul>}</div>)}
               </div></details>)}</div>
             </div>
           </div>}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Automated benchmark suite</CardTitle>
+          <CardDescription>Run a reproducible dataset × seed matrix and persist every run. Scores use silver row associations, not expert-verified causal truth.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            {([
+              ["t301-reconstructed", "T-301 reconstructed"],
+              ["t301-synthetic", "T-301 synthetic"],
+              ["dwsim-synthetic", "DWSIM synthetic"],
+            ] as const).map(([value, label]) => (
+              <label key={value} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={suiteDatasets.includes(value)} disabled={suiteRunning}
+                  onChange={(event) => setSuiteDatasets((current) => event.target.checked ? [...current, value] : current.filter((item) => item !== value))} />
+                {label}
+              </label>
+            ))}
+          </div>
+          <label className="block space-y-1 text-xs"><span className="text-muted-foreground">Random seeds (comma-separated; up to 6)</span>
+            <input value={suiteSeeds} onChange={(event) => setSuiteSeeds(event.target.value)} disabled={suiteRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
+          </label>
+          <label className="block space-y-1 text-xs"><span className="text-muted-foreground">Graph hop settings for ablation (comma-separated; 2–8)</span>
+            <input value={suiteGraphHops} onChange={(event) => setSuiteGraphHops(event.target.value)} disabled={suiteRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" placeholder="2, 4" />
+          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={() => void runBenchmarkSuite()} disabled={suiteRunning || !suiteDatasets.length}>
+              {suiteRunning ? <LoaderCircle className="size-4 animate-spin" /> : <Play className="size-4" />}
+              {suiteRunning ? "Running suite…" : "Run benchmark suite"}
+            </Button>
+            <span className="text-xs text-muted-foreground">{suiteDatasets.length * suiteSeeds.split(",").filter((item) => item.trim()).length * suiteGraphHops.split(",").filter((item) => item.trim()).length} planned runs</span>
+          </div>
+          {suiteError && <p role="alert" className="text-sm text-destructive">{suiteError}</p>}
+          {suiteResult && <>
+            <div className="rounded-md border border-border p-3 text-xs"><p className="font-medium">Run {suiteResult.run_id}</p><p className="mt-1 text-muted-foreground">{suiteResult.runs.length} completed · {suiteResult.failures.length} failed</p><p className="mt-2 text-muted-foreground">{suiteResult.label_warning}</p></div>
+            <div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[680px] text-left text-xs">
+              <thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-2">Dataset</th><th className="p-2">Seed</th><th className="p-2">Hops</th><th className="p-2">Cases</th><th className="p-2">Method</th><th className="p-2">Micro F1</th><th className="p-2">Coverage</th></tr></thead>
+              <tbody>{suiteResult.runs.flatMap((run) => Object.entries(run.method_summary).map(([method, metrics]) => <tr key={run.dataset + run.seed + run.max_hops + method} className="border-t border-border"><td className="p-2">{run.dataset}</td><td className="p-2">{run.seed}</td><td className="p-2">{run.max_hops}</td><td className="p-2">{run.case_count}</td><td className="p-2">{method} · {metrics.status ?? "unknown"}</td><td className="p-2">{formatBenchmarkMetric(metrics.micro_f1)}</td><td className="p-2">{formatBenchmarkMetric(metrics.coverage)}</td></tr>))}</tbody>
+            </table></div>
+            <div className="space-y-2 border-t border-border pt-3">
+              <h3 className="text-sm font-semibold">Across-seed summary · mean and 95% confidence interval</h3>
+              <p className="text-xs text-muted-foreground">Full-test and matched-case intervals are reported separately. Matched cases use the same deterministic capped IDs across methods within each seed. A single seed cannot estimate an interval. These metrics are not evidence of causal validity.</p>
+              <div className="overflow-x-auto rounded-md border border-border"><table className="w-full min-w-[760px] text-left text-xs">
+                <thead className="bg-muted/50 text-muted-foreground"><tr><th className="p-2">Scope</th><th className="p-2">Dataset</th><th className="p-2">Hops</th><th className="p-2">Method</th><th className="p-2">Seeds</th><th className="p-2">Mean F1</th><th className="p-2">95% CI</th><th className="p-2">Mean coverage</th></tr></thead>
+                <tbody>{Object.values(suiteResult.aggregate_summary).map((item) => {
+                  const f1 = item.metrics.micro_f1;
+                  const coverage = item.metrics.coverage;
+                  return <tr key={item.scope + item.dataset + item.max_hops + item.method} className="border-t border-border">
+                    <td className="p-2">{item.scope === "matched_cases" ? "Matched cases" : "Full test"}</td><td className="p-2">{item.dataset}</td><td className="p-2">{item.max_hops}</td><td className="p-2">{item.method}</td><td className="p-2">{f1?.n_seeds ?? 0}</td>
+                    <td className="p-2">{f1 ? formatBenchmarkMetric(f1.mean) : "—"}</td>
+                    <td className="p-2">{f1?.ci95_low == null || f1.ci95_high == null ? "Not estimable" : formatBenchmarkMetric(f1.ci95_low) + "–" + formatBenchmarkMetric(f1.ci95_high)}</td>
+                    <td className="p-2">{coverage ? formatBenchmarkMetric(coverage.mean) : "—"}</td>
+                  </tr>;
+                })}</tbody>
+              </table></div>
+            </div>
+            <div className="space-y-2 border-t border-border pt-3">
+              <h3 className="text-sm font-semibold">Run artifacts</h3>
+              {suiteResult.runs.map((run) => <div key={run.dataset + run.seed + run.max_hops} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-2 text-xs">
+                <span>{run.dataset} · seed {run.seed} · {run.max_hops} hops</span>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => void downloadSuiteArtifact(run, "report.md")}>Report</Button>
+                  <Button size="sm" variant="outline" onClick={() => void downloadSuiteArtifact(run, "summary.csv")}>Summary CSV</Button>
+                  <Button size="sm" variant="outline" onClick={() => void downloadSuiteArtifact(run, "predictions.csv")}>Predictions CSV</Button>
+                </div>
+              </div>)}
+            </div>
+            {suiteResult.failures.map((failure) => <p key={failure.dataset + failure.seed + failure.max_hops} className="text-xs text-destructive">{failure.dataset} · seed {failure.seed} · {failure.max_hops} hops: {failure.error}</p>)}
+          </>}
+          {savedRuns.length > 0 && <div className="space-y-1 border-t border-border pt-3"><h3 className="text-sm font-medium">Saved suite runs</h3>{savedRuns.slice(0, 5).map((run) => <div key={run.run_id} className="flex items-center justify-between gap-2 rounded-md border border-border p-2"><p className="text-xs text-muted-foreground">{run.run_id} · {run.runs.length} completed · {run.failures.length} failed</p><Button size="sm" variant="outline" onClick={() => setSuiteResult(run)}>Open results</Button></div>)}</div>}
         </CardContent>
       </Card>
 

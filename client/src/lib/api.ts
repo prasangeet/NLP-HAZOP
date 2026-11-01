@@ -156,12 +156,32 @@ export const api = {
     request<GraphResponse>(`/api/v1/datasets/${encodeURIComponent(datasetId)}/graph?limit=1000`),
   extractReport: (file: File, datasetId: string, name?: string) =>
     request<Record<string, unknown>>("/api/v1/reports/extract", { method: "POST", body: formData(file, { dataset_id: datasetId, ...(name ? { name } : {}) }) }),
+  runBenchmarkSuite: (payload: {
+    datasets: Array<"t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic">;
+    seeds: number[];
+    graph_hops: number[];
+    test_fraction: number;
+    with_llm: boolean;
+    max_llm_cases: number;
+  }) =>
+    request<BenchmarkSuiteRun>("/api/v1/experiments/benchmark-suite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+  listBenchmarkRuns: () =>
+    request<{ count: number; runs: BenchmarkSuiteRun[] }>("/api/v1/experiments/benchmark-runs"),
+  getBenchmarkArtifact: (runId: string, dataset: string, seed: number, maxHops: number, artifact: string) =>
+    request<{ filename: string; content: string }>(
+      `/api/v1/experiments/benchmark-runs/${encodeURIComponent(runId)}/${encodeURIComponent(dataset)}/${seed}/${maxHops}/${encodeURIComponent(artifact)}`,
+    ),
   runBenchmark: (payload: {
     dataset: "t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic";
     seed: number;
     test_fraction: number;
     with_llm: boolean;
     max_llm_cases: number;
+    cross_validation_folds: number;
   }) =>
     request<BenchmarkRun>("/api/v1/experiments/benchmark", {
       method: "POST",
@@ -203,6 +223,7 @@ export interface BenchmarkMethodMetrics {
 export interface BenchmarkCaseResult {
   case_id: string;
   scenario_id: string;
+  fold?: number;
   record_type: string;
   known_endpoint: string;
   gold_values: string[];
@@ -216,15 +237,45 @@ export interface BenchmarkCaseResult {
 
 export interface BenchmarkRun {
   status: string;
-  dataset: string;
+  dataset: "t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic";
   seed: number;
   test_fraction: number;
+  cross_validation_folds?: number;
   metadata: Record<string, unknown>;
+  fold_results?: Array<{ fold: number; metadata: Record<string, unknown>; method_summary: Record<string, BenchmarkMethodMetrics>; matched_case_summary: Record<string, BenchmarkMethodMetrics> }>;
   method_summary: Record<string, BenchmarkMethodMetrics>;
+  matched_case_summary: Record<string, BenchmarkMethodMetrics>;
   cases: BenchmarkCaseResult[];
   artifacts: {
     summary_csv: string;
     predictions_csv: string;
     report_md: string;
   };
+}
+
+
+export interface BenchmarkSuiteRun {
+  run_id: string;
+  created_at: string;
+  protocol_version: string;
+  label_status: string;
+  label_warning: string;
+  datasets: string[];
+  seeds: number[];
+  graph_hops: number[];
+  test_fraction: number;
+  with_llm: boolean;
+  aggregate_summary: Record<string, { scope: "full_test" | "matched_cases"; dataset: string; max_hops: number; method: string; metrics: Record<string, { n_seeds: number; mean: number; sample_sd: number | null; ci95_low: number | null; ci95_high: number | null; interval_method: string }> }>;
+  runs: Array<{
+    dataset: string;
+    seed: number;
+    max_hops: number;
+    status: string;
+    metadata: Record<string, unknown>;
+    method_summary: Record<string, BenchmarkMethodMetrics>;
+    matched_case_summary: Record<string, BenchmarkMethodMetrics>;
+    case_count: number;
+    artifacts: Record<string, string>;
+  }>;
+  failures: Array<{ dataset: string; seed: number; max_hops: number; error: string }>;
 }

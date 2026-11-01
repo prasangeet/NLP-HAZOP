@@ -7,6 +7,8 @@ from app.domain.entities.hazop_record import (
     RelationshipOrigin,
 )
 from scripts.run_benchmark import (
+    _mean_fold_summaries,
+    grouped_kfold_split,
     score_predictions,
     stable_split,
     strip_target_labels,
@@ -51,6 +53,81 @@ def test_split_is_scenario_disjoint_and_deterministic() -> None:
         {r.scenario_id for r in test_a}
     )
     assert len(test_a) == 4
+
+
+def test_grouped_kfold_is_deterministic_disjoint_and_exhaustive() -> None:
+    records = tuple(
+        record
+        for index in range(12)
+        for record in (
+            make_record(f"S-{index:03}"),
+            make_record(f"S-{index:03}"),
+        )
+    )
+    folds_a = grouped_kfold_split(records, n_splits=4, seed=42)
+    folds_b = grouped_kfold_split(records, n_splits=4, seed=42)
+
+    assert [
+        [r.scenario_id for r in test] for _, test in folds_a
+    ] == [
+        [r.scenario_id for r in test] for _, test in folds_b
+    ]
+
+    held_out_ids = []
+    for train, test in folds_a:
+        train_ids = {record.scenario_id for record in train}
+        test_ids = {record.scenario_id for record in test}
+        assert train_ids.isdisjoint(test_ids)
+        assert len(test_ids) == 3
+        held_out_ids.extend(test_ids)
+
+    assert sorted(held_out_ids) == [f"S-{index:03}" for index in range(12)]
+
+
+def test_grouped_kfold_rejects_more_folds_than_scenarios() -> None:
+    records = (make_record("S-001"),)
+    try:
+        grouped_kfold_split(records, n_splits=2, seed=42)
+    except ValueError as exc:
+        assert "unique scenarios" in str(exc)
+    else:
+        raise AssertionError("Expected grouped_kfold_split to reject one scenario")
+
+
+def test_fold_summary_uses_unweighted_means_and_preserves_denominators() -> None:
+    folds = [
+        {
+            "method_summary": {
+                "graph": {
+                    "status": "evaluated",
+                    "n_evaluated": 2,
+                    "n_total_test_cases": 2,
+                    "micro_f1": 0.2,
+                    "coverage": 0.5,
+                }
+            }
+        },
+        {
+            "method_summary": {
+                "graph": {
+                    "status": "evaluated",
+                    "n_evaluated": 4,
+                    "n_total_test_cases": 4,
+                    "micro_f1": 0.8,
+                    "coverage": 1.0,
+                }
+            }
+        },
+    ]
+
+    summary = _mean_fold_summaries(folds, "method_summary")["graph"]
+
+    assert summary["micro_f1"] == 0.5
+    assert summary["coverage"] == 0.75
+    assert summary["n_folds_evaluated"] == 2
+    assert summary["n_evaluated_cases_sum"] == 6
+    assert summary["n_total_test_cases_sum"] == 6
+    assert "not independent" in summary["aggregation_note"]
 
 
 def test_held_out_target_is_stripped_of_all_answer_fields() -> None:
