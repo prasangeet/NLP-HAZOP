@@ -56,6 +56,28 @@ These values are a historical baseline to reproduce, not proof of the research h
 9. **Uncertainty:** Current test sets are small. Add repeated scenario-level seeds or grouped cross-validation and report per-seed results plus confidence intervals where appropriate.
 10. **No causal overclaim:** Separate silver-label retrieval performance from expert-adjudicated causal correctness.
 
+### Scenario-grouped cross-validation foundation
+
+The benchmark module now provides `grouped_kfold_split(records, n_splits, seed)`.
+It assigns unique `scenario_id` groups to deterministic folds, returns one
+training/held-out pair per fold, and ensures every scenario appears in exactly
+one held-out fold. All rows belonging to a scenario remain together.
+
+This is currently a tested split primitive, **not yet an end-to-end
+cross-validation experiment**. The existing CLI, API suite, and frontend still
+execute the established single holdout per seed. Do not describe current
+benchmark-suite results as cross-validation results.
+
+Before using grouped folds for reported model metrics, integrate fold execution
+so that each fold rebuilds its retrieval/graph index from that fold's training
+records, strips held-out target labels and graph edges, and evaluates all
+methods on identical held-out case IDs. LLM call caps must be applied within
+each fold and reported with matched-case denominators. Report fold-level
+metrics and the number of scenarios and queries per fold. Because folds share
+overlapping training data and the current datasets are small, fold scores are
+not independent observations; confidence intervals across folds must be
+labelled descriptive rather than treated as independent-sample uncertainty.
+
 ## 4. Metrics
 
 For set-valued consequence predictions, compute micro and macro precision, recall, and F1 against the declared target set. Also report:
