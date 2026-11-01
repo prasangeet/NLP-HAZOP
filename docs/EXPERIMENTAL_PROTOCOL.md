@@ -199,6 +199,33 @@ variant is intentionally not included as an ablation condition. Prompt-only
 LLM remains a separate scenario-context control, not a component of the
 retrieval pipeline.
 
+### LLM-first recovery path (protocol 1.2)
+
+The hybrid recovery path now has two explicit LLM modes:
+
+1. When retrieval or graph traversal supplies candidates, the evidence-grounded
+   LLM adjudicator selects one supported candidate or abstains. It cannot
+   invent or rewrite an evidence edge.
+2. When neither retrieval nor graph traversal supplies a candidate, the
+   hybrid strategy invokes a generative LLM fallback with the scenario context
+   and available graph neighborhood. This path can propose a new endpoint;
+   its origin is `model_inferred`, and it is not presented as a source-backed
+   fact. The prompt-only benchmark condition remains scenario-context-only,
+   while the hybrid fallback may additionally receive graph context.
+
+All generated proposals are checked against the requested predicate, known
+endpoint direction, dataset scope, ontology endpoint types, and the selected
+HAZOP record's structured fields. A candidate that conflicts with the record
+is rejected. These deterministic checks establish structural consistency
+only; they do not establish physical plausibility, causal truth, or safety
+approval. The proposal retains a review-required warning.
+
+The workbench enables LLM evaluation by default. If LLM evaluation is requested
+without a configured Groq API key, the API returns an explicit service error
+rather than silently presenting the LLM methods as evaluated. The benchmark
+records the model, call cap, and a maximum of two LLM calls per matched case
+(one prompt-only call and one hybrid call).
+
 This is a first component comparison, not a complete factorial ablation.
 Grouped cross-validation, expert-adjudication workflow, and a formal audit of
 all possible feature/ontology leakage remain pending. A suite button does not
