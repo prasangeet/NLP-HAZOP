@@ -128,13 +128,12 @@ class HazopSafetyValidator:
 
         if missing_endpoint == "object":
             aligned = relation.subject.strip().casefold() == known_endpoint.strip().casefold()
-            missing_value = relation.object
+            # The missing endpoint is the relation object.
         elif missing_endpoint == "subject":
             aligned = relation.object.strip().casefold() == known_endpoint.strip().casefold()
-            missing_value = relation.subject
+            # The missing endpoint is the relation subject.
         else:
             aligned = False
-            missing_value = ""
 
         if not aligned:
             errors.append(ValidationIssue(
