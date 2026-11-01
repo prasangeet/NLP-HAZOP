@@ -54,6 +54,12 @@ RELATION_SCHEMA: dict[str, RelationSpec] = {
         frozenset({EntityType.DEVIATION}),
         frozenset({EntityType.CONSEQUENCE}),
     ),
+    # Benchmark output label: a cause and consequence co-listed in one
+    # reconstructed worksheet row. This is deliberately not a causal edge.
+    "co_listed_with_consequence": RelationSpec(
+        frozenset({EntityType.CAUSE}),
+        frozenset({EntityType.CONSEQUENCE}),
+    ),
     "mitigated_by": RelationSpec(
         frozenset({
             EntityType.DEVIATION,
@@ -96,6 +102,8 @@ def infer_entity_types(
         return EntityType.EFFECT, EntityType.CONSEQUENCE
     if normalized == "co_occurs_with_consequence":
         return EntityType.DEVIATION, EntityType.CONSEQUENCE
+    if normalized == "co_listed_with_consequence":
+        return EntityType.CAUSE, EntityType.CONSEQUENCE
     if normalized == "mitigated_by":
         return EntityType.CONSEQUENCE, EntityType.SAFEGUARD
     if normalized == "recommends_action":
