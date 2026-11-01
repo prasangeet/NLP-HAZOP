@@ -1,4 +1,4 @@
-"""Prompt-only LLM baseline without retrieval or graph evidence."""
+"""LLM endpoint generation from scenario context, optionally graph-grounded."""
 
 from __future__ import annotations
 
@@ -86,7 +86,9 @@ class PromptOnlyReasoner:
         """Return a model-inferred candidate or abstain."""
 
         dataset_id = getattr(context, "dataset_id", "default")
-        if not context.scenario_context.strip():
+        if not context.scenario_context.strip() and not (
+            self._include_graph_context and context.graph_context
+        ):
             return self._abstain(
                 context.scenario_id,
                 AbstentionReason.NO_EVIDENCE,
