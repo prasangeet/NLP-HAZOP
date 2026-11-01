@@ -54,7 +54,7 @@ from app.infrastructure.graph.in_memory_graph_repository import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-PROTOCOL_VERSION = "1.0"
+PROTOCOL_VERSION = "1.1"
 DATASET_PATHS = {
     "t301-reconstructed": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
     "t301-synthetic": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
@@ -564,7 +564,7 @@ def run(
     for case in cases:
         request = RecoveryRequest(
             scenario_id=case.scenario_id,
-            predicate="causes",
+            predicate="co_listed_with_consequence",
             known_endpoint=case.known_endpoint,
             missing_endpoint=MissingEndpoint.OBJECT,
             limit=args.top_k,
