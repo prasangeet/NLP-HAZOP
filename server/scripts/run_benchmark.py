@@ -493,10 +493,17 @@ def build_matched_case_summary(
     return summaries
 
 
-def run(args: argparse.Namespace) -> dict[str, Any]:
+def run(
+    args: argparse.Namespace,
+    *,
+    records_override: tuple[HazopRecord, ...] | None = None,
+    split_override: tuple[
+        tuple[HazopRecord, ...], tuple[HazopRecord, ...]
+    ] | None = None,
+) -> dict[str, Any]:
     selected_path = Path(args.dataset_path).resolve() if args.dataset_path else None
-    records = load_dataset(args.dataset, selected_path)
-    train, test = stable_split(
+    records = records_override or load_dataset(args.dataset, selected_path)
+    train, test = split_override or stable_split(
         records,
         test_fraction=args.test_fraction,
         seed=args.seed,
@@ -791,6 +798,114 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def _mean_fold_summaries(
+    fold_results: list[dict[str, Any]],
+    summary_key: str,
+) -> dict[str, dict[str, Any]]:
+    """Average fold metrics descriptively; folds are not independent samples."""
+    metric_names = (
+        "micro_precision", "micro_recall", "micro_f1", "macro_f1",
+        "coverage", "abstention_rate", "mean_latency_ms",
+    )
+    methods = {
+        method
+        for result in fold_results
+        for method in result.get(summary_key, {})
+    }
+    summaries: dict[str, dict[str, Any]] = {}
+    for method in sorted(methods):
+        fold_metrics = [
+            result.get(summary_key, {}).get(method, {})
+            for result in fold_results
+        ]
+        evaluated = [
+            item for item in fold_metrics
+            if item.get("status") == "evaluated"
+        ]
+        summary: dict[str, Any] = {
+            "status": "evaluated" if evaluated else "not_evaluated",
+            "n_folds_total": len(fold_results),
+            "n_folds_evaluated": len(evaluated),
+            "n_evaluated_cases_sum": sum(
+                int(item.get("n_evaluated", 0)) for item in evaluated
+            ),
+        }
+        for metric in metric_names:
+            values = [
+                float(item[metric])
+                for item in evaluated
+                if isinstance(item.get(metric), (int, float))
+            ]
+            summary[metric] = sum(values) / len(values) if values else None
+            summary[f"{metric}_fold_values"] = values
+        summary["aggregation_note"] = (
+            "Unweighted arithmetic mean of fold metrics; descriptive only. "
+            "Fold training sets overlap and folds are not independent samples."
+        )
+        summaries[method] = summary
+    return summaries
+
+
+def run_grouped_cross_validation(args: argparse.Namespace) -> dict[str, Any]:
+    """Execute the benchmark once per scenario-grouped held-out fold."""
+    selected_path = Path(args.dataset_path).resolve() if args.dataset_path else None
+    records = load_dataset(args.dataset, selected_path)
+    folds = grouped_kfold_split(
+        records,
+        n_splits=args.cross_validation_folds,
+        seed=args.seed,
+    )
+    fold_results: list[dict[str, Any]] = []
+    all_cases: list[dict[str, Any]] = []
+    for fold_index, split in enumerate(folds, start=1):
+        result = run(
+            args,
+            records_override=records,
+            split_override=split,
+        )
+        fold_results.append(result)
+        for case in result["cases"]:
+            all_cases.append({"fold": fold_index, **case})
+
+    first_metadata = fold_results[0]["metadata"]
+    metadata = {
+        **first_metadata,
+        "evaluation_protocol": "scenario_grouped_k_fold_cross_validation",
+        "cross_validation_folds": len(folds),
+        "fold_scenario_counts": [
+            {
+                "fold": index,
+                "train_scenarios": result["metadata"]["train_scenarios"],
+                "test_scenarios": result["metadata"]["test_scenarios"],
+                "test_queries": result["metadata"]["test_queries"],
+            }
+            for index, result in enumerate(fold_results, start=1)
+        ],
+        "seed": args.seed,
+        "fold_aggregation": (
+            "Unweighted arithmetic mean of fold-level metrics; descriptive "
+            "only because fold training sets overlap."
+        ),
+    }
+    return {
+        "metadata": metadata,
+        "method_summary": _mean_fold_summaries(fold_results, "method_summary"),
+        "matched_case_summary": _mean_fold_summaries(
+            fold_results, "matched_case_summary"
+        ),
+        "fold_results": [
+            {
+                "fold": index,
+                "metadata": result["metadata"],
+                "method_summary": result["method_summary"],
+                "matched_case_summary": result["matched_case_summary"],
+            }
+            for index, result in enumerate(fold_results, start=1)
+        ],
+        "cases": all_cases,
+    }
+
+
 def write_outputs(
     result: dict[str, Any],
     output_dir: Path,
@@ -969,6 +1084,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument("--max-hops", type=int, default=4)
+    parser.add_argument(
+        "--cross-validation-folds", type=int, default=0,
+        help="Run scenario-grouped K-fold cross-validation instead of one holdout; 0 disables it.",
+    )
     parser.add_argument("--limit-cases", type=int, default=None)
     parser.add_argument("--with-llm", action="store_true")
     parser.add_argument("--max-llm-cases", type=int, default=15)
@@ -982,12 +1101,18 @@ def parse_args() -> argparse.Namespace:
         parser.error("--top-k must be >= 1")
     if args.max_hops < 2:
         parser.error("--max-hops must be >= 2")
+    if args.cross_validation_folds == 1 or args.cross_validation_folds < 0:
+        parser.error("--cross-validation-folds must be 0 or >= 2")
     return args
 
 
 def main() -> None:
     args = parse_args()
-    result = run(args)
+    result = (
+        run_grouped_cross_validation(args)
+        if args.cross_validation_folds >= 2
+        else run(args)
+    )
     output_dir = (
         Path(args.output_dir).resolve()
         if args.output_dir
