@@ -31,6 +31,7 @@ BUILTIN_DATASETS = {
 
 
 def _dataset_path(dataset_id: str) -> Path | None:
+    """Resolve a built-in track or a persisted uploaded CSV by safe dataset ID."""
     if dataset_id in BUILTIN_DATASETS:
         return None
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,79}", dataset_id):
