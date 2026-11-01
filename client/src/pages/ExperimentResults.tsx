@@ -28,8 +28,10 @@ function saveText(filename: string, content: string, type: string) {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filename;
+  document.body.appendChild(anchor);
   anchor.click();
-  URL.revokeObjectURL(url);
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default function ExperimentResults({ runId, onOpenRun }: Props) {
@@ -38,6 +40,7 @@ export default function ExperimentResults({ runId, onOpenRun }: Props) {
   const [details, setDetails] = useState<Array<{ key: string; dataset: string; seed: number; hops: number; data: StoredResults }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reportDownloading, setReportDownloading] = useState(false);
 
   const load = async () => {
     setLoading(true); setError(null);
@@ -59,6 +62,21 @@ export default function ExperimentResults({ runId, onOpenRun }: Props) {
 
   useEffect(() => { void load(); }, [runId]);
 
+  const downloadFullReport = async () => {
+    if (!selected) return;
+    setReportDownloading(true);
+    setError(null);
+    try {
+      const report = await api.getBenchmarkFullReport(selected.run_id);
+      if (!report.content.trim()) throw new Error("The server returned an empty full report.");
+      saveText(report.filename || "nlp-hazop-" + selected.run_id + "-full-report.md", report.content, "text/markdown;charset=utf-8");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not download the full experiment report.");
+    } finally {
+      setReportDownloading(false);
+    }
+  };
+
   const aggregateRows = useMemo(() => selected ? Object.values(selected.aggregate_summary) : [], [selected]);
 
   return (
@@ -79,7 +97,7 @@ export default function ExperimentResults({ runId, onOpenRun }: Props) {
           <div className="min-w-0 space-y-4">
             {!selected ? <Card><CardContent className="flex min-h-48 flex-col items-center justify-center gap-2 text-center"><FlaskConical className="size-7 text-muted-foreground" /><p className="text-sm font-medium">Select an experiment run</p><p className="text-xs text-muted-foreground">Choose a saved run to inspect its metrics, folds, predictions, and artifacts.</p></CardContent></Card> : <>
               <Card>
-                <CardHeader><div className="flex flex-wrap items-center justify-between gap-2"><div><CardTitle className="break-all text-sm">{selected.run_id}</CardTitle><CardDescription>{new Date(selected.created_at).toLocaleString()} · {selected.runs.length} completed · {selected.failures.length} failed</CardDescription></div><Badge variant="outline">{selected.label_status}</Badge></div></CardHeader>
+                <CardHeader><div className="flex flex-wrap items-center justify-between gap-2"><div className="min-w-0"><CardTitle className="break-all text-sm">{selected.run_id}</CardTitle><CardDescription>{new Date(selected.created_at).toLocaleString()} · {selected.runs.length} completed · {selected.failures.length} failed</CardDescription></div><div className="flex flex-wrap items-center gap-2"><Button size="sm" onClick={() => void downloadFullReport()} disabled={reportDownloading}><Download className={reportDownloading ? "size-3.5 animate-pulse" : "size-3.5"} />{reportDownloading ? "Preparing report…" : "Download full report"}</Button><Badge variant="outline">{selected.label_status}</Badge></div></div></CardHeader>
                 <CardContent className="space-y-2 text-xs"><p>{selected.label_warning}</p><p className="text-muted-foreground">Datasets: {selected.datasets.join(", ")} · Seeds: {selected.seeds.join(", ")} · Graph hops: {selected.graph_hops.join(", ")}</p></CardContent>
               </Card>
               <Card><CardHeader><CardTitle className="text-sm">Across-seed metrics</CardTitle><CardDescription>Full-test and matched-case summaries remain separate.</CardDescription></CardHeader><CardContent className="overflow-x-auto"><table className="w-full min-w-[650px] text-left text-xs"><thead className="bg-muted/50"><tr>{["Scope","Dataset","Hops","Method","Seeds","Mean F1","95% CI","Coverage"].map((h) => <th key={h} className="p-2 font-medium">{h}</th>)}</tr></thead><tbody>{aggregateRows.map((item) => { const f1=item.metrics.micro_f1; const coverage=item.metrics.coverage; return <tr key={item.scope+item.dataset+item.max_hops+item.method} className="border-t border-border"><td className="p-2">{item.scope === "matched_cases" ? "Matched" : "Full test"}</td><td className="p-2">{item.dataset}</td><td className="p-2">{item.max_hops}</td><td className="p-2">{item.method}</td><td className="p-2">{f1?.n_seeds ?? 0}</td><td className="p-2">{f1 ? metric(f1.mean) : "—"}</td><td className="p-2">{f1?.ci95_low == null || f1.ci95_high == null ? "Not estimable" : metric(f1.ci95_low)+"–"+metric(f1.ci95_high)}</td><td className="p-2">{coverage ? metric(coverage.mean) : "—"}</td></tr>; })}</tbody></table></CardContent></Card>
