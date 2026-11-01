@@ -309,3 +309,61 @@ def test_cause_consequence_path_respects_hop_limit() -> None:
     )
 
     assert result.status == ReasoningStatus.ABSTAINED
+
+
+
+def test_reason_all_returns_set_of_consequences_for_benchmark() -> None:
+    edges = (
+        _typed_edge(
+            "Blocked inflow line",
+            "causes_deviation",
+            "Low level",
+            EntityType.CAUSE,
+            EntityType.DEVIATION,
+            "row-1-cause",
+        ),
+        _typed_edge(
+            "Low level",
+            "leads_to_consequence",
+            "Pump running dry",
+            EntityType.DEVIATION,
+            EntityType.CONSEQUENCE,
+            "row-1-consequence",
+        ),
+        _typed_edge(
+            "Low level",
+            "leads_to_consequence",
+            "Production downtime",
+            EntityType.DEVIATION,
+            EntityType.CONSEQUENCE,
+            "row-2-consequence",
+        ),
+        _typed_edge(
+            "Blocked inflow line",
+            "causes_deviation",
+            "High pressure",
+            EntityType.CAUSE,
+            EntityType.DEVIATION,
+            "row-3-cause",
+        ),
+        _typed_edge(
+            "High pressure",
+            "leads_to_consequence",
+            "Equipment rupture",
+            EntityType.DEVIATION,
+            EntityType.CONSEQUENCE,
+            "row-3-consequence",
+        ),
+    )
+
+    reasoner = GraphReasoner(max_hops=2)
+    relations = reasoner.reason_all(_cause_consequence_context(*edges))
+
+    assert {relation.object for relation in relations} == {
+        "Pump running dry",
+        "Production downtime",
+    }
+    assert all(
+        relation.origin == RelationshipOrigin.GRAPH_INFERRED
+        for relation in relations
+    )
