@@ -19,9 +19,19 @@ export default function Datasets() {
   const [loading, setLoading] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);\n  const [viewingDataset, setViewingDataset] = useState<Dataset | null>(null);\n  const [viewingScenarios, setViewingScenarios] = useState<import("@/lib/api").Scenario[]>([]);\n  const [viewLoading, setViewLoading] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [viewingDataset, setViewingDataset] = useState<Dataset | null>(null);
+  const [viewingScenarios, setViewingScenarios] = useState<import("@/lib/api").Scenario[]>([]);
+  const [viewLoading, setViewLoading] = useState(false);
   const activeDatasetId = useWorkspaceStore((state) => state.activeDatasetId);
-  const setActiveDataset = useWorkspaceStore((state) => state.setActiveDataset);\n\n  const viewDataset = async (dataset: Dataset) => {\n    setViewingDataset(dataset); setViewingScenarios([]); setViewLoading(true);\n    try { const result = await api.listScenarios(dataset.dataset_id); setViewingScenarios(result.scenarios); }\n    catch (err) { setError(err instanceof Error ? err.message : "Could not load dataset records."); }\n    finally { setViewLoading(false); }\n  };
+  const setActiveDataset = useWorkspaceStore((state) => state.setActiveDataset);
+
+  const viewDataset = async (dataset: Dataset) => {
+    setViewingDataset(dataset); setViewingScenarios([]); setViewLoading(true);
+    try { const result = await api.listScenarios(dataset.dataset_id); setViewingScenarios(result.scenarios); }
+    catch (err) { setError(err instanceof Error ? err.message : "Could not load dataset records."); }
+    finally { setViewLoading(false); }
+  };
 
   const loadDatasets = useCallback(async () => {
     setLoading(true);
