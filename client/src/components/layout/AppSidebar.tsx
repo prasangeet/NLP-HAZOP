@@ -4,7 +4,8 @@ import {
   FileSearch,
   GitBranch,
   Workflow,
-  FlaskConical,\n  ChartNoAxesCombined,
+  FlaskConical,
+  ChartNoAxesCombined,
 } from "lucide-react";
 
 import {
@@ -27,7 +28,8 @@ export type PageId =
   | "report-extraction"
   | "knowledge-graph"
   | "relationship-recovery"
-  | "experiments"\n  | "results";
+  | "experiments"
+  | "results";
 
 interface AppSidebarProps {
   activePage: PageId;
@@ -44,7 +46,8 @@ const navigation = [
     page: "relationship-recovery",
     icon: Workflow,
   },
-  { label: "Experiments", page: "experiments", icon: FlaskConical },\n  { label: "Research results", page: "results", icon: ChartNoAxesCombined },
+  { label: "Experiments", page: "experiments", icon: FlaskConical },
+  { label: "Research results", page: "results", icon: ChartNoAxesCombined },
 ] as const;
 
 export default function AppSidebar({
