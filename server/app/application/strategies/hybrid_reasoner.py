@@ -6,7 +6,7 @@ from dataclasses import replace
 
 from app.application.strategies.retrieval.models import RetrievalScope
 from app.application.use_cases.build_evidence_context import EvidenceItem
-from app.domain.entities.hazop_record import RelationshipOrigin
+from app.domain.entities.hazop_record import CausalRelation, RelationshipOrigin
 from app.domain.reasoning.models import (
     ReasoningResult,
     ReasoningStatus,
@@ -31,6 +31,60 @@ class HybridReasoner:
         self._graph_reasoner = graph_reasoner
         self._llm_reasoner = llm_reasoner
         self._fallback_reasoner = fallback_reasoner
+
+    def reason_all(self, context) -> tuple[CausalRelation, ...]:
+        """Adjudicate multiple candidates for row-level association recovery.
+
+        This set-valued path is separate from reason(), which remains the
+        conservative single-link reasoning contract.
+        """
+        graph_relations = ()
+        graph_reason_all = getattr(self._graph_reasoner, "reason_all", None)
+        if callable(graph_reason_all):
+            graph_relations = graph_reason_all(context)
+
+        candidates = list(context.evidence_items)
+        for relation in graph_relations:
+            candidates.append(EvidenceItem(
+                subject=relation.subject, predicate=relation.predicate,
+                object=relation.object, origin=RelationshipOrigin.GRAPH_INFERRED,
+                evidence=relation.evidence, confidence=relation.confidence,
+                source_id=relation.source_id,
+                relevance_note=(
+                    "Graph-composed row-association hypothesis; not a "
+                    "direct source-verified causal edge."
+                ),
+                scenario_id=context.scenario_id,
+                dataset_id=getattr(context, "dataset_id", "default"),
+                is_expert_verified=relation.is_expert_verified,
+                scope=RetrievalScope.SCENARIO_LOCAL, relevance_score=None,
+                subject_type=relation.subject_type,
+                object_type=relation.object_type,
+                source_location=getattr(relation, "source_location", None),
+            ))
+
+        dataset_id = getattr(context, "dataset_id", "default")
+        known = context.known_endpoint.strip().casefold()
+        compatible = tuple(
+            item for item in candidates
+            if getattr(item, "dataset_id", "default") == dataset_id
+            and item.predicate.strip().casefold() == context.predicate.strip().casefold()
+            and bool(item.evidence.strip())
+            and (
+                item.subject.strip().casefold() == known
+                if context.missing_endpoint == "object"
+                else item.object.strip().casefold() == known
+            )
+            and (item.origin != RelationshipOrigin.EXPERT
+                 or getattr(item, "is_expert_verified", False))
+        )
+        if not compatible:
+            return ()
+        adjudication_context = replace(context, evidence_items=compatible)
+        reason_all = getattr(self._llm_reasoner, "reason_all", None)
+        if not callable(reason_all):
+            return ()
+        return reason_all(adjudication_context)
 
     def reason(self, context) -> ReasoningResult:
         graph_context = replace(context, evidence_items=())

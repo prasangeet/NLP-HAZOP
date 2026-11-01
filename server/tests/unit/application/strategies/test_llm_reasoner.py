@@ -1,5 +1,7 @@
 """Unit tests for the LLM missing-link reasoning strategy."""
 
+from dataclasses import replace
+
 from app.application.strategies.llm_reasoner import LLMDecision, LLMReasoner
 from app.application.use_cases.build_evidence_context import (
     EvidenceContext,
@@ -7,6 +9,7 @@ from app.application.use_cases.build_evidence_context import (
 )
 from app.application.use_cases.recover_missing_link import RecoveryStatus
 from app.domain.entities.hazop_record import RelationshipOrigin
+from app.domain.ontology.schema import EntityType
 from app.domain.reasoning.models import AbstentionReason, ReasoningStatus
 
 
@@ -32,6 +35,8 @@ def make_item(
     origin: RelationshipOrigin = RelationshipOrigin.SOURCE,
     evidence: str = "The source documents this relationship.",
     source_id: str = "paper-row-12",
+    subject_type: EntityType = EntityType.CONCEPT,
+    object_type: EntityType = EntityType.CONCEPT,
 ) -> EvidenceItem:
     return EvidenceItem(
         subject=subject,
@@ -42,6 +47,8 @@ def make_item(
         confidence=0.9,
         source_id=source_id,
         relevance_note="Test evidence.",
+        subject_type=subject_type,
+        object_type=object_type,
     )
 
 
@@ -188,5 +195,86 @@ def test_respects_explicit_model_abstention() -> None:
 
     result = reasoner.reason(make_context(make_item()))
 
+    assert result.status == ReasoningStatus.ABSTAINED
+    assert result.abstention_reason == AbstentionReason.AMBIGUOUS_EVIDENCE
+
+
+def test_reason_all_recovers_multiple_row_associations_with_provenance() -> None:
+    reasoner, fake_llm = make_reasoner(
+        LLMDecision(
+            decision="propose",
+            evidence_indices=[0, 1],
+            confidence=0.91,
+            reason="Both endpoints are explicitly represented in the evidence.",
+        )
+    )
+    first = make_item(
+        predicate="co_listed_with_consequence",
+        object_="Overfilling",
+        source_id="row-1",
+        subject_type=EntityType.CAUSE,
+        object_type=EntityType.CONSEQUENCE,
+    )
+    second = make_item(
+        predicate="co_listed_with_consequence",
+        object_="Loss of containment",
+        source_id="row-2",
+        subject_type=EntityType.CAUSE,
+        object_type=EntityType.CONSEQUENCE,
+    )
+    context = replace(
+        make_context(first, second),
+        predicate="co_listed_with_consequence",
+    )
+
+    relations = reasoner.reason_all(context)
+
+    assert fake_llm.called
+    assert fake_llm.prompt is not None
+    assert "not determining physical causation" in fake_llm.prompt
+    assert [relation.object for relation in relations] == [
+        "Overfilling", "Loss of containment"
+    ]
+    assert [relation.source_id for relation in relations] == ["row-1", "row-2"]
+    assert all(
+        relation.origin == RelationshipOrigin.SOURCE for relation in relations
+    )
+
+
+def test_reason_all_is_restricted_to_row_association_predicate() -> None:
+    reasoner, fake_llm = make_reasoner(
+        LLMDecision(decision="propose", evidence_indices=[0], reason="Evidence."),
+    )
+    result = reasoner.reason_all(make_context(make_item()))
+    assert result == ()
+    assert not fake_llm.called
+
+
+def test_reason_all_rejects_wrong_ontology_types() -> None:
+    reasoner, _ = make_reasoner(
+        LLMDecision(decision="propose", evidence_indices=[0], reason="Evidence."),
+    )
+    item = make_item(
+        predicate="co_listed_with_consequence",
+        subject_type=EntityType.CAUSE,
+        object_type=EntityType.EFFECT,
+    )
+    context = replace(
+        make_context(item),
+        predicate="co_listed_with_consequence",
+    )
+    assert reasoner.reason_all(context) == ()
+
+
+def test_reason_remains_single_candidate_and_abstains_on_multiple_indices() -> None:
+    reasoner, _ = make_reasoner(
+        LLMDecision(
+            decision="propose", evidence_indices=[0, 1],
+            reason="Two endpoints are present.",
+        )
+    )
+    result = reasoner.reason(
+        make_context(make_item(), make_item(object_="Tank overflow"))
+    )
     assert result.status == ReasoningStatus.ABSTAINED
     assert result.abstention_reason == AbstentionReason.AMBIGUOUS_EVIDENCE
