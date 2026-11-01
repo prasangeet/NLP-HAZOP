@@ -110,7 +110,8 @@ export default function Experiments({ onOpenResults }: { onOpenResults: (runId: 
   const [benchmarkRunning, setBenchmarkRunning] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
   const [benchmarkResult, setBenchmarkResult] = useState<BenchmarkRun | null>(null);
-  const [suiteDatasets, setSuiteDatasets] = useState<Array<"t301-reconstructed" | "t301-synthetic" | "dwsim-synthetic">>(["t301-reconstructed", "t301-synthetic", "dwsim-synthetic"]);
+  const [suiteDatasets, setSuiteDatasets] = useState<string[]>(["t301-reconstructed"]);
+  const [benchmarkDatasets, setBenchmarkDatasets] = useState<Array<{ dataset_id: string; name: string; source: "built-in" | "uploaded"; record_count?: number }>>([]);
   const [suiteSeeds, setSuiteSeeds] = useState("42, 7, 21");
   const [suiteGraphHops, setSuiteGraphHops] = useState("2, 4");
   const [suiteRunning, setSuiteRunning] = useState(false);
@@ -126,6 +127,16 @@ export default function Experiments({ onOpenResults }: { onOpenResults: (runId: 
       })
       .catch(() => {
         // History is optional; the workbench remains usable when no runs exist.
+      });
+    api.listBenchmarkDatasets()
+      .then((response) => {
+        if (active) {
+          setBenchmarkDatasets(response.datasets);
+          setSuiteDatasets((current) => current.length ? current : response.datasets.map((item) => item.dataset_id));
+        }
+      })
+      .catch(() => {
+        // Keep the runner usable for existing built-in datasets if registry lookup fails.
       });
     return () => {
       active = false;
@@ -582,17 +593,14 @@ export default function Experiments({ onOpenResults }: { onOpenResults: (runId: 
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-3">
-            {([
-              ["t301-reconstructed", "T-301 reconstructed"],
-              ["t301-synthetic", "T-301 synthetic"],
-              ["dwsim-synthetic", "DWSIM synthetic"],
-            ] as const).map(([value, label]) => (
-              <label key={value} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={suiteDatasets.includes(value)} disabled={suiteRunning}
-                  onChange={(event) => setSuiteDatasets((current) => event.target.checked ? [...current, value] : current.filter((item) => item !== value))} />
-                {label}
+            {benchmarkDatasets.map((dataset) => (
+              <label key={dataset.dataset_id} className="flex items-start gap-2 border border-border p-3 text-sm">
+                <input type="checkbox" checked={suiteDatasets.includes(dataset.dataset_id)} disabled={suiteRunning}
+                  onChange={(event) => setSuiteDatasets((current) => event.target.checked ? [...current, dataset.dataset_id] : current.filter((item) => item !== dataset.dataset_id))} />
+                <span><span className="block font-medium">{dataset.name}</span><span className="text-[10px] text-muted-foreground">{dataset.dataset_id} · {dataset.source}{dataset.record_count != null ? " · " + dataset.record_count + " scenarios" : ""}</span></span>
               </label>
             ))}
+            {benchmarkDatasets.length === 0 && <p className="text-xs text-muted-foreground">No benchmark datasets found. Import a CSV from the Datasets page and refresh this page.</p>}
           </div>
           <label className="block space-y-1 text-xs"><span className="text-muted-foreground">Random seeds (comma-separated; up to 6)</span>
             <input value={suiteSeeds} onChange={(event) => setSuiteSeeds(event.target.value)} disabled={suiteRunning} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" />
