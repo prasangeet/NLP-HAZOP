@@ -85,6 +85,7 @@ class HybridReasoner:
         if not callable(reason_all):
             return ()
         return reason_all(adjudication_context)
+
     def reason(self, context) -> ReasoningResult:
         graph_context = replace(context, evidence_items=())
         graph_result = self._graph_reasoner.reason(graph_context)
