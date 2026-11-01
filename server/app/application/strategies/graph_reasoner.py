@@ -196,6 +196,89 @@ class GraphReasoner:
             confidence=None,
         )
 
+    def reason_all(
+        self,
+        context: EvidenceContextProtocol,
+    ) -> tuple[CausalRelation, ...]:
+        """Return all supported endpoints for a set-valued recovery query.
+
+        The interactive API keeps the conservative single-proposal behavior
+        of reason(). The benchmark uses this method because its target is a
+        set of co-listed consequences, not one uniquely determined node.
+        """
+        if not context.graph_context:
+            return ()
+
+        direction = context.missing_endpoint.strip().casefold()
+        if direction not in {"subject", "object"}:
+            return ()
+
+        paths = self._find_paths(context, direction)
+        if not paths:
+            return ()
+
+        requested_spec = RELATION_SCHEMA.get(context.predicate.strip().casefold())
+        if requested_spec is None:
+            return ()
+
+        by_endpoint: dict[tuple[EntityType, str], list[_Path]] = defaultdict(list)
+        for path in paths:
+            by_endpoint[path.endpoint].append(path)
+
+        dataset_id = getattr(context, "dataset_id", "default")
+        known = context.known_endpoint.strip()
+        relations: list[CausalRelation] = []
+        for endpoint_paths in by_endpoint.values():
+            selected = min(endpoint_paths, key=lambda path: len(path.edges))
+            known_type = selected.nodes[0][0]
+            endpoint_type = selected.nodes[-1][0]
+            subject, object_ = (
+                (selected.display_endpoint, known)
+                if direction == "subject"
+                else (known, selected.display_endpoint)
+            )
+            subject_type, object_type = (
+                (endpoint_type, known_type)
+                if direction == "subject"
+                else (known_type, endpoint_type)
+            )
+            if (
+                subject_type not in requested_spec.subject_types
+                or object_type not in requested_spec.object_types
+            ):
+                continue
+
+            path_evidence = self._format_path(selected)
+            path_source_ids = [
+                edge.source_id for edge in selected.edges if edge.source_id
+            ]
+            relations.append(
+                CausalRelation(
+                    subject=subject,
+                    predicate=context.predicate,
+                    object=object_,
+                    origin=RelationshipOrigin.GRAPH_INFERRED,
+                    evidence=(
+                        "Row-association candidate inferred by typed graph "
+                        f"composition. {path_evidence} The endpoints are "
+                        "co-listed through a reconstructed relationship "
+                        "path; this does not establish an independently "
+                        "validated causal assertion."
+                    ),
+                    confidence=None,
+                    source_id=(
+                        f"graph-path:{dataset_id}:" + "->".join(path_source_ids)
+                        if path_source_ids
+                        else None
+                    ),
+                    dataset_id=dataset_id,
+                    subject_type=subject_type,
+                    object_type=object_type,
+                )
+            )
+
+        return tuple(relations)
+
     def _direct_candidates(
         self,
         context: EvidenceContextProtocol,
@@ -417,6 +500,23 @@ class GraphReasoner:
                             "leads_to_consequence",
                             "leads_to",
                         ]
+                    if valid_chain and association_query:
+                        context_parts = [
+                            part.strip().casefold()
+                            for part in context.scenario_context.split(" | ")
+                            if part.strip()
+                        ]
+                        context_deviation = (
+                            context_parts[-1] if context_parts else ""
+                        )
+                        if context_deviation:
+                            deviation_nodes = {
+                                value
+                                for entity_type, value in next_path.nodes
+                                if entity_type == EntityType.DEVIATION
+                            }
+                            valid_chain = context_deviation in deviation_nodes
+
                     if valid_chain:
                         candidates.append(next_path)
 
