@@ -12,6 +12,7 @@ from app.application.strategies.retrieval.models import (
     RetrievedEvidence,
 )
 from app.domain.entities.hazop_record import CausalRelation
+from app.domain.ontology.schema import EntityType
 
 
 class MissingEndpoint(StrEnum):
@@ -128,10 +129,12 @@ class RecoveryResult:
     graph_context: tuple[RetrievedEvidence, ...] = ()
     scenario_context: str = ""
     dataset_id: str = "default"
+    scenario_entities: tuple[tuple[str, EntityType], ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "candidates", tuple(self.candidates))
         object.__setattr__(self, "graph_context", tuple(self.graph_context))
+        object.__setattr__(self, "scenario_entities", tuple(self.scenario_entities))
 
     @property
     def is_empty(self) -> bool:
@@ -146,6 +149,10 @@ class RecoveryResult:
             "is_empty": self.is_empty,
             "candidates": [candidate.to_dict() for candidate in self.candidates],
             "scenario_context": self.scenario_context,
+            "scenario_entities": [
+                {"value": value, "type": entity_type.value}
+                for value, entity_type in self.scenario_entities
+            ],
             "graph_context": [
                 {
                     "scenario_id": item.scenario_id,
@@ -226,4 +233,5 @@ class RecoverMissingLink:
             retrieval_scope=retrieval_result.scope,
             graph_context=retrieval_result.graph_context,
             scenario_context=retrieval_result.scenario_context,
+            scenario_entities=retrieval_result.scenario_entities,
         )
