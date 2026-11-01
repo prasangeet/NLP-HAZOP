@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from app.domain.entities.extracted_report import ExtractedReport, ExtractedScenario
-from app.domain.entities.hazop_record import CausalRelation, RelationshipOrigin
+from app.domain.entities.hazop_record import CausalRelation, HazopRecord, RelationshipOrigin
 from app.domain.ontology.schema import validate_relation_types
 
 @dataclass(frozen=True, slots=True)
@@ -94,3 +94,119 @@ class HazopSafetyValidator:
         if relation.origin in unverified_origins:
             warnings.append(ValidationIssue("requires_expert_review", f"Proposal origin is {relation.origin.value}; it must not be treated as expert-validated."))
         return ValidationReport(valid=not errors, errors=tuple(errors), warnings=tuple(warnings))
+
+
+    def validate_recovery_proposal(
+        self,
+        relation: CausalRelation,
+        *,
+        predicate: str,
+        known_endpoint: str,
+        missing_endpoint: str,
+        dataset_id: str,
+        record: HazopRecord,
+    ) -> ValidationReport:
+        """Validate a proposed edge against the query and its source row.
+
+        These are deterministic structural/record-consistency constraints,
+        not a physical-process simulation or expert safety assessment.
+        """
+        base = self.validate_proposal(relation)
+        errors = list(base.errors)
+        warnings = list(base.warnings)
+
+        if relation.predicate != predicate:
+            errors.append(ValidationIssue(
+                "query_predicate_mismatch",
+                "The proposed predicate differs from the requested predicate.",
+            ))
+        if relation.dataset_id != dataset_id or record.dataset_id != dataset_id:
+            errors.append(ValidationIssue(
+                "dataset_scope_mismatch",
+                "The proposal, query and source record must belong to the same dataset.",
+            ))
+
+        if missing_endpoint == "object":
+            aligned = relation.subject.strip().casefold() == known_endpoint.strip().casefold()
+            missing_value = relation.object
+        elif missing_endpoint == "subject":
+            aligned = relation.object.strip().casefold() == known_endpoint.strip().casefold()
+            missing_value = relation.subject
+        else:
+            aligned = False
+            missing_value = ""
+
+        if not aligned:
+            errors.append(ValidationIssue(
+                "query_endpoint_mismatch",
+                "The proposal does not preserve the known endpoint and requested direction.",
+            ))
+
+        folded = lambda values: {value.strip().casefold() for value in values if value.strip()}
+        candidate = missing_value.strip().casefold()
+        cause_values = folded(record.causes)
+        effect_values = folded(record.effects)
+        consequence_values = folded(record.consequences)
+        safeguard_values = folded(record.safeguards)
+        recommendation_values = folded(record.recommendations)
+        deviation = record.deviation.strip().casefold()
+        equipment = record.equipment.strip().casefold()
+        unit = record.plant_unit.strip().casefold()
+        parameter = record.parameter.strip().casefold()
+
+        expected = {
+            "causes_deviation": (
+                relation.subject.strip().casefold() in cause_values
+                and relation.object.strip().casefold() == deviation
+            ),
+            "leads_to": (
+                relation.subject.strip().casefold() == deviation
+                and relation.object.strip().casefold() in effect_values
+            ),
+            "leads_to_consequence": (
+                relation.subject.strip().casefold() in (effect_values | {deviation})
+                and relation.object.strip().casefold() in consequence_values
+            ),
+            "co_occurs_with_consequence": (
+                relation.subject.strip().casefold() == deviation
+                and relation.object.strip().casefold() in consequence_values
+            ),
+            "co_listed_with_consequence": (
+                relation.subject.strip().casefold() in cause_values
+                and relation.object.strip().casefold() in consequence_values
+            ),
+            "mitigated_by": (
+                relation.subject.strip().casefold() in (effect_values | consequence_values | {deviation})
+                and relation.object.strip().casefold() in safeguard_values
+            ),
+            "recommends_action": (
+                relation.subject.strip().casefold() in (consequence_values | {deviation})
+                and relation.object.strip().casefold() in recommendation_values
+            ),
+            "has_parameter": (
+                relation.subject.strip().casefold() == equipment
+                and bool(parameter)
+                and relation.object.strip().casefold() == parameter
+            ),
+            "located_in": (
+                relation.subject.strip().casefold() == equipment
+                and bool(unit)
+                and relation.object.strip().casefold() == unit
+            ),
+        }
+        if relation.predicate not in expected:
+            errors.append(ValidationIssue(
+                "unsupported_process_constraint",
+                f"No record-consistency constraint is defined for {relation.predicate!r}.",
+            ))
+        elif not expected[relation.predicate]:
+            errors.append(ValidationIssue(
+                "record_constraint_violation",
+                "The proposed endpoints do not match the corresponding fields in the selected HAZOP record.",
+            ))
+
+        return ValidationReport(
+            valid=not errors,
+            errors=tuple(errors),
+            warnings=tuple(warnings),
+        )
