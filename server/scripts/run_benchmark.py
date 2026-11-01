@@ -878,6 +878,7 @@ def run_grouped_cross_validation(args: argparse.Namespace) -> dict[str, Any]:
     metadata = {
         **first_metadata,
         "evaluation_protocol": "scenario_grouped_k_fold_cross_validation",
+        "method": "scenario-grouped K-fold; each held-out scenario has target labels and graph edges removed from the fold index",
         "cross_validation_folds": len(folds),
         "fold_scenario_counts": [
             {
@@ -1042,6 +1043,7 @@ def write_outputs(
     with predictions_path.open("w", encoding="utf-8", newline="") as handle:
         fieldnames = [
             "case_id",
+            "fold",
             "scenario_id",
             "record_type",
             "known_endpoint",
@@ -1059,6 +1061,7 @@ def write_outputs(
                 writer.writerow(
                     {
                         "case_id": case["case_id"],
+                        "fold": case.get("fold", ""),
                         "scenario_id": case["scenario_id"],
                         "record_type": case["record_type"],
                         "known_endpoint": case["known_endpoint"],
