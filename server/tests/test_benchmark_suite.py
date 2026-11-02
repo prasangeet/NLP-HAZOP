@@ -199,6 +199,7 @@ def test_run_recovery_does_not_call_hybrid_reason_twice() -> None:
     reasoner.reason = Mock()
 
     request = SimpleNamespace(
+        known_endpoint="cause",
         missing_endpoint=SimpleNamespace(value="object"),
         scenario_id="T301-001",
     )
