@@ -1,0 +1,9 @@
+{
+  "dataset_id": "feed-study",
+  "name": "feed",
+  "filename": "feed.csv",
+  "source_sha256": "23020a93dd379341b159a3746e9936f5ed65271ba0e18486ebd9e4e56beba3ad",
+  "record_count": 1,
+  "relationship_count": 2,
+  "created_at": "2026-11-01T23:32:14.121138+00:00"
+}

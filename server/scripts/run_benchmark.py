@@ -11,6 +11,7 @@ import argparse
 import csv
 import hashlib
 import json
+import logging
 import math
 import os
 import platform
@@ -61,6 +62,8 @@ DATASET_PATHS = {
     "dwsim-synthetic": ROOT / "data/raw/dwsim/synthetic_hazop_D001_D030.csv",
 }
 NORMALIZE_RE = re.compile(r"[^a-z0-9]+")
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -434,6 +437,7 @@ def merge_candidate_predictions(
     return merged
 
 
+
 def _run_recovery(
     use_case: RecoverMissingLink,
     builder: BuildEvidenceContext,
@@ -442,19 +446,31 @@ def _run_recovery(
     reasoner=None,
 ) -> tuple[list[dict[str, Any]], float, str, list[str]]:
     started = time.perf_counter()
+    logger.debug(
+        "[BENCHMARK] Recovery started | scenario=%s known_endpoint=%s "
+        "missing_endpoint=%s reasoner=%s",
+        request.scenario_id,
+        request.known_endpoint,
+        request.missing_endpoint.value,
+        type(reasoner).__name__ if reasoner is not None else "retrieval_only",
+    )
     recovery = use_case.execute(request)
     diagnostics: list[str] = []
+
     if reasoner is None:
         predictions = predictions_from_recovery(
             recovery,
             request.missing_endpoint.value,
         )
         status = recovery.status.value
+
     else:
         context = builder.execute(recovery, request)
         reason_all = getattr(reasoner, "reason_all", None)
+
         if callable(reason_all):
             relations = reason_all(context)
+
             predictions = [
                 prediction_from_relation(
                     relation,
@@ -463,8 +479,16 @@ def _run_recovery(
                 )
                 for relation in relations
             ]
+
             if predictions:
                 status = "candidates_found"
+
+            elif isinstance(reasoner, HybridReasoner):
+                # reason_all() already performs hybrid evidence adjudication
+                # and independent model generation. Do not invoke reason()
+                # again, as that would cause duplicate LLM calls.
+                status = "no_candidates"
+
             else:
                 reasoning = reasoner.reason(context)
                 status = (
@@ -474,13 +498,16 @@ def _run_recovery(
                     else reasoning.status.value
                 )
                 diagnostics.extend(reasoning.supporting_evidence)
+
         else:
             reasoning = reasoner.reason(context)
+
             predictions = prediction_from_reasoning(
                 reasoning,
                 request.missing_endpoint.value,
                 request.scenario_id,
             )
+
             status = (
                 reasoning.abstention_reason.value
                 if reasoning.status == ReasoningStatus.ABSTAINED
@@ -488,8 +515,29 @@ def _run_recovery(
                 else reasoning.status.value
             )
             diagnostics.extend(reasoning.supporting_evidence)
+
     latency_ms = (time.perf_counter() - started) * 1000.0
+
+    logger.info(
+        "[BENCHMARK] Recovery completed | scenario=%s reasoner=%s "
+        "status=%s predictions=%d latency_ms=%.2f diagnostics=%d",
+        request.scenario_id,
+        type(reasoner).__name__ if reasoner is not None else "retrieval_only",
+        status,
+        len(predictions),
+        latency_ms,
+        len(diagnostics),
+    )
+
+    if diagnostics:
+        logger.debug(
+            "[BENCHMARK] Recovery diagnostics | scenario=%s details=%s",
+            request.scenario_id,
+            diagnostics,
+        )
+
     return predictions, latency_ms, status, diagnostics
+
 
 
 def build_matched_case_summary(
@@ -527,12 +575,20 @@ def run(
     ] | None = None,
 ) -> dict[str, Any]:
     selected_path = Path(args.dataset_path).resolve() if args.dataset_path else None
+    logger.info("[BENCHMARK] Starting run | dataset=%s seed=%s test_fraction=%s "
+                "with_llm=%s max_llm_cases=%s model=%s",
+                args.dataset, args.seed, args.test_fraction, args.with_llm,
+                args.max_llm_cases, args.model)
     records = records_override or load_dataset(args.dataset, selected_path)
+    logger.info("[BENCHMARK] Dataset loaded | rows=%d path=%s",
+                len(records), selected_path or DATASET_PATHS[args.dataset])
     train, test = split_override or stable_split(
         records,
         test_fraction=args.test_fraction,
         seed=args.seed,
     )
+    logger.info("[BENCHMARK] Split complete | train_scenarios=%d test_scenarios=%d",
+                len(train), len(test))
     cases = list(make_cases(test))
     if args.limit_cases is not None:
         cases = cases[: args.limit_cases]
@@ -564,6 +620,11 @@ def run(
 
     llm_available = bool(os.getenv("GROQ_API_KEY"))
     llm_enabled = args.with_llm and llm_available
+    logger.info("[BENCHMARK] LLM configuration | requested=%s key_available=%s "
+                "enabled=%s max_cases=%d",
+                args.with_llm, llm_available, llm_enabled, args.max_llm_cases)
+    if args.with_llm and not llm_available:
+        logger.error("[BENCHMARK] --with-llm was set but GROQ_API_KEY is unavailable")
     llm_reasoner = LLMReasoner(model_name=args.model) if llm_enabled else None
     prompt_reasoner = PromptOnlyReasoner(model_name=args.model) if llm_enabled else None
     hybrid_reasoner = (
@@ -593,7 +654,10 @@ def run(
         "hybrid_graph_vector_llm": [],
     }
 
-    for case in cases:
+    for case_index, case in enumerate(cases, start=1):
+        logger.info("[BENCHMARK] Case %d/%d | case_id=%s scenario=%s known_endpoint=%s",
+                    case_index, len(cases), case.case_id, case.scenario_id,
+                    case.known_endpoint)
         request = RecoveryRequest(
             scenario_id=case.scenario_id,
             predicate="co_listed_with_consequence",
@@ -726,6 +790,8 @@ def run(
                     "latency_ms": 0.0,
                 }
 
+        logger.info("[BENCHMARK] Case complete | case_id=%s methods=%d",
+                    case.case_id, len(case_result["methods"]))
         per_case.append(case_result)
 
     method_summary: dict[str, Any] = {}
@@ -826,6 +892,9 @@ def run(
         "N equals max_llm_cases"
     )
 
+    logger.info("[BENCHMARK] Run complete | evaluated_cases=%d llm_enabled=%s",
+                len(per_case), llm_enabled)
+
     return {
         "metadata": metadata,
         "method_summary": method_summary,
@@ -901,12 +970,24 @@ def run_grouped_cross_validation(args: argparse.Namespace) -> dict[str, Any]:
     fold_results: list[dict[str, Any]] = []
     all_cases: list[dict[str, Any]] = []
     for fold_index, split in enumerate(folds, start=1):
+        logger.info(
+            "[BENCHMARK] Starting cross-validation fold %d/%d | train=%d test=%d",
+            fold_index,
+            len(folds),
+            len(split[0]),
+            len(split[1]),
+        )
         result = run(
             args,
             records_override=records,
             split_override=split,
         )
         fold_results.append(result)
+        logger.info(
+            "[BENCHMARK] Completed cross-validation fold %d/%d",
+            fold_index,
+            len(folds),
+        )
         for case in result["cases"]:
             all_cases.append({"fold": fold_index, **case})
 
@@ -1152,6 +1233,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    logging.basicConfig(
+        level=os.getenv("LOG_LEVEL", "INFO").upper(),
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        handlers=[logging.StreamHandler()],
+        force=True,
+    )
+    logger.info("[BENCHMARK] Logging initialized | level=%s",
+                os.getenv("LOG_LEVEL", "INFO").upper())
     args = parse_args()
     result = (
         run_grouped_cross_validation(args)
@@ -1163,7 +1252,9 @@ def main() -> None:
         if args.output_dir
         else ROOT / "results" / args.dataset
     )
+    logger.info("[BENCHMARK] Writing outputs | output_dir=%s", output_dir)
     write_outputs(result, output_dir)
+    logger.info("[BENCHMARK] Outputs written successfully | output_dir=%s", output_dir)
     print(json.dumps(result["method_summary"], indent=2))
     print(f"\nWrote benchmark outputs to: {output_dir}")
 
