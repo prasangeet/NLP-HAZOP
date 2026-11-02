@@ -14,6 +14,7 @@ import KnowledgeGraph from "@/pages/KnowledgeGraph";
 import RelationshipRecovery from "@/pages/RelationshipRecovery";
 import Experiments from "@/pages/Experiments";
 import ExperimentResults from "@/pages/ExperimentResults";
+import EvaluationWorkbench from "@/pages/EvaluationWorkbench";
 
 const pageTitles: Record<PageId, string> = {
   overview: "Overview",
@@ -22,6 +23,7 @@ const pageTitles: Record<PageId, string> = {
   "knowledge-graph": "Knowledge Graph",
   "relationship-recovery": "Relationship Recovery",
   experiments: "Experiments",
+  "evaluation-workbench": "Evaluation Workbench",
   results: "Experiment results",
 };
 
@@ -44,6 +46,8 @@ function Workspace() {
         return <RelationshipRecovery />;
       case "experiments":
         return <Experiments onOpenResults={openResults} />;
+      case "evaluation-workbench":
+        return <EvaluationWorkbench />;
       case "results":
         return <ExperimentResults runId={selectedRunId} onOpenRun={setSelectedRunId} />;
     }
@@ -53,10 +57,8 @@ function Workspace() {
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar activePage={activePage} onNavigate={setActivePage} />
-
         <SidebarInset className="min-h-svh">
           <AppHeader title={pageTitles[activePage]} />
-
           <main className="min-w-0 flex-1 overflow-auto p-4 md:p-6 lg:p-8">
             {renderPage()}
           </main>
