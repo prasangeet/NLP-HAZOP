@@ -299,9 +299,12 @@ and model outputs are not expert-validated causal truth.
 The typed extraction workflow is exposed separately from CSV import:
 
 - `POST /api/v1/reports/extract`
-- Multipart fields: `file` (UTF-8 `.txt`, `.md`, or `.log`), `dataset_id` (letters, numbers, dot, underscore and hyphen), and optional `name`.
-- The endpoint uses the `AIProviderFactory` to select the Groq/Llama adapter, extracts typed scenario propositions, checks exact source quotes and scenario-field consistency, then imports the extracted dataset.
+- Multipart fields: `file` (PDF or UTF-8 `.txt`, `.md`, or `.log`), `dataset_id` (letters, numbers, dot, underscore and hyphen), and optional `name`.
+- PDF ingestion uses pypdf to extract selectable text page by page and inserts explicit `[Page N]` markers before passing the text to the existing Groq/Llama extraction adapter. Empty pages are reported in the response. The original upload SHA-256 is retained in dataset metadata.
+- The endpoint extracts typed scenario propositions, checks exact source quotes and scenario-field consistency, then imports the extracted dataset.
 - Every extracted relationship is stored as `llm_extracted` and remains `unreviewed`. The response includes validation warnings; it is not expert approval.
-- File size is limited to 2 MiB. PDF extraction is not supported yet.
+- File size is limited to 20 MiB. PDF extraction is text-layer only: scanned/image-only PDFs are rejected with an OCR-required message. OCR, DOCX, and spreadsheet ingestion are not implemented yet.
+- The page markers are included in the extraction input so the model can attach page references to extracted relationships. This is not a guarantee that every extracted relationship will have a correct page citation; verify the stored quote and location against the source document.
+- After changing dependencies, run `uv lock` from `server/` and commit the regenerated `uv.lock` before CI; CI installs with `uv sync --locked`.
 
 Set `GROQ_API_KEY` in the repository-root `.env` (or `server/.env`) before using extraction or the LLM/hybrid recovery strategies. Keep real keys out of version control. The graph-only recovery strategy does not require Groq.
