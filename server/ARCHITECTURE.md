@@ -55,7 +55,10 @@ The application layer depends on interfaces and domain objects. Neo4j, Groq, Fas
 ### Report extraction and persistence
 
 ```text
-TXT / MD / LOG upload
+PDF / TXT / MD / LOG upload
+        |
+        v
+DocumentTextExtractor (page-aware PDF text extraction)
         |
         v
 GroqReportExtractor (structured extraction)
@@ -144,7 +147,7 @@ uv sync
 uv run uvicorn app.main:app --reload --env-file ../.env --host 127.0.0.1 --port 8000
 ```
 
-The extraction endpoint accepts UTF-8 `.txt`, `.md`, or `.log` files up to 2 MiB at `POST /api/v1/reports/extract`. PDF ingestion is not implemented in this version.
+The extraction endpoint accepts PDF or UTF-8 `.txt`, `.md`, or `.log` files up to 20 MiB at `POST /api/v1/reports/extract`. PDFs are parsed page by page with pypdf; page markers are inserted into the extraction text, empty pages are reported, and the original file SHA-256 is stored in dataset metadata. Scanned/image-only PDFs are not OCR'd and are rejected if no selectable text is found.
 
 ## Validation
 
