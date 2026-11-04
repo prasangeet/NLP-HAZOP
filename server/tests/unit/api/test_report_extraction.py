@@ -1,6 +1,9 @@
 """API tests for report extraction through the provider factory."""
 
+from io import BytesIO
+
 from fastapi.testclient import TestClient
+from pypdf import PdfWriter
 
 from app.api.dependencies import get_ai_provider_factory, get_graph_repository
 from app.domain.entities.extracted_report import (
@@ -92,11 +95,29 @@ def test_report_extraction_rejects_unsupported_file_type():
     with client:
         response = client.post(
             "/api/v1/reports/extract",
-            files={"file": ("report.pdf", b"%PDF", "application/pdf")},
+            files={"file": ("report.docx", b"not a supported report", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
             data={"dataset_id": "pump-report"},
         )
 
     assert response.status_code == 415
+
+
+def test_report_extraction_reports_scanned_pdf_needs_ocr():
+    writer = PdfWriter()
+    writer.add_blank_page(width=612, height=792)
+    pdf = BytesIO()
+    writer.write(pdf)
+
+    client, _ = build_client()
+    with client:
+        response = client.post(
+            "/api/v1/reports/extract",
+            files={"file": ("scanned-report.pdf", pdf.getvalue(), "application/pdf")},
+            data={"dataset_id": "scanned-report"},
+        )
+
+    assert response.status_code == 422
+    assert "need OCR" in response.json()["detail"]
 
 
 def test_report_extraction_rejects_non_verbatim_extraction():
