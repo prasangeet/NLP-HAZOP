@@ -79,8 +79,7 @@ async def extract_report(
         )
         title = name or filename or selected_id
         metadata, validation, records = use_case.execute(
-            document.text, title=title, dataset_id=selected_id
-        )
+            document.text,\n            title=title,\n            dataset_id=selected_id,\n            source_sha256=hashlib.sha256(raw).hexdigest(),\n        )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except RuntimeError as exc:
