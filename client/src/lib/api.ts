@@ -93,9 +93,13 @@ export interface RecoveryResponse {
     [key: string]: unknown;
   };
   reasoning: {
+    status?: string;
+    abstention_reason?: string | null;
+    confidence?: number | null;
+    supporting_evidence?: string[];
     proposed_relation?: Record<string, unknown> | null;
     [key: string]: unknown;
-  };
+  } | null;
   validation: {
     valid: boolean;
     errors: string[];
