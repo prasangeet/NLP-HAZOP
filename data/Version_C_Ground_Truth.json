@@ -1,0 +1,178 @@
+{
+  "document": "T301_HAZOP_Report_Version_C",
+  "purpose": "Ground truth for controlled missing-consequence recovery experiment",
+  "withheld_scenario_count": 12,
+  "withheld_scenario_ids": [
+    "T301-041",
+    "T301-043",
+    "T301-046",
+    "T301-048",
+    "T301-050",
+    "T301-052",
+    "T301-055",
+    "T301-059",
+    "T301-061",
+    "T301-067",
+    "T301-069",
+    "T301-083"
+  ],
+  "records": {
+    "T301-041": {
+      "scenario_id": "T301-041",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "Unloading continues after target inventory; incorrect inventory estimate; level controller fails to reduce inflow.",
+      "withheld_consequence_field": "Liquid hexane spills from tank opening or overflow path; flammable vapor may form; fire or flash fire possible if ignition occurs.",
+      "withheld_recommendation_field": "Review high-level alarm and independent overfill shutdown; define unloading stop procedure; verify containment capacity.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    },
+    "T301-043": {
+      "scenario_id": "T301-043",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "Level instrument under-reads; calibration drift; impulse connection obstructed.",
+      "withheld_consequence_field": "Operator delays stopping inflow; overfill and release of hexane.",
+      "withheld_recommendation_field": "Provide independent level verification and proof-test critical level instruments.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    },
+    "T301-046": {
+      "scenario_id": "T301-046",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "Transfer pump continues drawing liquid; inflow is lower than outflow.",
+      "withheld_consequence_field": "Low inventory; downstream feed interruption; pump may run dry if suction is lost.",
+      "withheld_recommendation_field": "Review low-level alarm and pump trip requirements; establish minimum operating inventory.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    },
+    "T301-048": {
+      "scenario_id": "T301-048",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "Level instrument over-reads and controller reduces or stops inflow.",
+      "withheld_consequence_field": "Tank inventory falls below target; downstream supply may be interrupted.",
+      "withheld_recommendation_field": "Provide independent level cross-check and instrument diagnostics.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    },
+    "T301-050": {
+      "scenario_id": "T301-050",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "Water enters through an open connection, condensation, or incomplete draining after cleaning.",
+      "withheld_consequence_field": "Water contamination may affect product quality and may contribute to freezing or drain-line problems under sufficiently cold conditions.",
+      "withheld_recommendation_field": "Verify material identity and water content; inspect drains and prevent water ingress.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    },
+    "T301-052": {
+      "scenario_id": "T301-052",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "Transfer connection or tank selection error.",
+      "withheld_consequence_field": "Contamination and possible incompatibility; downstream product or operation affected.",
+      "withheld_recommendation_field": "Use positive identification of tank, transfer hose, and material before transfer.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    },
+    "T301-055": {
+      "scenario_id": "T301-055",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "Supplier quality variation or inadequate receipt checks.",
+      "withheld_consequence_field": "Off-spec material; process performance may change; consequences depend on impurity.",
+      "withheld_recommendation_field": "Define acceptance specification and hold material pending identity/quality verification.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    },
+    "T301-059": {
+      "scenario_id": "T301-059",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "Seal wear, incorrect installation, shaft misalignment, or vibration.",
+      "withheld_consequence_field": "Hexane release and pool formation; flammable vapor; potential fire or explosion if ignited.",
+      "withheld_recommendation_field": "Inspect seal condition and alignment; provide suitable leak detection and isolation.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    },
+    "T301-061": {
+      "scenario_id": "T301-061",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "Drain valve left open, damaged seat, or accidental operation.",
+      "withheld_consequence_field": "Hexane discharge to surrounding area; vapor generation and potential ignition.",
+      "withheld_recommendation_field": "Use valve lineup checks and suitable protection against unintended opening.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    },
+    "T301-067": {
+      "scenario_id": "T301-067",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "Outlet or vent path obstructed; vapor generation continues.",
+      "withheld_consequence_field": "Pressure rise; tank damage or rupture if design capacity is exceeded; hexane release and fire/explosion potential.",
+      "withheld_recommendation_field": "Verify vent/relief design and inspect for blockage; assess credible overpressure cases.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    },
+    "T301-069": {
+      "scenario_id": "T301-069",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "External fire heats tank contents and increases vapor generation.",
+      "withheld_consequence_field": "Pressure rise, tank damage, loss of containment, escalation to fire involving released hexane.",
+      "withheld_recommendation_field": "Evaluate fire exposure and tank protection with qualified engineers.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    },
+    "T301-083": {
+      "scenario_id": "T301-083",
+      "source_class": "S",
+      "deviation": "Elsewhere flow / loss of containment",
+      "known_cause_field": "Prolonged solar exposure raises stored liquid temperature.",
+      "withheld_consequence_field": "Higher vapor generation and pressure; potential exceedance of tank/vent capacity depending on conditions.",
+      "withheld_recommendation_field": "Assess ambient heat exposure and verify pressure/venting design.",
+      "withheld_fields": [
+        "possible_consequences",
+        "scenario_recommendation"
+      ],
+      "note": "Held out from Version C. This value is ground truth for the controlled experiment, not evidence available to the model."
+    }
+  },
+  "warning": "Keep this file separate from model inputs. It contains the answers withheld from Version C."
+}

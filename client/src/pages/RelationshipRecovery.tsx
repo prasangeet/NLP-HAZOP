@@ -1,8 +1,22 @@
+
 import { useState } from "react";
-import { BrainCircuit, GitBranch, LoaderCircle, Search, Workflow, ShieldAlert } from "lucide-react";
+import {
+  BrainCircuit,
+  GitBranch,
+  LoaderCircle,
+  Search,
+  Workflow,
+  ShieldAlert,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -11,33 +25,64 @@ import { api, type RecoveryResponse } from "@/lib/api";
 import { useWorkspaceStore } from "@/lib/workspace-store";
 
 const strategies = [
-  { id: "graph", title: "Graph-based", description: "Use graph and multi-hop evidence.", icon: GitBranch },
-  { id: "llm", title: "LLM-based", description: "Use language-model reasoning.", icon: BrainCircuit },
-  { id: "hybrid", title: "Hybrid", description: "Combine graph evidence and language-model reasoning.", icon: Workflow },
+  {
+    id: "graph",
+    title: "Graph-based",
+    description: "Use existing graph relationships and multi-hop evidence.",
+    icon: GitBranch,
+  },
+  {
+    id: "llm",
+    title: "LLM-based",
+    description: "Use language-model reasoning over retrieved evidence.",
+    icon: BrainCircuit,
+  },
+  {
+    id: "hybrid",
+    title: "Hybrid",
+    description: "Combine graph reasoning, retrieval, and LLM adjudication.",
+    icon: Workflow,
+  },
 ] as const;
 
 type RecoveryStrategy = (typeof strategies)[number]["id"];
 
 export default function RelationshipRecovery() {
-  const activeDatasetId = useWorkspaceStore((state) => state.activeDatasetId);
+  const activeDatasetId = useWorkspaceStore(
+    (state) => state.activeDatasetId,
+  );
+
   const [strategy, setStrategy] = useState<RecoveryStrategy>("hybrid");
   const [scenarioId, setScenarioId] = useState("");
   const [predicate, setPredicate] = useState("leads_to_consequence");
   const [knownEndpoint, setKnownEndpoint] = useState("");
-  const [missingEndpoint, setMissingEndpoint] = useState<"subject" | "object">("object");
+  const [missingEndpoint, setMissingEndpoint] = useState<
+    "subject" | "object"
+  >("object");
+
   const [result, setResult] = useState<RecoveryResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const runRecovery = async () => {
-    if (!activeDatasetId) return;
-    if (!scenarioId.trim() || !predicate.trim() || !knownEndpoint.trim()) {
+    if (!activeDatasetId) {
+      setError("Select a dataset before running relationship recovery.");
+      return;
+    }
+
+    if (
+      !scenarioId.trim() ||
+      !predicate.trim() ||
+      !knownEndpoint.trim()
+    ) {
       setError("Enter a scenario ID, predicate, and known endpoint.");
       return;
     }
+
     setLoading(true);
     setError(null);
     setResult(null);
+
     try {
       const response = await api.recover(activeDatasetId, {
         scenario_id: scenarioId.trim(),
@@ -47,49 +92,416 @@ export default function RelationshipRecovery() {
         limit: 20,
         strategy,
       });
+
       setResult(response);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Recovery request failed.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Relationship recovery request failed.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const reasoning = result?.reasoning;
+  const retrievalCandidates = result?.recovery.candidates ?? [];
+  const supportingDetails = reasoning?.supporting_evidence ?? [];
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6">
-      <PageHeader eyebrow="Causal inference / 04" title="Relationship recovery" description="Generate candidate links from a selected HAZOP scenario and inspect the evidence returned by the recovery API." actions={<Badge variant="outline">{activeDatasetId ?? "No dataset selected"}</Badge>} />
+      <PageHeader
+        eyebrow="Causal inference / 04"
+        title="Relationship recovery"
+        description="Recover potentially missing relationships from a HAZOP scenario and inspect the retrieval evidence and reasoning outcome."
+        actions={
+          <Badge variant="outline">
+            {activeDatasetId ?? "No dataset selected"}
+          </Badge>
+        }
+      />
+
+      {/* Recovery request */}
       <Card>
-        <CardHeader><CardTitle>Recovery request</CardTitle><CardDescription>Recovered links are research proposals and are not automatically accepted into the knowledge graph.</CardDescription></CardHeader>
+        <CardHeader>
+          <CardTitle>Recovery request</CardTitle>
+          <CardDescription>
+            Configure a missing relationship query. Recovered relationships
+            are research proposals and are never automatically accepted into
+            the knowledge graph.
+          </CardDescription>
+        </CardHeader>
+
         <CardContent className="space-y-5">
+          {/* Strategy selection */}
           <div className="grid gap-3 md:grid-cols-3">
             {strategies.map((item) => {
               const Icon = item.icon;
               const selected = strategy === item.id;
-              return <Button key={item.id} type="button" variant={selected ? "secondary" : "outline"} aria-pressed={selected} onClick={() => setStrategy(item.id)} className={`h-auto min-h-24 justify-start whitespace-normal border p-3 text-left ${selected ? "border-primary" : "border-border"}`}><div className="flex items-start gap-3"><Icon className="mt-0.5 size-4 shrink-0" /><div><p className="text-xs font-semibold">{item.title}</p><p className="mt-1 text-[10px] font-normal leading-5 text-muted-foreground">{item.description}</p></div></div></Button>;
+
+              return (
+                <Button
+                  key={item.id}
+                  type="button"
+                  variant={selected ? "secondary" : "outline"}
+                  aria-pressed={selected}
+                  onClick={() => setStrategy(item.id)}
+                  className={`h-auto min-h-24 justify-start whitespace-normal border p-3 text-left ${
+                    selected ? "border-primary" : "border-border"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <Icon className="mt-0.5 size-4 shrink-0" />
+
+                    <div>
+                      <p className="text-xs font-semibold">
+                        {item.title}
+                      </p>
+                      <p className="mt-1 text-[10px] font-normal leading-5 text-muted-foreground">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+                </Button>
+              );
             })}
           </div>
+
           <Separator />
+
+          {/* Query configuration */}
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-1.5"><span className="text-[11px] text-muted-foreground">Scenario ID</span><Input value={scenarioId} onChange={(e) => setScenarioId(e.target.value)} placeholder="e.g. S001" /></label>
-            <label className="space-y-1.5"><span className="text-[11px] text-muted-foreground">Predicate / relationship type</span><Input value={predicate} onChange={(e) => setPredicate(e.target.value)} placeholder="e.g. leads_to_consequence" /></label>
-            <label className="space-y-1.5"><span className="text-[11px] text-muted-foreground">Known endpoint</span><Input value={knownEndpoint} onChange={(e) => setKnownEndpoint(e.target.value)} placeholder="Known cause, deviation, or consequence" /></label>
-            <label className="space-y-1.5"><span className="text-[11px] text-muted-foreground">Missing endpoint</span><select className="h-9 w-full border border-input bg-background px-3 text-xs" value={missingEndpoint} onChange={(e) => setMissingEndpoint(e.target.value as "subject" | "object")}><option value="object">Object — find the target</option><option value="subject">Subject — find the source</option></select></label>
+            <label className="space-y-1.5">
+              <span className="text-[11px] text-muted-foreground">
+                Scenario ID
+              </span>
+              <Input
+                value={scenarioId}
+                onChange={(event) => setScenarioId(event.target.value)}
+                placeholder="e.g. S001"
+              />
+            </label>
+
+            <label className="space-y-1.5">
+              <span className="text-[11px] text-muted-foreground">
+                Predicate / relationship type
+              </span>
+              <Input
+                value={predicate}
+                onChange={(event) => setPredicate(event.target.value)}
+                placeholder="e.g. leads_to_consequence"
+              />
+            </label>
+
+            <label className="space-y-1.5">
+              <span className="text-[11px] text-muted-foreground">
+                Known endpoint
+              </span>
+              <Input
+                value={knownEndpoint}
+                onChange={(event) => setKnownEndpoint(event.target.value)}
+                placeholder="Enter the exact known entity"
+              />
+            </label>
+
+            <label className="space-y-1.5">
+              <span className="text-[11px] text-muted-foreground">
+                Missing endpoint
+              </span>
+
+              <select
+                className="h-9 w-full border border-input bg-background px-3 text-xs"
+                value={missingEndpoint}
+                onChange={(event) =>
+                  setMissingEndpoint(
+                    event.target.value as "subject" | "object",
+                  )
+                }
+              >
+                <option value="object">Object — find the target</option>
+                <option value="subject">Subject — find the source</option>
+              </select>
+            </label>
           </div>
-          {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><p className="text-[10px] leading-5 text-muted-foreground">Active dataset: {activeDatasetId ?? "Select a dataset in Datasets first."}</p><Button disabled={!activeDatasetId || loading} onClick={() => void runRecovery()}>{loading ? <LoaderCircle className="size-3.5 animate-spin" /> : <Search className="size-3.5" />}{loading ? "Running recovery…" : "Run recovery"}</Button></div>
+
+          {error && (
+            <div
+              className="border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive"
+              role="alert"
+            >
+              {error}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+            <p className="text-[10px] leading-5 text-muted-foreground">
+              Active dataset:{" "}
+              {activeDatasetId ?? "Select a dataset in Datasets first."}
+            </p>
+
+            <Button
+              disabled={!activeDatasetId || loading}
+              onClick={() => void runRecovery()}
+            >
+              {loading ? (
+                <LoaderCircle className="size-3.5 animate-spin" />
+              ) : (
+                <Search className="size-3.5" />
+              )}
+
+              {loading ? "Running recovery..." : "Run recovery"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
+      {/* Recovery response */}
       <Card>
-        <CardHeader><div className="flex items-center justify-between gap-3"><div><CardTitle>Recovery response</CardTitle><CardDescription>Candidate relationships and reasoning from the backend.</CardDescription></div>{result && <Badge variant={result.validation.valid ? "secondary" : "destructive"}>{result.validation.valid ? "Validation passed" : "Validation failed"}</Badge>}</div></CardHeader>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle>Recovery response</CardTitle>
+              <CardDescription>
+                Inspect retrieved candidates, reasoning decisions, and
+                validation results separately.
+              </CardDescription>
+            </div>
+
+            {result && (
+              <Badge
+                variant={
+                  result.validation.valid ? "secondary" : "destructive"
+                }
+              >
+                {result.validation.valid
+                  ? "Validation passed"
+                  : "Validation failed"}
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+
         <CardContent>
-          {!result ? <div className="flex min-h-48 flex-col items-center justify-center gap-3 border border-dashed border-border bg-muted/20 px-6 py-8 text-center"><Workflow className="size-6 text-muted-foreground" /><p className="text-xs font-medium">No recovery response yet</p><p className="max-w-sm text-[11px] leading-5 text-muted-foreground">Choose a dataset, enter the scenario details, and run a strategy to inspect returned candidates.</p></div> : <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-3">{[["Scenario", result.scenario_id], ["Strategy", result.strategy], ["Status", result.recovery.status]].map(([label, value]) => <div key={label} className="border border-border p-3"><p className="text-[10px] text-muted-foreground">{label}</p><p className="mt-1 break-words text-xs font-medium">{value}</p></div>)}</div>
-            {result.recovery.candidates.length ? <div className="space-y-2"><h3 className="text-xs font-semibold">Retrieved candidates</h3>{result.recovery.candidates.map((candidate, index) => <pre key={index} className="overflow-auto whitespace-pre-wrap break-words border border-border bg-muted/20 p-3 text-[10px] leading-5">{JSON.stringify(candidate, null, 2)}</pre>)}</div> : <p className="text-xs text-muted-foreground">No retrieval candidates were returned for this request.</p>}
-            {result.reasoning.proposed_relation && <div className="space-y-2"><h3 className="text-xs font-semibold">Proposed relationship</h3><pre className="overflow-auto whitespace-pre-wrap break-words border border-border p-3 text-[10px] leading-5">{JSON.stringify(result.reasoning.proposed_relation, null, 2)}</pre></div>}
-            {(result.validation.errors.length > 0 || result.validation.warnings.length > 0) && <div className="space-y-1"><h3 className="text-xs font-semibold">Validation notes</h3>{[...result.validation.errors, ...result.validation.warnings].map((item, index) => <p key={index} className="text-[10px] text-muted-foreground">{item}</p>)}</div>}
-            <div className="flex items-start gap-2 border border-border p-3"><ShieldAlert className="mt-0.5 size-4 shrink-0 text-muted-foreground" /><p className="text-[10px] leading-5 text-muted-foreground">{result.notice}</p></div>
-          </div>}
+          {!result ? (
+            <div className="flex min-h-48 flex-col items-center justify-center gap-3 border border-dashed border-border bg-muted/20 px-6 py-8 text-center">
+              <Workflow className="size-6 text-muted-foreground" />
+
+              <p className="text-xs font-medium">
+                No recovery response yet
+              </p>
+
+              <p className="max-w-sm text-[11px] leading-5 text-muted-foreground">
+                Select a dataset, configure a scenario query, and run a
+                reasoning strategy to inspect its results.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {/* Request summary */}
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  ["Scenario", result.scenario_id],
+                  ["Strategy", result.strategy],
+                  ["Retrieval status", result.recovery.status],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="border border-border p-3"
+                  >
+                    <p className="text-[10px] text-muted-foreground">
+                      {label}
+                    </p>
+                    <p className="mt-1 break-words text-xs font-medium">
+                      {value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Retrieved candidates */}
+              <section className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-xs font-semibold">
+                      Retrieved candidates
+                    </h3>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      Relationships retrieved from the dataset and graph.
+                      These are not necessarily accepted reasoning results.
+                    </p>
+                  </div>
+
+                  <Badge variant="outline">
+                    {retrievalCandidates.length} candidates
+                  </Badge>
+                </div>
+
+                {retrievalCandidates.length > 0 ? (
+                  <div className="space-y-2">
+                    {retrievalCandidates.map((candidate, index) => (
+                      <pre
+                        key={index}
+                        className="overflow-auto whitespace-pre-wrap break-words border border-border bg-muted/20 p-3 text-[10px] leading-5"
+                      >
+                        {JSON.stringify(candidate, null, 2)}
+                      </pre>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border border-dashed border-border p-4 text-center">
+                    <p className="text-xs text-muted-foreground">
+                      No retrieval candidates were returned.
+                    </p>
+                  </div>
+                )}
+              </section>
+
+              <Separator />
+
+              {/* Reasoning trace */}
+              {reasoning && (
+                <section className="space-y-4 rounded-lg border border-border p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold">
+                        Reasoning trace
+                      </h3>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Outcome returned by the selected reasoning strategy.
+                      </p>
+                    </div>
+
+                    <Badge
+                      variant={
+                        reasoning.status === "proposed"
+                          ? "secondary"
+                          : "outline"
+                      }
+                    >
+                      {reasoning.status}
+                    </Badge>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-md bg-muted/30 p-3">
+                      <p className="text-xs text-muted-foreground">
+                        Reasoning outcome
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium">
+                        {reasoning.status === "proposed"
+                          ? "Relationship proposed"
+                          : reasoning.abstention_reason ??
+                            "No proposal returned"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-md bg-muted/30 p-3">
+                      <p className="text-xs text-muted-foreground">
+                        Reported confidence
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium">
+                        {reasoning.confidence == null
+                          ? "Not available"
+                          : `${(
+                              reasoning.confidence * 100
+                            ).toFixed(1)}%`}
+                      </p>
+
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        Model-reported score, not a calibrated probability.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold">
+                      Evidence / reasoning details
+                    </p>
+
+                    {supportingDetails.length > 0 ? (
+                      supportingDetails.map((item, index) => (
+                        <div
+                          key={index}
+                          className="rounded-md border border-border bg-muted/20 p-3 text-xs leading-5"
+                        >
+                          {item}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        No evidence or reasoning details were returned.
+                      </p>
+                    )}
+                  </div>
+                </section>
+              )}
+
+              {/* Proposed relationship */}
+              {reasoning?.proposed_relation && (
+                <section className="space-y-2">
+                  <div>
+                    <h3 className="text-xs font-semibold">
+                      Proposed relationship
+                    </h3>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      This is the relationship selected by the reasoning
+                      strategy. Review its provenance before accepting it.
+                    </p>
+                  </div>
+
+                  <pre className="overflow-auto whitespace-pre-wrap break-words border border-border bg-muted/20 p-3 text-[10px] leading-5">
+                    {JSON.stringify(
+                      reasoning.proposed_relation,
+                      null,
+                      2,
+                    )}
+                  </pre>
+                </section>
+              )}
+
+              {/* Validation */}
+              {(result.validation.errors.length > 0 ||
+                result.validation.warnings.length > 0) && (
+                <section className="space-y-2">
+                  <h3 className="text-xs font-semibold">
+                    Validation notes
+                  </h3>
+
+                  {result.validation.errors.map((item, index) => (
+                    <p
+                      key={`error-${index}`}
+                      className="text-[10px] text-destructive"
+                    >
+                      Error: {item}
+                    </p>
+                  ))}
+
+                  {result.validation.warnings.map((item, index) => (
+                    <p
+                      key={`warning-${index}`}
+                      className="text-[10px] text-muted-foreground"
+                    >
+                      Warning: {item}
+                    </p>
+                  ))}
+                </section>
+              )}
+
+              {/* Research disclaimer */}
+              <div className="flex items-start gap-2 border border-border p-3">
+                <ShieldAlert className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+
+                <p className="text-[10px] leading-5 text-muted-foreground">
+                  {result.notice}
+                </p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
