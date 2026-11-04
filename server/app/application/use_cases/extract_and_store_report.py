@@ -12,7 +12,7 @@ class ExtractAndStoreReport:
     """Coordinate extraction, deterministic validation and atomic repository import."""
     def __init__(self, extractor: ReportExtractor, repository: DatasetRepository, validator: HazopSafetyValidator):
         self._extractor, self._repository, self._validator = extractor, repository, validator
-    def execute(self, text: str, *, title: str, dataset_id: str) -> tuple[DatasetMetadata, ValidationReport, tuple[HazopRecord, ...]]:
+    def execute(\n        self,\n        text: str,\n        *,\n        title: str,\n        dataset_id: str,\n        source_sha256: str | None = None,\n    ) -> tuple[DatasetMetadata, ValidationReport, tuple[HazopRecord, ...]]:
         if self._repository.get_dataset(dataset_id) is not None:
             raise ValueError(f"Dataset '{dataset_id}' already exists.")
         extracted = self._extractor.extract(text, title=title)
@@ -21,7 +21,7 @@ class ExtractAndStoreReport:
             messages = "; ".join(issue.message for issue in validation.errors)
             raise ValueError(f"Extracted report failed validation: {messages}")
         records = self._to_records(extracted, dataset_id)
-        metadata = DatasetMetadata(dataset_id, title, title, hashlib.sha256(text.encode("utf-8")).hexdigest(), len(records), sum(len(r.causal_relations) for r in records), datetime.now(UTC).isoformat())
+        metadata = DatasetMetadata(dataset_id, title, title, (source_sha256 or hashlib.sha256(text.encode("utf-8")).hexdigest()), len(records), sum(len(r.causal_relations) for r in records), datetime.now(UTC).isoformat())
         self._repository.import_dataset(metadata, records)
         return metadata, validation, records
     @staticmethod
