@@ -11,6 +11,7 @@ dependencies = [
     "pytest>=9.1.1",
     "python-dotenv>=1.2.4",
     "python-multipart>=0.0.18",
+    "pypdf>=6.0.0,<7.0.0",
     "uvicorn>=0.30.0,<1.0.0",
     "ruff>=0.17.2",
 ]
