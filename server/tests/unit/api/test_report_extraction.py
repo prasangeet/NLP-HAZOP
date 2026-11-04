@@ -77,6 +77,9 @@ def test_report_extraction_validates_and_persists_source_grounded_records():
     assert payload["scenario_count"] == 1
     assert payload["relationship_count"] == 1
     assert payload["validation"]["valid"] is True
+    assert payload["document"]["format"] == "txt"
+    assert payload["document"]["page_count"] == 1
+    assert payload["document"]["empty_pages"] == []
 
     record = repository.get_record("S-001", dataset_id="pump-report")
     assert record is not None
