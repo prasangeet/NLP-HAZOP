@@ -133,6 +133,7 @@ class GraphNeighborhoodRetriever:
                         dataset_id=record.dataset_id,
                         relation=relation,
                         scope=RetrievalScope.CROSS_SCENARIO,
+                        process_context=_record_process_context(record),
                     )
                 )
 
@@ -191,3 +192,21 @@ class GraphNeighborhoodRetriever:
             scenario_context=result.scenario_context,
             scenario_entities=result.scenario_entities,
         )
+
+
+
+def _record_process_context(record) -> str:
+    """Describe a source scenario without exposing unrelated hidden labels."""
+    fields = (
+        ("Plant/unit", record.plant_unit),
+        ("Equipment", record.equipment),
+        ("Design intent", record.design_intent),
+        ("Parameter", record.parameter),
+        ("Guideword", record.guideword),
+        ("Deviation", record.deviation),
+        ("Known causes", "; ".join(record.causes)),
+        ("Known effects", "; ".join(record.effects)),
+        ("Safeguards", "; ".join(record.safeguards)),
+        ("Recommendations", "; ".join(record.recommendations)),
+    )
+    return " | ".join(f"{label}: {value}" for label, value in fields if value)
