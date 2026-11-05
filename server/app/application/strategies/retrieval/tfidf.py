@@ -73,16 +73,22 @@ def _cosine(
 
 
 def _scenario_context(record: HazopRecord) -> str:
+    """Return target context while deliberately omitting held-out consequences."""
+    sections = (
+        ("Plant/unit", record.plant_unit),
+        ("Equipment", record.equipment),
+        ("Design intent", record.design_intent),
+        ("Parameter", record.parameter),
+        ("Guideword", record.guideword),
+        ("Deviation", record.deviation),
+        ("Known causes", "; ".join(record.causes)),
+        ("Known effects", "; ".join(record.effects)),
+        ("Safeguards", "; ".join(record.safeguards)),
+        ("Recommendations", "; ".join(record.recommendations)),
+    )
     return " | ".join(
-        value
-        for value in (
-            record.plant_unit,
-            record.equipment,
-            record.design_intent,
-            record.parameter,
-            record.guideword,
-            record.deviation,
-        )
+        f"{label}: {value}"
+        for label, value in sections
         if value
     )
 
