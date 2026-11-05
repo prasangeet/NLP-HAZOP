@@ -37,6 +37,7 @@ def make_item(
     source_id: str = "paper-row-12",
     subject_type: EntityType = EntityType.CONCEPT,
     object_type: EntityType = EntityType.CONCEPT,
+    process_context: str = "",
 ) -> EvidenceItem:
     return EvidenceItem(
         subject=subject,
@@ -49,6 +50,7 @@ def make_item(
         relevance_note="Test evidence.",
         subject_type=subject_type,
         object_type=object_type,
+        process_context=process_context,
     )
 
 
@@ -106,8 +108,10 @@ def test_prompt_includes_target_process_and_causal_graph_context() -> None:
     candidate = make_item(
         predicate="leads_to_consequence",
         object_="Fire",
+        subject="Other than composition",
         subject_type=EntityType.DEVIATION,
         object_type=EntityType.CONSEQUENCE,
+        process_context="Equipment: T-301 | Design intent: Store liquid hexane",
     )
     graph_edges = (
         EvidenceItem(
@@ -139,6 +143,8 @@ def test_prompt_includes_target_process_and_causal_graph_context() -> None:
     )
     context = replace(
         make_context(candidate),
+        predicate="leads_to_consequence",
+        known_endpoint="Other than composition",
         scenario_context=(
             "Plant/unit: Hexane storage | Equipment: T-301 | "
             "Design intent: Receive and store liquid hexane | "
@@ -153,6 +159,7 @@ def test_prompt_includes_target_process_and_causal_graph_context() -> None:
     assert fake_llm.prompt is not None
     assert "Equipment: T-301" in fake_llm.prompt
     assert "Closed outlet valve" in fake_llm.prompt
+    assert "Source process context: Equipment: T-301" in fake_llm.prompt
     assert "Other than composition -[leads_to]-> Flammable vapour release" in fake_llm.prompt
     assert "Flammable vapour release -[leads_to_consequence]-> Fire" in fake_llm.prompt
     assert "valid typed causal path" in fake_llm.prompt
