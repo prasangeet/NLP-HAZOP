@@ -96,6 +96,68 @@ def test_proposes_selected_evidence_and_preserves_provenance() -> None:
     assert result.confidence == 0.82
 
 
+def test_prompt_includes_target_process_and_causal_graph_context() -> None:
+    reasoner, fake_llm = make_reasoner(
+        LLMDecision(
+            decision="abstain_insufficient",
+            reason="The supplied path does not support the candidate.",
+        )
+    )
+    candidate = make_item(
+        predicate="leads_to_consequence",
+        object_="Fire",
+        subject_type=EntityType.DEVIATION,
+        object_type=EntityType.CONSEQUENCE,
+    )
+    graph_edges = (
+        EvidenceItem(
+            subject="Other than composition",
+            predicate="leads_to",
+            object="Flammable vapour release",
+            origin=RelationshipOrigin.RECONSTRUCTED,
+            evidence="The reconstructed row links the deviation to the effect.",
+            confidence=None,
+            source_id="T301-015:effect",
+            relevance_note="Reconstructed graph edge.",
+            scenario_id="T301-015",
+            subject_type=EntityType.DEVIATION,
+            object_type=EntityType.EFFECT,
+        ),
+        EvidenceItem(
+            subject="Flammable vapour release",
+            predicate="leads_to_consequence",
+            object="Fire",
+            origin=RelationshipOrigin.RECONSTRUCTED,
+            evidence="The reconstructed row links the effect to fire.",
+            confidence=None,
+            source_id="T301-015:consequence",
+            relevance_note="Reconstructed graph edge.",
+            scenario_id="T301-015",
+            subject_type=EntityType.EFFECT,
+            object_type=EntityType.CONSEQUENCE,
+        ),
+    )
+    context = replace(
+        make_context(candidate),
+        scenario_context=(
+            "Plant/unit: Hexane storage | Equipment: T-301 | "
+            "Design intent: Receive and store liquid hexane | "
+            "Known causes: Closed outlet valve | Safeguards: High-level alarm"
+        ),
+        graph_context=graph_edges,
+    )
+
+    result = reasoner.reason(context)
+
+    assert result.status == ReasoningStatus.ABSTAINED
+    assert fake_llm.prompt is not None
+    assert "Equipment: T-301" in fake_llm.prompt
+    assert "Closed outlet valve" in fake_llm.prompt
+    assert "Other than composition -[leads_to]-> Flammable vapour release" in fake_llm.prompt
+    assert "Flammable vapour release -[leads_to_consequence]-> Fire" in fake_llm.prompt
+    assert "valid typed causal path" in fake_llm.prompt
+
+
 def test_does_not_call_llm_when_no_evidence_exists() -> None:
     reasoner, fake_llm = make_reasoner(
         LLMDecision(
