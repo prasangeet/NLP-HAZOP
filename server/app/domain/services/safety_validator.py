@@ -210,10 +210,10 @@ class HazopSafetyValidator:
                 ))
         else:
             warnings.append(ValidationIssue(
-                "cross_scenario_transfer_requires_review",
-                "The proposal is supported by evidence from another scenario; "
-                "target-record field consistency is not applicable. "
-                "Review process-context transfer before accepting it.",
+                "inferred_proposal_requires_record_review",
+                "The proposal is not a direct association from the selected target "
+                "record; target-record field membership was not used as a rejection "
+                "criterion. Review its provenance and process-context support.",
             ))
 
         return ValidationReport(
