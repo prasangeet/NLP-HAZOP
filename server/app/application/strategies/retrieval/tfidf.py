@@ -383,16 +383,17 @@ class TfidfRetriever:
                     idf,
                 )
 
-                anchor_score = _cosine(query_vector, anchor_vector)
-
+                # A structured relation endpoint must match the requested
+                # entity exactly. TF-IDF similarity is useful for ranking
+                # records, but it must not silently turn a different entity
+                # into the requested subject/object.
                 if (
                     anchor.strip().casefold()
-                    == request.known_endpoint.strip().casefold()
+                    != request.known_endpoint.strip().casefold()
                 ):
-                    anchor_score = 1.0
-
-                if anchor_score < self._min_score:
                     continue
+
+                anchor_score = 1.0
 
                 score = 0.75 * anchor_score + 0.25 * record_score
 
