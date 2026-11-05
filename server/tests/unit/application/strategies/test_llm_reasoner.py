@@ -101,8 +101,10 @@ def test_proposes_selected_evidence_and_preserves_provenance() -> None:
 def test_prompt_includes_target_process_and_causal_graph_context() -> None:
     reasoner, fake_llm = make_reasoner(
         LLMDecision(
-            decision="abstain_insufficient",
-            reason="The supplied path does not support the candidate.",
+            decision="propose",
+            evidence_indices=[0],
+            confidence=0.8,
+            reason="The candidate has a supplied causal path.",
         )
     )
     candidate = make_item(
@@ -155,7 +157,7 @@ def test_prompt_includes_target_process_and_causal_graph_context() -> None:
 
     result = reasoner.reason(context)
 
-    assert result.status == ReasoningStatus.ABSTAINED
+    assert result.status == ReasoningStatus.PROPOSED
     assert fake_llm.prompt is not None
     assert "Equipment: T-301" in fake_llm.prompt
     assert "Closed outlet valve" in fake_llm.prompt
