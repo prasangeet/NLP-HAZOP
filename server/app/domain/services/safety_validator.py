@@ -105,6 +105,7 @@ class HazopSafetyValidator:
         missing_endpoint: str,
         dataset_id: str,
         record: HazopRecord,
+        enforce_record_constraints: bool = True,
     ) -> ValidationReport:
         """Validate a proposed edge against the query and its source row.
 
@@ -141,66 +142,78 @@ class HazopSafetyValidator:
                 "The proposal does not preserve the known endpoint and requested direction.",
             ))
 
-        folded = lambda values: {value.strip().casefold() for value in values if value.strip()}
-        cause_values = folded(record.causes)
-        effect_values = folded(record.effects)
-        consequence_values = folded(record.consequences)
-        safeguard_values = folded(record.safeguards)
-        recommendation_values = folded(record.recommendations)
-        deviation = record.deviation.strip().casefold()
-        equipment = record.equipment.strip().casefold()
-        unit = record.plant_unit.strip().casefold()
-        parameter = record.parameter.strip().casefold()
+        if enforce_record_constraints:
+            folded = lambda values: {
+                value.strip().casefold()
+                for value in values
+                if value.strip()
+            }
+            cause_values = folded(record.causes)
+            effect_values = folded(record.effects)
+            consequence_values = folded(record.consequences)
+            safeguard_values = folded(record.safeguards)
+            recommendation_values = folded(record.recommendations)
+            deviation = record.deviation.strip().casefold()
+            equipment = record.equipment.strip().casefold()
+            unit = record.plant_unit.strip().casefold()
+            parameter = record.parameter.strip().casefold()
 
-        expected = {
-            "causes_deviation": (
-                relation.subject.strip().casefold() in cause_values
-                and relation.object.strip().casefold() == deviation
-            ),
-            "leads_to": (
-                relation.subject.strip().casefold() == deviation
-                and relation.object.strip().casefold() in effect_values
-            ),
-            "leads_to_consequence": (
-                relation.subject.strip().casefold() in (effect_values | {deviation})
-                and relation.object.strip().casefold() in consequence_values
-            ),
-            "co_occurs_with_consequence": (
-                relation.subject.strip().casefold() == deviation
-                and relation.object.strip().casefold() in consequence_values
-            ),
-            "co_listed_with_consequence": (
-                relation.subject.strip().casefold() in cause_values
-                and relation.object.strip().casefold() in consequence_values
-            ),
-            "mitigated_by": (
-                relation.subject.strip().casefold() in (effect_values | consequence_values | {deviation})
-                and relation.object.strip().casefold() in safeguard_values
-            ),
-            "recommends_action": (
-                relation.subject.strip().casefold() in (consequence_values | {deviation})
-                and relation.object.strip().casefold() in recommendation_values
-            ),
-            "has_parameter": (
-                relation.subject.strip().casefold() == equipment
-                and bool(parameter)
-                and relation.object.strip().casefold() == parameter
-            ),
-            "located_in": (
-                relation.subject.strip().casefold() == equipment
-                and bool(unit)
-                and relation.object.strip().casefold() == unit
-            ),
-        }
-        if relation.predicate not in expected:
-            errors.append(ValidationIssue(
-                "unsupported_process_constraint",
-                f"No record-consistency constraint is defined for {relation.predicate!r}.",
-            ))
-        elif not expected[relation.predicate]:
-            errors.append(ValidationIssue(
-                "record_constraint_violation",
-                "The proposed endpoints do not match the corresponding fields in the selected HAZOP record.",
+            expected = {
+                "causes_deviation": (
+                    relation.subject.strip().casefold() in cause_values
+                    and relation.object.strip().casefold() == deviation
+                ),
+                "leads_to": (
+                    relation.subject.strip().casefold() == deviation
+                    and relation.object.strip().casefold() in effect_values
+                ),
+                "leads_to_consequence": (
+                    relation.subject.strip().casefold() in (effect_values | {deviation})
+                    and relation.object.strip().casefold() in consequence_values
+                ),
+                "co_occurs_with_consequence": (
+                    relation.subject.strip().casefold() == deviation
+                    and relation.object.strip().casefold() in consequence_values
+                ),
+                "co_listed_with_consequence": (
+                    relation.subject.strip().casefold() in cause_values
+                    and relation.object.strip().casefold() in consequence_values
+                ),
+                "mitigated_by": (
+                    relation.subject.strip().casefold() in (effect_values | consequence_values | {deviation})
+                    and relation.object.strip().casefold() in safeguard_values
+                ),
+                "recommends_action": (
+                    relation.subject.strip().casefold() in (consequence_values | {deviation})
+                    and relation.object.strip().casefold() in recommendation_values
+                ),
+                "has_parameter": (
+                    relation.subject.strip().casefold() == equipment
+                    and bool(parameter)
+                    and relation.object.strip().casefold() == parameter
+                ),
+                "located_in": (
+                    relation.subject.strip().casefold() == equipment
+                    and bool(unit)
+                    and relation.object.strip().casefold() == unit
+                ),
+            }
+            if relation.predicate not in expected:
+                errors.append(ValidationIssue(
+                    "unsupported_process_constraint",
+                    f"No record-consistency constraint is defined for {relation.predicate!r}.",
+                ))
+            elif not expected[relation.predicate]:
+                errors.append(ValidationIssue(
+                    "record_constraint_violation",
+                    "The proposed endpoints do not match the corresponding fields in the selected HAZOP record.",
+                ))
+        else:
+            warnings.append(ValidationIssue(
+                "inferred_proposal_requires_record_review",
+                "The proposal is not a direct association from the selected target "
+                "record; target-record field membership was not used as a rejection "
+                "criterion. Review its provenance and process-context support.",
             ))
 
         return ValidationReport(

@@ -124,3 +124,52 @@ def test_recovery_proposal_rejects_candidate_outside_record_fields():
 
     assert not result.valid
     assert "record_constraint_violation" in {issue.code for issue in result.errors}
+
+
+def test_cross_scenario_recovery_skips_target_row_constraint_but_warns():
+    from app.domain.entities.hazop_record import (
+        CausalRelation,
+        HazopRecord,
+        RecordType,
+        RelationshipOrigin,
+    )
+    from app.domain.ontology.schema import infer_entity_types
+
+    record = HazopRecord(
+        scenario_id="T301-016",
+        dataset_id="study",
+        equipment="T-301",
+        deviation="High level",
+        consequences=("Explosion",),
+        record_type=RecordType.SOURCE_RECONSTRUCTED,
+    )
+    subject_type, object_type = infer_entity_types(
+        "leads_to_consequence", "Other than composition", "Fire"
+    )
+    proposal = CausalRelation(
+        subject="Other than composition",
+        predicate="leads_to_consequence",
+        object="Fire",
+        origin=RelationshipOrigin.RETRIEVAL_INFERRED,
+        evidence="The relation was retrieved from a separate scenario.",
+        dataset_id="study",
+        subject_type=subject_type,
+        object_type=object_type,
+    )
+
+    result = HazopSafetyValidator().validate_recovery_proposal(
+        proposal,
+        predicate="leads_to_consequence",
+        known_endpoint="Other than composition",
+        missing_endpoint="object",
+        dataset_id="study",
+        record=record,
+        enforce_record_constraints=False,
+    )
+
+    assert result.valid
+    assert not result.errors
+    assert any(
+        issue.code == "inferred_proposal_requires_record_review"
+        for issue in result.warnings
+    )

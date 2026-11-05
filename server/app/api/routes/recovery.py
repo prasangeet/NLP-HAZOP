@@ -158,6 +158,15 @@ def recover_missing_link(
             ],
         }
     else:
+        candidate_source_scenarios = {
+            (
+                candidate.subject.strip().casefold(),
+                candidate.predicate.strip().casefold(),
+                candidate.object.strip().casefold(),
+            ): candidate.scenario_id.strip().casefold()
+            for candidate in recovery.candidates
+        }
+
         validations = [
             HazopSafetyValidator().validate_recovery_proposal(
                 relation,
@@ -166,6 +175,17 @@ def recover_missing_link(
                 missing_endpoint=payload.missing_endpoint.value,
                 dataset_id=dataset_id,
                 record=record,
+                enforce_record_constraints=(
+                    relation.origin.value != "graph_inferred"
+                    and candidate_source_scenarios.get(
+                        (
+                            relation.subject.strip().casefold(),
+                            relation.predicate.strip().casefold(),
+                            relation.object.strip().casefold(),
+                        )
+                    )
+                    in (None, payload.scenario_id.strip().casefold())
+                ),
             )
             for relation in proposed_relations
         ]
@@ -178,12 +198,12 @@ def recover_missing_link(
             "valid": all(validation.valid for validation in validations),
             "results": [validation.to_dict() for validation in validations],
             "errors": [
-                error
+                error.to_dict()
                 for validation in validations
                 for error in validation.errors
             ],
             "warnings": [
-                warning
+                warning.to_dict()
                 for validation in validations
                 for warning in validation.warnings
             ],
