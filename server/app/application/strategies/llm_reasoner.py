@@ -474,7 +474,8 @@ class LLMReasoner:
                 f"{edge.subject} -[{edge.predicate}]-> {edge.object}\n"
                 f"Origin: {getattr(edge.origin, 'value', edge.origin)}\n"
                 f"Evidence: {edge.evidence}\n"
-                f"Source ID: {edge.source_id or 'Not specified'}"
+                f"Source ID: {edge.source_id or 'Not specified'}\n"
+                f"Source process context: {getattr(edge, 'process_context', '') or 'Not supplied'}"
             )
             for index, edge in enumerate(getattr(context, "graph_context", ()))
         ]
@@ -489,7 +490,8 @@ class LLMReasoner:
                 f"Object: {item.object}\n"
                 f"Origin: {getattr(item.origin, 'value', item.origin)}\n"
                 f"Evidence: {item.evidence}\n"
-                f"Source ID: {item.source_id or 'Not specified'}"
+                f"Source ID: {item.source_id or 'Not specified'}\n"
+                f"Source process context: {getattr(item, 'process_context', '') or 'Not supplied'}"
             )
 
         eligible_ids = {id(item) for item in eligible_items}
@@ -836,6 +838,7 @@ Evidence:
                 f"Origin: {getattr(item.origin, 'value', item.origin)}\n"
                 f"Evidence: {item.evidence}\n"
                 f"Source ID: {item.source_id or 'Not specified'}\n"
+                f"Source process context: {getattr(item, 'process_context', '') or 'Not supplied'}\n"
                 f"Source location: "
                 f"{getattr(item, 'source_location', None) or 'Not specified'}\n"
                 f"Scenario ID: {getattr(item, 'scenario_id', '')}\n"
