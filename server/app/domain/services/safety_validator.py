@@ -105,6 +105,7 @@ class HazopSafetyValidator:
         missing_endpoint: str,
         dataset_id: str,
         record: HazopRecord,
+        enforce_record_constraints: bool = True,
     ) -> ValidationReport:
         """Validate a proposed edge against the query and its source row.
 
@@ -141,7 +142,8 @@ class HazopSafetyValidator:
                 "The proposal does not preserve the known endpoint and requested direction.",
             ))
 
-        folded = lambda values: {value.strip().casefold() for value in values if value.strip()}
+        if enforce_record_constraints:
+            folded = lambda values: {value.strip().casefold() for value in values if value.strip()}
         cause_values = folded(record.causes)
         effect_values = folded(record.effects)
         consequence_values = folded(record.consequences)
@@ -201,6 +203,15 @@ class HazopSafetyValidator:
             errors.append(ValidationIssue(
                 "record_constraint_violation",
                 "The proposed endpoints do not match the corresponding fields in the selected HAZOP record.",
+            ))
+
+
+        else:
+            warnings.append(ValidationIssue(
+                "cross_scenario_transfer_requires_review",
+                "The proposal is supported by evidence from another scenario; "
+                "target-record field consistency is not applicable. "
+                "Review process-context transfer before accepting it.",
             ))
 
         return ValidationReport(
