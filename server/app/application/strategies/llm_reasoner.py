@@ -232,10 +232,20 @@ class LLMReasoner:
                 eligible_items=eligible_items,
             )
 
+        known_endpoint_type = next(
+            (
+                entity_type.value
+                for value, entity_type in getattr(context, "scenario_entities", ())
+                if value.strip().casefold()
+                == context.known_endpoint.strip().casefold()
+            ),
+            "unknown",
+        )
         prompt = self._build_prompt(
             eligible_items,
             predicate=context.predicate,
             known_endpoint=context.known_endpoint,
+            known_endpoint_type=known_endpoint_type,
             missing_endpoint=context.missing_endpoint,
             scenario_context=context.scenario_context,
             graph_context=getattr(context, "graph_context", ()),
@@ -779,6 +789,7 @@ You are recovering row-level HAZOP associations, not determining physical causat
 Task:
 - Predicate: {predicate}
 - Known endpoint: {known_endpoint}
+- Known endpoint type: {known_endpoint_type}
 - Missing endpoint: {missing_endpoint}
 
 Scenario context:
@@ -808,6 +819,7 @@ Evidence:
         *,
         predicate: str,
         known_endpoint: str,
+        known_endpoint_type: str = "unknown",
         missing_endpoint: str,
         scenario_context: str = "",
         graph_context: Sequence[EvidenceItemProtocol] = (),
@@ -856,8 +868,10 @@ Evidence:
                 f"[G{index}]\n"
                 f"Scenario: {getattr(edge, 'scenario_id', 'unknown')}\n"
                 f"Subject: {edge.subject}\n"
+                f"Subject type: {getattr(getattr(edge, 'subject_type', None), 'value', 'Concept')}\n"
                 f"Predicate: {edge.predicate}\n"
                 f"Object: {edge.object}\n"
+                f"Object type: {getattr(getattr(edge, 'object_type', None), 'value', 'Concept')}\n"
                 f"Origin: {getattr(edge.origin, 'value', edge.origin)}\n"
                 f"Evidence: {edge.evidence}\n"
                 f"Source ID: {edge.source_id or 'Not specified'}"
