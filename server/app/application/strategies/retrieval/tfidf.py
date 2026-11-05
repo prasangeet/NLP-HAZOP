@@ -276,8 +276,23 @@ class TfidfRetriever:
                 scenario_context=_scenario_context(target),
             )
 
-        query_terms = _tokens(request.known_endpoint)
-        query_vector = self._vector(query_terms, idf)
+        # Rank records using the target's process context, not only the
+        # deviation string. Held-out consequences are deliberately excluded.
+        target_context = " ".join(
+            (
+                target.plant_unit,
+                target.equipment,
+                target.design_intent,
+                target.parameter,
+                target.guideword,
+                target.deviation,
+                *target.causes,
+                *target.effects,
+                *target.safeguards,
+                *target.recommendations,
+            )
+        )
+        query_vector = self._vector(_tokens(target_context), idf)
 
         if not query_vector:
             return RetrievalResult(
@@ -378,11 +393,6 @@ class TfidfRetriever:
                 continue
 
             for anchor in anchors:
-                anchor_vector = self._vector(
-                    _tokens(anchor),
-                    idf,
-                )
-
                 # A structured relation endpoint must match the requested
                 # entity exactly. TF-IDF similarity is useful for ranking
                 # records, but it must not silently turn a different entity
