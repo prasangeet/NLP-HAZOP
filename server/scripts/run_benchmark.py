@@ -20,14 +20,25 @@ import re
 import subprocess
 import time
 from collections import Counter
+from functools import wraps
+from threading import Lock
+
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import httpx
+from google.genai import types as genai_types
+import langchain_google_genai.chat_models as google_chat_models
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 from app.application.strategies.graph_reasoner import GraphReasoner
 from app.application.strategies.hybrid_reasoner import HybridReasoner
-from app.application.strategies.llm_reasoner import LLMReasoner
+from app.application.strategies.llm_reasoner import (
+    GeminiRequestError,
+    LLMReasoner,
+)
 from app.application.strategies.prompt_only_reasoner import PromptOnlyReasoner
 from app.application.strategies.retrieval.graph_neighborhood import (
     GraphNeighborhoodRetriever,
@@ -55,7 +66,7 @@ from app.infrastructure.graph.in_memory_graph_repository import (
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-PROTOCOL_VERSION = "1.2"
+PROTOCOL_VERSION = "1.3"
 DATASET_PATHS = {
     "t301-reconstructed": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
     "t301-synthetic": ROOT / "data/raw/t301/T301_HAZOP_CCPS2001_style.csv",
@@ -64,6 +75,299 @@ DATASET_PATHS = {
 NORMALIZE_RE = re.compile(r"[^a-z0-9]+")
 
 logger = logging.getLogger(__name__)
+
+
+class GeminiRequestGate:
+    """Serialize Gemini HTTP attempts, retry transient failures, and cool down.
+
+    Retries happen at the HTTP boundary, not at LangChain's invoke boundary.
+    Therefore every physical HTTP attempt (including a retry) is followed by
+    the mandatory cooldown. A maximum of three attempts means one initial
+    request plus at most two retries.
+    """
+
+    RETRYABLE_STATUS_CODES = frozenset({408, 425, 429, 500, 502, 503, 504})
+
+    def __init__(
+        self,
+        *,
+        cooldown_seconds: float = 10.0,
+        max_attempts: int = 10,
+    ) -> None:
+        if cooldown_seconds <= 0:
+            raise ValueError("cooldown_seconds must be greater than zero")
+        if max_attempts < 1:
+            raise ValueError("max_attempts must be at least one")
+
+        self.cooldown_seconds = float(cooldown_seconds)
+        self.max_attempts = int(max_attempts)
+        self._lock = Lock()
+        self._fatal_error: GeminiRequestError | None = None
+        self.request_count = 0
+        self.success_count = 0
+        self.failure_count = 0
+        self.retry_count = 0
+        self.cooldown_count = 0
+        self.total_cooldown_seconds = 0.0
+
+    @staticmethod
+    def is_gemini_request(request: httpx.Request) -> bool:
+        """Identify Gemini Developer API and Vertex AI HTTP requests."""
+        host = (getattr(getattr(request, "url", None), "host", "") or "").casefold()
+        return (
+            "generativelanguage" in host
+            or host == "aiplatform.googleapis.com"
+            or host.endswith(".aiplatform.googleapis.com")
+        )
+
+    def raise_if_failed(self) -> None:
+        """Raise the final provider failure if an inner reasoner swallowed it."""
+        with self._lock:
+            if self._fatal_error is not None:
+                raise self._fatal_error
+
+    def _cooldown(self, attempt_number: int) -> None:
+        started = time.monotonic()
+        time.sleep(self.cooldown_seconds)
+        waited = time.monotonic() - started
+        self.cooldown_count += 1
+        self.total_cooldown_seconds += waited
+        logger.info(
+            "[GEMINI] Post-attempt cooldown complete | attempt=%d "
+            "waited=%.2fs required=%.2fs",
+            attempt_number,
+            waited,
+            self.cooldown_seconds,
+        )
+
+    def _make_error(
+        self,
+        *,
+        request: httpx.Request,
+        attempts: int,
+        status_code: int | None,
+        detail: str,
+    ) -> GeminiRequestError:
+        status_text = f" HTTP {status_code}" if status_code is not None else ""
+        return GeminiRequestError(
+            f"Gemini request failed after {attempts} attempt(s):{status_text} "
+            f"{detail} URL: {request.url}",
+            status_code=status_code,
+            attempts=attempts,
+        )
+
+    def send(
+        self,
+        original_send,
+        client: httpx.Client,
+        request: httpx.Request,
+        *args,
+        **kwargs,
+    ) -> httpx.Response:
+        """Retry transient failures; cool down after every physical attempt."""
+        with self._lock:
+            if self._fatal_error is not None:
+                raise self._fatal_error
+
+            # Buffer the request body once so the same POST can be replayed
+            # safely by httpx for a bounded retry.
+            request.read()
+
+            last_error: GeminiRequestError | None = None
+            for attempt_number in range(1, self.max_attempts + 1):
+                self.request_count += 1
+                request_number = self.request_count
+                started_at = time.monotonic()
+                logger.info(
+                    "[GEMINI] HTTP attempt started | attempt=%d/%d "
+                    "request=%d host=%s cooldown=%.1fs",
+                    attempt_number,
+                    self.max_attempts,
+                    request_number,
+                    request.url.host,
+                    self.cooldown_seconds,
+                )
+
+                retryable = False
+                response: httpx.Response | None = None
+
+                try:
+                    response = original_send(client, request, *args, **kwargs)
+                    status_code = int(response.status_code)
+
+                    if status_code < 400:
+                        self.success_count += 1
+                        logger.info(
+                            "[GEMINI] HTTP response received | attempt=%d/%d "
+                            "status=%d request_ms=%.1f",
+                            attempt_number,
+                            self.max_attempts,
+                            status_code,
+                            (time.monotonic() - started_at) * 1000.0,
+                        )
+                        # Cooldown is part of the attempt contract, even when
+                        # the response is successful.
+                        self._cooldown(request_number)
+                        return response
+
+                    retryable = status_code in self.RETRYABLE_STATUS_CODES
+                    detail = (
+                        "Transient provider response; retrying after cooldown."
+                        if retryable and attempt_number < self.max_attempts
+                        else "Provider returned a non-success response."
+                    )
+                    last_error = self._make_error(
+                        request=request,
+                        attempts=attempt_number,
+                        status_code=status_code,
+                        detail=detail,
+                    )
+                    self.failure_count += 1
+                    logger.warning(
+                        "[GEMINI] HTTP attempt failed | attempt=%d/%d "
+                        "status=%d retryable=%s",
+                        attempt_number,
+                        self.max_attempts,
+                        status_code,
+                        retryable,
+                    )
+                    response.close()
+
+                except httpx.TransportError as exc:
+                    retryable = True
+                    self.failure_count += 1
+                    last_error = self._make_error(
+                        request=request,
+                        attempts=attempt_number,
+                        status_code=None,
+                        detail=(
+                            f"Transport error {type(exc).__name__}: {exc}"
+                        ),
+                    )
+                    logger.warning(
+                        "[GEMINI] Transport attempt failed | attempt=%d/%d "
+                        "error=%s",
+                        attempt_number,
+                        self.max_attempts,
+                        type(exc).__name__,
+                    )
+
+                except GeminiRequestError:
+                    raise
+
+                except Exception as exc:
+                    # Programming/configuration errors are not transient
+                    # network failures and should not be retried.
+                    self.failure_count += 1
+                    last_error = self._make_error(
+                        request=request,
+                        attempts=attempt_number,
+                        status_code=None,
+                        detail=f"Non-retryable error {type(exc).__name__}: {exc}",
+                    )
+                    logger.exception(
+                        "[GEMINI] Non-retryable HTTP wrapper failure | attempt=%d",
+                        attempt_number,
+                    )
+                    self._cooldown(request_number)
+                    self._fatal_error = last_error
+                    raise last_error from exc
+
+                # This finally-equivalent cooldown runs after every failed
+                # physical attempt, before deciding whether to retry.
+                self._cooldown(request_number)
+
+                if retryable and attempt_number < self.max_attempts:
+                    self.retry_count += 1
+                    logger.warning(
+                        "[GEMINI] Retrying provider request | next_attempt=%d/%d "
+                        "after_cooldown=%.1fs",
+                        attempt_number + 1,
+                        self.max_attempts,
+                        self.cooldown_seconds,
+                    )
+                    continue
+
+                assert last_error is not None
+                self._fatal_error = last_error
+                logger.error(
+                    "[GEMINI] Retry budget exhausted or error non-retryable | "
+                    "attempts=%d max_attempts=%d status=%s",
+                    attempt_number,
+                    self.max_attempts,
+                    last_error.status_code,
+                )
+                raise last_error
+
+            # Defensive guard; the loop always returns or raises.
+            assert last_error is not None
+            self._fatal_error = last_error
+            raise last_error
+
+
+GEMINI_REQUEST_GATE = GeminiRequestGate(cooldown_seconds=10.0, max_attempts=10)
+
+
+def install_gemini_request_gate() -> None:
+    """Install the HTTP-boundary gate and disable SDK-level automatic retries.
+
+    The HTTPX wrapper is process-wide, so requests from the primary reasoner,
+    diagnostic reasoner, prompt-only reasoner, and hybrid fallback all share
+    the same ten-second cooldown and fatal-error latch.
+    """
+
+    # Configure the Google GenAI SDK for a single attempt. The HTTP-boundary
+    # gate remains authoritative and would still pace every attempt if an SDK
+    # version unexpectedly made more than one.
+    if not getattr(google_chat_models, "_hazop_http_options_patched", False):
+        original_http_options = google_chat_models.HttpOptions
+
+        def http_options_without_retries(*args, **kwargs):
+            kwargs["retry_options"] = genai_types.HttpRetryOptions(attempts=1)
+            return original_http_options(*args, **kwargs)
+
+        google_chat_models.HttpOptions = http_options_without_retries
+        google_chat_models._hazop_http_options_patched = True
+
+    # Disable LangChain's own retry loop as well.
+    if not getattr(ChatGoogleGenerativeAI, "_hazop_retries_disabled", False):
+        original_init = ChatGoogleGenerativeAI.__init__
+
+        @wraps(original_init)
+        def no_langchain_retries_init(self, *args, **kwargs):
+            kwargs["max_retries"] = 0
+            original_init(self, *args, **kwargs)
+
+        ChatGoogleGenerativeAI.__init__ = no_langchain_retries_init
+        ChatGoogleGenerativeAI._hazop_retries_disabled = True
+
+    # Patch HTTPX once, below LangChain and the Google GenAI client. Every
+    # Gemini client in this process therefore uses the same serialization.
+    if not getattr(httpx.Client, "_hazop_gemini_gate_installed", False):
+        original_send = httpx.Client.send
+
+        @wraps(original_send)
+        def gated_httpx_send(self, request, *args, **kwargs):
+            if not GEMINI_REQUEST_GATE.is_gemini_request(request):
+                return original_send(self, request, *args, **kwargs)
+            return GEMINI_REQUEST_GATE.send(
+                original_send,
+                self,
+                request,
+                *args,
+                **kwargs,
+            )
+
+        httpx.Client.send = gated_httpx_send
+        httpx.Client._hazop_gemini_gate_installed = True
+
+    logger.info(
+        "[GEMINI] HTTP request gate installed | boundary=httpx.Client.send "
+        "cooldown_after_every_attempt=%.1fs max_attempts=%d "
+        "LangChain_retries=0 Google_GenAI_attempts=1",
+        GEMINI_REQUEST_GATE.cooldown_seconds,
+        GEMINI_REQUEST_GATE.max_attempts,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -438,6 +742,24 @@ def merge_candidate_predictions(
 
 
 
+def _invoke_reasoner_safely(method, context):
+    """Invoke a reasoner and surface any latched Gemini HTTP failure.
+
+    Some strategy implementations intentionally catch broad exceptions and
+    return an abstention. The request gate's fatal latch makes provider errors
+    observable here even when an inner strategy swallowed the original one.
+    """
+
+    try:
+        result = method(context)
+    except Exception:
+        GEMINI_REQUEST_GATE.raise_if_failed()
+        raise
+
+    GEMINI_REQUEST_GATE.raise_if_failed()
+    return result
+
+
 def _run_recovery(
     use_case: RecoverMissingLink,
     builder: BuildEvidenceContext,
@@ -469,7 +791,7 @@ def _run_recovery(
         reason_all = getattr(reasoner, "reason_all", None)
 
         if callable(reason_all):
-            relations = reason_all(context)
+            relations = _invoke_reasoner_safely(reason_all, context)
 
             predictions = [
                 prediction_from_relation(
@@ -490,7 +812,7 @@ def _run_recovery(
                 status = "no_candidates"
 
             else:
-                reasoning = reasoner.reason(context)
+                reasoning = _invoke_reasoner_safely(reasoner.reason, context)
                 status = (
                     reasoning.abstention_reason.value
                     if reasoning.status == ReasoningStatus.ABSTAINED
@@ -500,7 +822,7 @@ def _run_recovery(
                 diagnostics.extend(reasoning.supporting_evidence)
 
         else:
-            reasoning = reasoner.reason(context)
+            reasoning = _invoke_reasoner_safely(reasoner.reason, context)
 
             predictions = prediction_from_reasoning(
                 reasoning,
@@ -618,6 +940,9 @@ def run(
 
     graph_reasoner = GraphReasoner(max_hops=args.max_hops)
 
+    if args.with_llm:
+        install_gemini_request_gate()
+
     llm_available = bool(os.getenv("GEMINI_API_KEY"))
     llm_enabled = args.with_llm and llm_available
     logger.info("[BENCHMARK] LLM configuration | requested=%s key_available=%s "
@@ -643,6 +968,14 @@ def run(
     }
 
     per_case: list[dict[str, Any]] = []
+    checkpoint_path = None
+    if getattr(args, "checkpoint_dir", None):
+        checkpoint_dir = Path(args.checkpoint_dir).resolve()
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        run_stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+        checkpoint_path = checkpoint_dir / f"cases-{run_stamp}.partial.jsonl"
+        # Never truncate a previous run's checkpoint. Each run gets its own file.
+        logger.info("[BENCHMARK] Per-case checkpoint enabled | path=%s", checkpoint_path)
     method_cases: dict[str, list[dict[str, Any]]] = {
         "prompt_only_llm": [],
         "tfidf_vector_retrieval": [],
@@ -736,60 +1069,112 @@ def run(
         case_result["methods"]["graph_tfidf_union"] = graph_vector_case
 
         # LLM methods are evaluated on the same deterministic capped subset.
-        if llm_enabled and case.case_id in llm_case_ids:
-            prompt_predictions, prompt_latency, prompt_status, prompt_diagnostics = _run_recovery(
-                local_use_case,
-                builder,
-                request,
-                reasoner=prompt_reasoner,
-            )
-            prompt_case = {
-                "case_id": case.case_id,
-                "gold_values": list(case.gold_values),
-                "predictions": prompt_predictions,
-                "latency_ms": prompt_latency,
-                "status": prompt_status,
-                "diagnostics": prompt_diagnostics,
-            }
-            method_cases["prompt_only_llm"].append(prompt_case)
-            case_result["methods"]["prompt_only_llm"] = prompt_case
-
-            hybrid_predictions, hybrid_latency, hybrid_status, hybrid_diagnostics = _run_recovery(
-                hybrid_use_case,
-                builder,
-                request,
-                reasoner=hybrid_reasoner,
-            )
-            hybrid_case = {
-                "case_id": case.case_id,
-                "gold_values": list(case.gold_values),
-                "predictions": hybrid_predictions,
-                "latency_ms": hybrid_latency,
-                "status": hybrid_status,
-                "diagnostics": hybrid_diagnostics,
-            }
-            method_cases["hybrid_graph_vector_llm"].append(hybrid_case)
-            case_result["methods"]["hybrid_graph_vector_llm"] = hybrid_case
-        else:
-            skipped_reason = (
-                "llm_call_cap"
-                if llm_enabled
-                else (
-                    "missing_gemini_api_key"
-                    if args.with_llm and not llm_available
-                    else "disabled"
+        # If Gemini fails, persist the current case (including completed
+        # deterministic baselines) before propagating the fatal provider error.
+        active_llm_method: str | None = None
+        try:
+            if llm_enabled and case.case_id in llm_case_ids:
+                active_llm_method = "prompt_only_llm"
+                prompt_predictions, prompt_latency, prompt_status, prompt_diagnostics = _run_recovery(
+                    local_use_case,
+                    builder,
+                    request,
+                    reasoner=prompt_reasoner,
                 )
-            )
-            for method in ("prompt_only_llm", "hybrid_graph_vector_llm"):
-                case_result["methods"][method] = {
-                    "status": f"not_evaluated_{skipped_reason}",
+                prompt_case = {
+                    "case_id": case.case_id,
+                    "gold_values": list(case.gold_values),
+                    "predictions": prompt_predictions,
+                    "latency_ms": prompt_latency,
+                    "status": prompt_status,
+                    "diagnostics": prompt_diagnostics,
+                }
+                method_cases["prompt_only_llm"].append(prompt_case)
+                case_result["methods"]["prompt_only_llm"] = prompt_case
+
+                active_llm_method = "hybrid_graph_vector_llm"
+                hybrid_predictions, hybrid_latency, hybrid_status, hybrid_diagnostics = _run_recovery(
+                    hybrid_use_case,
+                    builder,
+                    request,
+                    reasoner=hybrid_reasoner,
+                )
+                hybrid_case = {
+                    "case_id": case.case_id,
+                    "gold_values": list(case.gold_values),
+                    "predictions": hybrid_predictions,
+                    "latency_ms": hybrid_latency,
+                    "status": hybrid_status,
+                    "diagnostics": hybrid_diagnostics,
+                }
+                method_cases["hybrid_graph_vector_llm"].append(hybrid_case)
+                case_result["methods"]["hybrid_graph_vector_llm"] = hybrid_case
+            else:
+                skipped_reason = (
+                    "llm_call_cap"
+                    if llm_enabled
+                    else (
+                        "missing_gemini_api_key"
+                        if args.with_llm and not llm_available
+                        else "disabled"
+                    )
+                )
+                for method in ("prompt_only_llm", "hybrid_graph_vector_llm"):
+                    case_result["methods"][method] = {
+                        "status": f"not_evaluated_{skipped_reason}",
+                        "predictions": [],
+                        "latency_ms": 0.0,
+                    }
+        except GeminiRequestError as exc:
+            failed_method = active_llm_method or "unknown_llm_method"
+            case_result["methods"].setdefault(
+                failed_method,
+                {
+                    "status": "provider_error",
                     "predictions": [],
                     "latency_ms": 0.0,
-                }
+                    "diagnostics": [str(exc)],
+                },
+            )
+            for method in ("prompt_only_llm", "hybrid_graph_vector_llm"):
+                case_result["methods"].setdefault(
+                    method,
+                    {
+                        "status": "not_evaluated_provider_failure",
+                        "predictions": [],
+                        "latency_ms": 0.0,
+                    },
+                )
+
+            case_result["case_status"] = "interrupted_provider_failure"
+            case_result["provider_error"] = {
+                "type": type(exc).__name__,
+                "message": str(exc),
+                "status_code": exc.status_code,
+            }
+            per_case.append(case_result)
+            if checkpoint_path is not None:
+                with checkpoint_path.open("a", encoding="utf-8") as checkpoint:
+                    checkpoint.write(json.dumps(case_result, ensure_ascii=False) + "\n")
+                    checkpoint.flush()
+                    os.fsync(checkpoint.fileno())
+
+            logger.error(
+                "[BENCHMARK] Persisted interrupted case before stopping | "
+                "case_id=%s failed_method=%s",
+                case.case_id,
+                failed_method,
+            )
+            raise
 
         logger.info("[BENCHMARK] Case complete | case_id=%s methods=%d",
                     case.case_id, len(case_result["methods"]))
         per_case.append(case_result)
+        if checkpoint_path is not None:
+            with checkpoint_path.open("a", encoding="utf-8") as checkpoint:
+                checkpoint.write(json.dumps(case_result, ensure_ascii=False) + "\n")
+                checkpoint.flush()
+                os.fsync(checkpoint.fileno())
 
     method_summary: dict[str, Any] = {}
     for method, evaluated_cases in method_cases.items():
@@ -870,7 +1255,26 @@ def run(
         "llm_enabled": llm_enabled,
         "llm_model": "gemini-3.5-flash-lite" if llm_enabled else None,
         "llm_max_cases": args.max_llm_cases,
-        "llm_calls_per_evaluated_case_max": 2,
+        "llm_request_gate": {
+            "provider": "Gemini",
+            "request_boundary": "httpx.Client.send (Gemini endpoints only)",
+            "cooldown_seconds_after_every_http_attempt": GEMINI_REQUEST_GATE.cooldown_seconds,
+            "http_attempts": GEMINI_REQUEST_GATE.request_count,
+            "successful_http_attempts": GEMINI_REQUEST_GATE.success_count,
+            "failed_http_attempts": GEMINI_REQUEST_GATE.failure_count,
+            "completed_post_request_cooldowns": GEMINI_REQUEST_GATE.cooldown_count,
+            "measured_cooldown_seconds": round(
+                GEMINI_REQUEST_GATE.total_cooldown_seconds,
+                3,
+            ),
+            "serialized_across_all_gemini_clients": True,
+            "stop_after_first_provider_or_transport_failure": True,
+            "google_genai_attempts_per_sdk_call": 1,
+            "langchain_retries": 0,
+            "automatic_retries_on_http_errors": False,
+            "synchronous": True,
+        },
+        "checkpoint_path": str(checkpoint_path) if checkpoint_path else None,
         "cost_measurement": "not captured; cost_usd remains null",
         "created_at": datetime.now(UTC).isoformat(),
     }
@@ -974,8 +1378,13 @@ def run_grouped_cross_validation(args: argparse.Namespace) -> dict[str, Any]:
             len(split[0]),
             len(split[1]),
         )
+        fold_args = argparse.Namespace(**vars(args))
+        if getattr(args, "checkpoint_dir", None):
+            fold_args.checkpoint_dir = str(
+                Path(args.checkpoint_dir) / f"fold-{fold_index:02d}"
+            )
         result = run(
-            args,
+            fold_args,
             records_override=records,
             split_override=split,
         )
@@ -1203,6 +1612,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--dataset-path", default=None)
     parser.add_argument("--output-dir", default=None)
+    parser.add_argument("--checkpoint-dir", default=None,
+                        help="Directory for a durable JSONL checkpoint written after each completed case.")
     parser.add_argument("--test-fraction", type=float, default=0.2)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--top-k", type=int, default=10)
@@ -1238,16 +1649,26 @@ def main() -> None:
     logger.info("[BENCHMARK] Logging initialized | level=%s",
                 os.getenv("LOG_LEVEL", "INFO").upper())
     args = parse_args()
-    result = (
-        run_grouped_cross_validation(args)
-        if args.cross_validation_folds >= 2
-        else run(args)
-    )
     output_dir = (
         Path(args.output_dir).resolve()
         if args.output_dir
         else ROOT / "results" / args.dataset
     )
+    if args.checkpoint_dir is None:
+        args.checkpoint_dir = str(output_dir / "checkpoint")
+    try:
+        result = (
+            run_grouped_cross_validation(args)
+            if args.cross_validation_folds >= 2
+            else run(args)
+        )
+    except GeminiRequestError as exc:
+        logger.error("[BENCHMARK] Stopped safely: %s", exc)
+        logger.error(
+            "[BENCHMARK] Completed cases, if any, remain in the JSONL checkpoint: %s",
+            args.checkpoint_dir,
+        )
+        raise SystemExit(2) from exc
     logger.info("[BENCHMARK] Writing outputs | output_dir=%s", output_dir)
     write_outputs(result, output_dir)
     logger.info("[BENCHMARK] Outputs written successfully | output_dir=%s", output_dir)
