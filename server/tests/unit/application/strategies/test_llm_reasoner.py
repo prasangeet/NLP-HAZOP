@@ -153,6 +153,7 @@ def test_prompt_includes_target_process_and_causal_graph_context() -> None:
             "Known causes: Closed outlet valve | Safeguards: High-level alarm"
         ),
         graph_context=graph_edges,
+        scenario_entities=(("Other than composition", EntityType.DEVIATION),),
     )
 
     result = reasoner.reason(context)
@@ -164,6 +165,7 @@ def test_prompt_includes_target_process_and_causal_graph_context() -> None:
     assert "Source process context: Equipment: T-301" in fake_llm.prompt
     assert "Other than composition -[leads_to]-> Flammable vapour release" in fake_llm.prompt
     assert "Flammable vapour release -[leads_to_consequence]-> Fire" in fake_llm.prompt
+    assert "Known endpoint type: Deviation" in fake_llm.prompt
     assert "valid typed causal path" in fake_llm.prompt
 
 
