@@ -15,6 +15,7 @@ from app.domain.entities.hazop_record import (
 )
 from app.domain.ontology.schema import validate_relation_types
 from app.domain.reasoning.models import (
+    AbstentionReason,
     ReasoningResult,
     ReasoningStatus,
     ReasoningStrategy,
@@ -561,10 +562,12 @@ class HybridReasoner:
                 context.scenario_id,
             )
 
-            return replace(
-                fallback_result,
+            return ReasoningResult(
                 status=ReasoningStatus.ABSTAINED,
-                proposed_relation=None,
+                scenario_id=context.scenario_id,
+                dataset_id=dataset_id,
+                supporting_evidence=fallback_result.supporting_evidence,
+                abstention_reason=AbstentionReason.INSUFFICIENT_SUPPORT,
             )
 
         llm_result = self._llm_reasoner.reason(
@@ -573,6 +576,35 @@ class HybridReasoner:
                 evidence_items=compatible,
             )
         )
+
+        # Validate every LLM proposal. Consequence recovery is set-valued,
+        # so validating only proposed_relation (the first item) silently
+        # discarded all other supported consequences.
+        if llm_result.status == ReasoningStatus.PROPOSED:
+            valid_relations = tuple(
+                relation
+                for relation in llm_result.proposed_relations
+                if self._is_valid_evidence_result(
+                    relation,
+                    context=context,
+                    dataset_id=dataset_id,
+                    known_endpoint=known_endpoint,
+                )
+            )
+            if valid_relations:
+                return replace(
+                    llm_result,
+                    proposed_relation=valid_relations[0],
+                    proposed_relations=valid_relations,
+                )
+
+            return ReasoningResult(
+                status=ReasoningStatus.ABSTAINED,
+                scenario_id=context.scenario_id,
+                dataset_id=dataset_id,
+                supporting_evidence=llm_result.supporting_evidence,
+                abstention_reason=AbstentionReason.INSUFFICIENT_SUPPORT,
+            )
 
         # If the LLM abstained (ambiguous or insufficient) and a fallback
         # reasoner is configured, try generating an independent hypothesis
