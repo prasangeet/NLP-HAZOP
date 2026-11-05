@@ -176,7 +176,8 @@ def recover_missing_link(
                 dataset_id=dataset_id,
                 record=record,
                 enforce_record_constraints=(
-                    candidate_source_scenarios.get(
+                    relation.origin.value != "graph_inferred"
+                    and candidate_source_scenarios.get(
                         (
                             relation.subject.strip().casefold(),
                             relation.predicate.strip().casefold(),
