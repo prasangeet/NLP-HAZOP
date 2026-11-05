@@ -469,11 +469,11 @@ class LLMReasoner:
 
         graph_blocks = [
             (
-                f"[G{index}]\\n"
-                f"Scenario: {getattr(edge, 'scenario_id', 'unknown')}\\n"
-                f"{edge.subject} -[{edge.predicate}]-> {edge.object}\\n"
-                f"Origin: {getattr(edge.origin, 'value', edge.origin)}\\n"
-                f"Evidence: {edge.evidence}\\n"
+                f"[G{index}]\n"
+                f"Scenario: {getattr(edge, 'scenario_id', 'unknown')}\n"
+                f"{edge.subject} -[{edge.predicate}]-> {edge.object}\n"
+                f"Origin: {getattr(edge.origin, 'value', edge.origin)}\n"
+                f"Evidence: {edge.evidence}\n"
                 f"Source ID: {edge.source_id or 'Not specified'}"
             )
             for index, edge in enumerate(getattr(context, "graph_context", ()))
