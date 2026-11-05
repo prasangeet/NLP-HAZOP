@@ -38,6 +38,7 @@ class EvidenceItem:
     subject_type: EntityType = EntityType.CONCEPT
     object_type: EntityType = EntityType.CONCEPT
     source_location: str | None = None
+    process_context: str = ""
 
     @classmethod
     def from_candidate(cls, candidate: RecoveryCandidate) -> EvidenceItem:
@@ -61,6 +62,7 @@ class EvidenceItem:
             subject_type=relation.subject_type,
             object_type=relation.object_type,
             source_location=relation.source_location,
+            process_context=candidate.process_context,
         )
 
     @classmethod
@@ -85,6 +87,7 @@ class EvidenceItem:
             subject_type=relation.subject_type,
             object_type=relation.object_type,
             source_location=relation.source_location,
+            process_context=item.process_context,
         )
 
     @staticmethod
@@ -147,6 +150,7 @@ class EvidenceItem:
             "source_location": self.source_location,
             "scope": self.scope.value,
             "relevance_score": self.relevance_score,
+            "process_context": self.process_context,
         }
 
 

@@ -27,6 +27,7 @@ class RetrievedEvidence:
     scope: RetrievalScope
     relevance_score: float | None = None
     dataset_id: str = "default"
+    process_context: str = ""
 
 
 @dataclass(frozen=True, slots=True)

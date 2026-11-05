@@ -73,16 +73,22 @@ def _cosine(
 
 
 def _scenario_context(record: HazopRecord) -> str:
+    """Return target context while deliberately omitting held-out consequences."""
+    sections = (
+        ("Plant/unit", record.plant_unit),
+        ("Equipment", record.equipment),
+        ("Design intent", record.design_intent),
+        ("Parameter", record.parameter),
+        ("Guideword", record.guideword),
+        ("Deviation", record.deviation),
+        ("Known causes", "; ".join(record.causes)),
+        ("Known effects", "; ".join(record.effects)),
+        ("Safeguards", "; ".join(record.safeguards)),
+        ("Recommendations", "; ".join(record.recommendations)),
+    )
     return " | ".join(
-        value
-        for value in (
-            record.plant_unit,
-            record.equipment,
-            record.design_intent,
-            record.parameter,
-            record.guideword,
-            record.deviation,
-        )
+        f"{label}: {value}"
+        for label, value in sections
         if value
     )
 
@@ -270,8 +276,23 @@ class TfidfRetriever:
                 scenario_context=_scenario_context(target),
             )
 
-        query_terms = _tokens(request.known_endpoint)
-        query_vector = self._vector(query_terms, idf)
+        # Rank records using the target's process context, not only the
+        # deviation string. Held-out consequences are deliberately excluded.
+        target_context = " ".join(
+            (
+                target.plant_unit,
+                target.equipment,
+                target.design_intent,
+                target.parameter,
+                target.guideword,
+                target.deviation,
+                *target.causes,
+                *target.effects,
+                *target.safeguards,
+                *target.recommendations,
+            )
+        )
+        query_vector = self._vector(_tokens(target_context), idf)
 
         if not query_vector:
             return RetrievalResult(
@@ -372,21 +393,17 @@ class TfidfRetriever:
                 continue
 
             for anchor in anchors:
-                anchor_vector = self._vector(
-                    _tokens(anchor),
-                    idf,
-                )
-
-                anchor_score = _cosine(query_vector, anchor_vector)
-
+                # A structured relation endpoint must match the requested
+                # entity exactly. TF-IDF similarity is useful for ranking
+                # records, but it must not silently turn a different entity
+                # into the requested subject/object.
                 if (
                     anchor.strip().casefold()
-                    == request.known_endpoint.strip().casefold()
+                    != request.known_endpoint.strip().casefold()
                 ):
-                    anchor_score = 1.0
-
-                if anchor_score < self._min_score:
                     continue
+
+                anchor_score = 1.0
 
                 score = 0.75 * anchor_score + 0.25 * record_score
 
@@ -473,6 +490,7 @@ class TfidfRetriever:
                                 else RetrievalScope.CROSS_SCENARIO
                             ),
                             relevance_score=score,
+                            process_context=_scenario_context(record),
                         )
                     )
 
@@ -536,6 +554,7 @@ class TfidfRetriever:
                 dataset_id=record.dataset_id,
                 relation=relation,
                 scope=RetrievalScope.SCENARIO_LOCAL,
+                process_context=_scenario_context(record),
             )
             for relation in record.causal_relations
             if relation.origin not in {

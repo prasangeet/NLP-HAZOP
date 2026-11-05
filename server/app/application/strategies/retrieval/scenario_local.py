@@ -54,12 +54,14 @@ class ScenarioLocalRetriever:
             if relation.origin in self._ALLOWED_LOCAL_ORIGINS
         )
 
+        process_context = _record_process_context(record)
         graph_context = tuple(
             RetrievedEvidence(
                 scenario_id=record.scenario_id,
                 dataset_id=record.dataset_id,
                 relation=relation,
                 scope=RetrievalScope.SCENARIO_LOCAL,
+                process_context=process_context,
             )
             for relation in eligible_relations
         )
@@ -95,6 +97,7 @@ class ScenarioLocalRetriever:
                     dataset_id=record.dataset_id,
                     relation=relation,
                     scope=RetrievalScope.SCENARIO_LOCAL,
+                    process_context=process_context,
                 )
             )
 
@@ -112,18 +115,7 @@ class ScenarioLocalRetriever:
             if value
         )
 
-        scenario_context = " | ".join(
-            value
-            for value in (
-                record.plant_unit,
-                record.equipment,
-                record.design_intent,
-                record.parameter,
-                record.guideword,
-                record.deviation,
-            )
-            if value
-        )
+        scenario_context = process_context
 
         return RetrievalResult(
             scenario_id=request.scenario_id,
@@ -154,3 +146,21 @@ class ScenarioLocalRetriever:
         raise ValueError(
             "missing_endpoint must be 'subject' or 'object'."
         )
+
+
+
+def _record_process_context(record) -> str:
+    """Build target context without including consequence labels that may be held out."""
+    fields = (
+        ("Plant/unit", record.plant_unit),
+        ("Equipment", record.equipment),
+        ("Design intent", record.design_intent),
+        ("Parameter", record.parameter),
+        ("Guideword", record.guideword),
+        ("Deviation", record.deviation),
+        ("Known causes", "; ".join(record.causes)),
+        ("Known effects", "; ".join(record.effects)),
+        ("Safeguards", "; ".join(record.safeguards)),
+        ("Recommendations", "; ".join(record.recommendations)),
+    )
+    return " | ".join(f"{label}: {value}" for label, value in fields if value)

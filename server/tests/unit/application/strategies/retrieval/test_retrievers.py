@@ -134,6 +134,37 @@ def repository() -> FakeRepository:
     )
 
 
+def test_local_retrieval_supplies_process_context_without_consequence_labels() -> None:
+    target = HazopRecord(
+        scenario_id="T301-016",
+        plant_unit="Hexane storage",
+        equipment="T-301",
+        design_intent="Receive and store liquid hexane",
+        parameter="Level",
+        guideword="High",
+        deviation="High level",
+        causes=("Closed outlet valve",),
+        effects=("Liquid overflow",),
+        consequences=("WITHHELD_CONSEQUENCE",),
+        safeguards=("High-level alarm",),
+        recommendations=("Inspect outlet valve",),
+    )
+    result = ScenarioLocalRetriever(FakeRepository([target])).retrieve(
+        RetrievalRequest(
+            scenario_id="T301-016",
+            predicate="leads_to_consequence",
+            known_endpoint="High level",
+            missing_endpoint="object",
+        )
+    )
+
+    assert "Equipment: T-301" in result.scenario_context
+    assert "Known causes: Closed outlet valve" in result.scenario_context
+    assert "Safeguards: High-level alarm" in result.scenario_context
+    assert "WITHHELD_CONSEQUENCE" not in result.scenario_context
+    assert result.graph_context == ()
+
+
 def test_local_retrieval_returns_only_target_scenario(
     repository: FakeRepository,
 ) -> None:

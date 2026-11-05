@@ -114,6 +114,7 @@ class RecoveryCandidate:
     scenario_id: str = ""
     scope: RetrievalScope = RetrievalScope.SCENARIO_LOCAL
     relevance_score: float | None = None
+    process_context: str = ""
 
     def __post_init__(self) -> None:
         if (
@@ -171,6 +172,7 @@ class RecoveryCandidate:
             "source_location": self.relation.source_location,
             "scope": self.scope.value,
             "relevance_score": self.relevance_score,
+            "process_context": self.process_context,
         }
 
 
@@ -227,6 +229,7 @@ class RecoveryResult:
                     "origin": item.relation.origin.value,
                     "source_id": item.relation.source_id,
                     "scope": item.scope.value,
+                    "process_context": item.process_context,
                 }
                 for item in self.graph_context
             ],
@@ -354,6 +357,7 @@ class RecoverMissingLink:
                     scenario_id=item.scenario_id,
                     scope=item.scope,
                     relevance_score=item.relevance_score,
+                    process_context=item.process_context,
                 )
             )
 

@@ -40,6 +40,16 @@ class CapturingReasoner:
         )
 
 
+class FixedResultReasoner:
+    def __init__(self, result: ReasoningResult) -> None:
+        self.result = result
+        self.context = None
+
+    def reason(self, context) -> ReasoningResult:
+        self.context = context
+        return self.result
+
+
 class FixedProposalReasoner:
     def __init__(self, relation: CausalRelation) -> None:
         self.relation = relation
@@ -187,6 +197,73 @@ def test_graph_step_adds_path_candidate_to_vector_evidence_before_llm() -> None:
 
     assert "graph-row-1" in graph_item.evidence
     assert "graph-row-2" in graph_item.evidence
+
+
+def test_hybrid_preserves_all_valid_consequence_proposals_from_llm() -> None:
+    first = CausalRelation(
+        subject="Other than composition",
+        predicate="leads_to_consequence",
+        object="Fire",
+        origin=RelationshipOrigin.RECONSTRUCTED,
+        evidence="Graph path supports fire.",
+        dataset_id="default",
+        subject_type=EntityType.EFFECT,
+        object_type=EntityType.CONSEQUENCE,
+    )
+    second = CausalRelation(
+        subject="Other than composition",
+        predicate="leads_to_consequence",
+        object="Loss of primary containment",
+        origin=RelationshipOrigin.RECONSTRUCTED,
+        evidence="A second graph path supports loss of containment.",
+        dataset_id="default",
+        subject_type=EntityType.EFFECT,
+        object_type=EntityType.CONSEQUENCE,
+    )
+    llm_result = ReasoningResult(
+        status=ReasoningStatus.PROPOSED,
+        scenario_id="HELD-OUT-001",
+        proposed_relations=(first, second),
+        dataset_id="default",
+    )
+    candidates = (
+        make_item(
+            "Other than composition",
+            "leads_to_consequence",
+            "Fire",
+            RelationshipOrigin.RECONSTRUCTED,
+            "candidate-fire",
+        ),
+        make_item(
+            "Other than composition",
+            "leads_to_consequence",
+            "Loss of primary containment",
+            RelationshipOrigin.RECONSTRUCTED,
+            "candidate-loss",
+        ),
+    )
+    context = EvidenceContext(
+        scenario_id="HELD-OUT-001",
+        predicate="leads_to_consequence",
+        known_endpoint="Other than composition",
+        missing_endpoint="object",
+        status=RecoveryStatus.CANDIDATES_FOUND,
+        evidence_items=candidates,
+        graph_context=(),
+        scenario_context="Equipment: T-301 | Deviation: Other than composition",
+    )
+    llm = FixedResultReasoner(llm_result)
+
+    result = HybridReasoner(
+        graph_reasoner=GraphReasoner(),
+        llm_reasoner=llm,
+    ).reason(context)
+
+    assert result.status == ReasoningStatus.PROPOSED
+    assert [item.object for item in result.proposed_relations] == [
+        "Fire",
+        "Loss of primary containment",
+    ]
 
 
 def test_returns_graph_abstention_when_neither_retrieval_nor_path_exists() -> None:

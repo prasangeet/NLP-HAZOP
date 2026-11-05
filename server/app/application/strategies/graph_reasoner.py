@@ -618,12 +618,21 @@ class GraphReasoner:
             return None
 
         parts = [
-            part.strip().casefold()
+            part.strip()
             for part in scenario_context.split(" | ")
             if part.strip()
         ]
 
-        return parts[-1] if parts else None
+        # New contexts use explicit labels and may include causes, effects,
+        # safeguards, and recommendations after the deviation. Read the
+        # labeled deviation rather than assuming it is the final field.
+        for part in parts:
+            label, separator, value = part.partition(":")
+            if separator and label.strip().casefold() == "deviation":
+                return value.strip().casefold() or None
+
+        # Backward compatibility with older unlabeled context strings.
+        return parts[-1].casefold() if parts else None
 
     def _build_path_relation(
         self,
