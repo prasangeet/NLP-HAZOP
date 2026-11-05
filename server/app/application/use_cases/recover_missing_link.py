@@ -229,6 +229,7 @@ class RecoveryResult:
                     "origin": item.relation.origin.value,
                     "source_id": item.relation.source_id,
                     "scope": item.scope.value,
+                    "process_context": item.process_context,
                 }
                 for item in self.graph_context
             ],
