@@ -141,6 +141,36 @@ def test_does_not_return_unrelated_rows_from_metadata_overlap() -> None:
     assert result.evidence == ()
 
 
+def test_does_not_treat_similar_but_different_endpoint_as_same_entity() -> None:
+    repository = InMemoryGraphRepository()
+    repository.save_record(
+        record(
+            "TRAIN-001",
+            causes=("Valve fails open",),
+            consequences=("Tank overflow",),
+        )
+    )
+    repository.save_context_record(
+        HazopRecord(
+            scenario_id="HELD-OUT-001",
+            plant_unit="Storage",
+            equipment="T-301",
+            deviation="High tank level",
+        )
+    )
+
+    result = TfidfRetriever(repository).retrieve(
+        RetrievalRequest(
+            scenario_id="HELD-OUT-001",
+            predicate="causes",
+            known_endpoint="Valve failure",
+            missing_endpoint="object",
+        )
+    )
+
+    assert result.evidence == ()
+
+
 def test_missing_target_scenario_is_reported() -> None:
     repository = InMemoryGraphRepository()
     result = TfidfRetriever(repository).retrieve(
