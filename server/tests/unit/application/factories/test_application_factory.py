@@ -32,6 +32,6 @@ def test_llm_strategies_require_provider_factory():
     try:
         factory.create_reasoning_strategy("hybrid")
     except RuntimeError as exc:
-        assert "GROQ_API_KEY" in str(exc)
+        assert "GEMINI_API_KEY" in str(exc)
     else:
         raise AssertionError("Expected LLM configuration error")

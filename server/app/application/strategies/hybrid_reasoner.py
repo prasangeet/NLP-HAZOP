@@ -85,32 +85,52 @@ class HybridReasoner:
             len(compatible),
         )
 
-        # 3. Adjudicate evidence-backed candidates.
+        # 3. Adjudicate evidence using the correct epistemic path.
         supported_relations: list[CausalRelation] = []
-        reason_all = getattr(self._llm_reasoner, "reason_all", None)
+        adjudication_context = replace(
+            context,
+            evidence_items=compatible,
+        )
 
-        if compatible and callable(reason_all):
-            adjudication_context = replace(
-                context,
-                evidence_items=compatible,
-            )
-
+        if compatible:
             try:
-                adjudicated = cast(
-                    Iterable[CausalRelation],
-                    reason_all(adjudication_context),
-                )
+                if context.predicate.strip().casefold() == "co_listed_with_consequence":
+                    reason_all = getattr(self._llm_reasoner, "reason_all", None)
 
-                supported_relations = [
-                    relation
-                    for relation in adjudicated
-                    if self._is_valid_evidence_result(
-                        relation,
-                        context=context,
-                        dataset_id=dataset_id,
-                        known_endpoint=known_endpoint,
+                    if callable(reason_all):
+                        adjudicated = cast(
+                            Iterable[CausalRelation],
+                            reason_all(adjudication_context),
+                        )
+
+                        supported_relations = [
+                            relation
+                            for relation in adjudicated
+                            if self._is_valid_evidence_result(
+                                relation,
+                                context=context,
+                                dataset_id=dataset_id,
+                                known_endpoint=known_endpoint,
+                            )
+                        ]
+                else:
+                    causal_result = self._llm_reasoner.reason(
+                        adjudication_context
                     )
-                ]
+                    relation = causal_result.proposed_relation
+
+                    if (
+                        causal_result.status == ReasoningStatus.PROPOSED
+                        and relation is not None
+                        and self._is_valid_evidence_result(
+                            relation,
+                            context=context,
+                            dataset_id=dataset_id,
+                            known_endpoint=known_endpoint,
+                        )
+                    ):
+                        supported_relations.append(relation)
+
             except Exception:
                 logger.exception(
                     "Evidence adjudication failed for scenario %s",
@@ -224,14 +244,20 @@ class HybridReasoner:
 
     @staticmethod
     def _is_supported_request(context: Any) -> bool:
-        """Check that the request uses a supported predicate and direction."""
+        """Validate the request shape without hard-coding one predicate.
+
+        The hybrid evidence-adjudication workflow is relation-agnostic: the
+        requested predicate and endpoint direction are supplied by the
+        recovery context. Restricting this check to one association predicate
+        caused valid causal requests (for example, ``leads_to_consequence``)
+        to bypass candidate adjudication entirely.
+        """
 
         return (
-            isinstance(context.predicate, str)
-            and context.predicate.strip().casefold()
-            == "co_listed_with_consequence"
-            and context.missing_endpoint in {"subject", "object"}
-            and isinstance(context.known_endpoint, str)
+            isinstance(getattr(context, "predicate", None), str)
+            and bool(context.predicate.strip())
+            and getattr(context, "missing_endpoint", None) in {"subject", "object"}
+            and isinstance(getattr(context, "known_endpoint", None), str)
             and bool(context.known_endpoint.strip())
         )
 
@@ -541,9 +567,50 @@ class HybridReasoner:
                 proposed_relation=None,
             )
 
-        return self._llm_reasoner.reason(
+        llm_result = self._llm_reasoner.reason(
             replace(
                 context,
                 evidence_items=compatible,
             )
         )
+
+        # If the LLM abstained (ambiguous or insufficient) and a fallback
+        # reasoner is configured, try generating an independent hypothesis
+        # rather than surfacing the abstention directly.
+        if llm_result.status == ReasoningStatus.ABSTAINED and self._fallback_reasoner is not None:
+            logger.info(
+                "LLM abstained for scenario %s (reason=%s); trying fallback reasoner",
+                context.scenario_id,
+                llm_result.abstention_reason,
+            )
+
+            try:
+                fallback_result = self._fallback_reasoner.reason(
+                    replace(context, evidence_items=())
+                )
+            except Exception:
+                logger.exception(
+                    "Fallback reasoning failed for scenario %s",
+                    context.scenario_id,
+                )
+                return llm_result
+
+            if fallback_result.status != ReasoningStatus.PROPOSED:
+                return llm_result
+
+            relation = fallback_result.proposed_relation
+
+            if relation is not None and self._is_valid_model_hypothesis(
+                relation,
+                context=context,
+                dataset_id=dataset_id,
+                known_endpoint=known_endpoint,
+            ):
+                return fallback_result
+
+            logger.warning(
+                "Rejected invalid fallback proposal for scenario %s after LLM abstention",
+                context.scenario_id,
+            )
+
+        return llm_result

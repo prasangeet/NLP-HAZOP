@@ -27,7 +27,7 @@ server/
 │   │   └── services/               # deterministic validation
 │   ├── infrastructure/
 │   │   ├── datasets/               # CSV import adapter
-│   │   ├── extraction/             # Groq/Llama report extraction adapter
+│   │   ├── extraction/             # Gemini report extraction adapter
 │   │   ├── factories/              # concrete AI provider factory
 │   │   └── graph/                  # in-memory and Neo4j repository adapters
 │   └── main.py                     # FastAPI composition root
@@ -43,12 +43,12 @@ server/
 | Repository | `domain/repositories/graph_repository.py` | Defines storage operations without tying the domain to Neo4j |
 | Repository adapters | `infrastructure/graph/` | Implements the same contract with in-memory and Neo4j storage |
 | Strategy | `application/strategies/` | Makes graph, evidence-based LLM, hybrid and retrieval methods interchangeable |
-| Abstract Factory | `AIProviderFactory`, `GroqAIProviderFactory` | Creates a compatible set of AI extraction and reasoning adapters |
+| Abstract Factory | `AIProviderFactory`, `GeminiAIProviderFactory` | Creates a compatible set of AI extraction and reasoning adapters |
 | Factory Method / composition factory | `ApplicationFactory` | Selects and wires retrieval and reasoning strategies for an API request |
-| Ports and Adapters | `ReportExtractor` port + `GroqReportExtractor` adapter | Keeps the extraction use case independent from the Groq SDK |
+| Ports and Adapters | `ReportExtractor` port + `GeminiReportExtractor` adapter | Keeps the extraction use case independent from the Gemini SDK |
 | Dependency Injection | `api/dependencies.py` and route parameters | Supplies repository and AI-provider dependencies at the HTTP boundary |
 
-The application layer depends on interfaces and domain objects. Neo4j, Groq, FastAPI and file upload handling stay in infrastructure/API layers.
+The application layer depends on interfaces and domain objects. Neo4j, Gemini, FastAPI and file upload handling stay in infrastructure/API layers.
 
 ## Data flow
 
@@ -61,7 +61,7 @@ PDF / TXT / MD / LOG upload
 DocumentTextExtractor (page-aware PDF text extraction)
         |
         v
-GroqReportExtractor (structured extraction)
+GeminiReportExtractor (structured extraction)
         |
         v
 ExtractAndStoreReport
@@ -135,7 +135,7 @@ From the repository root, start Neo4j:
 
 ```bash
 cp .env.example .env
-# Set a local password and GROQ_API_KEY if LLM functionality is required.
+# Set a local password and GEMINI_API_KEY if LLM functionality is required.
 docker compose up -d
 ```
 

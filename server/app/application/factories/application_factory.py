@@ -68,6 +68,7 @@ class ApplicationFactory:
             )
 
         llm_reasoner = self._ai_factory.create_missing_link_reasoner()
+        fallback_reasoner = self._ai_factory.create_fallback_reasoner()
 
         if mode == "llm":
             return llm_reasoner
@@ -75,5 +76,5 @@ class ApplicationFactory:
         return HybridReasoner(
             graph_reasoner=GraphReasoner(),
             llm_reasoner=llm_reasoner,
-            fallback_reasoner=llm_reasoner,
+            fallback_reasoner=fallback_reasoner,
         )

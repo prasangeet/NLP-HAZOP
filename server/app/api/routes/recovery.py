@@ -143,34 +143,53 @@ def recover_missing_link(
             detail="Scenario record not found in this dataset.",
         )
 
-    proposed_relation = reasoning.proposed_relation
+    proposed_relations = reasoning.proposed_relations
 
-    if proposed_relation is None:
+    if not proposed_relations:
         validation_result: dict[str, object] = {
             "status": "not_evaluated",
             "valid": None,
             "errors": [],
             "warnings": [
-                "No reasoning proposal was produced; "
-                "safety validation was not performed."
+                (
+                    "No reasoning proposal was produced; "
+                    "safety validation was not performed."
+                )
             ],
         }
     else:
-        validation = HazopSafetyValidator().validate_recovery_proposal(
-            proposed_relation,
-            predicate=payload.predicate,
-            known_endpoint=payload.known_endpoint,
-            missing_endpoint=payload.missing_endpoint.value,
-            dataset_id=dataset_id,
-            record=record,
-        )
-
+        validations = [
+            HazopSafetyValidator().validate_recovery_proposal(
+                relation,
+                predicate=payload.predicate,
+                known_endpoint=payload.known_endpoint,
+                missing_endpoint=payload.missing_endpoint.value,
+                dataset_id=dataset_id,
+                record=record,
+            )
+            for relation in proposed_relations
+        ]
         validation_result = {
-            "status": "validated" if validation.valid else "rejected",
-            **validation.to_dict(),
+            "status": (
+                "validated"
+                if all(validation.valid for validation in validations)
+                else "rejected"
+            ),
+            "valid": all(validation.valid for validation in validations),
+            "results": [validation.to_dict() for validation in validations],
+            "errors": [
+                error
+                for validation in validations
+                for error in validation.errors
+            ],
+            "warnings": [
+                warning
+                for validation in validations
+                for warning in validation.warnings
+            ],
         }
 
-        if not validation.valid:
+        if not validation_result["valid"]:
             raise HTTPException(
                 status_code=422,
                 detail={

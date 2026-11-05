@@ -80,11 +80,10 @@ class _ReportOutput(BaseModel):
 class GeminiReportExtractor:
     """Extract source-grounded HAZOP scenarios using Gemini."""
 
-    DEFAULT_MODEL = "gemini-3.5-flash-lite"
+    MODEL = "gemini-3.5-flash-lite"
 
     def __init__(
         self,
-        model_name: str = DEFAULT_MODEL,
         *,
         chat_model: StructuredExtractorModel | None = None,
     ) -> None:
@@ -101,7 +100,7 @@ class GeminiReportExtractor:
             )
 
         chat = ChatGoogleGenerativeAI(
-            model=model_name,
+            model=self.MODEL,
             google_api_key=SecretStr(api_key),
             temperature=0,
         )

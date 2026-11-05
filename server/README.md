@@ -77,9 +77,9 @@ The output reports:
 - Mean number of candidates.
 - Evidence-text availability and provenance-origin rates.
 - Mean per-query latency and TF–IDF index-build time.
-- cost_usd, left null because the current Groq wrapper does not capture billable token usage reliably.
+- cost_usd, left null because the current Gemini wrapper does not capture billable token usage reliably.
 
-LLM methods use the same deterministic capped query subset (max-llm-cases) to limit API calls. If GROQ_API_KEY is unavailable, the prompt-only and hybrid methods are marked skipped; the script does not substitute fake model outputs.
+LLM methods use the same deterministic capped query subset (max-llm-cases) to limit API calls. They use the fixed `gemini-3.5-flash-lite` model. If GEMINI_API_KEY is unavailable, the prompt-only and hybrid methods are marked skipped; the script does not substitute fake model outputs.
 
 ## Setup
 
@@ -89,11 +89,11 @@ From the server/ directory:
 uv sync
 ~~~
 
-Set the Groq key only when running LLM methods. Keep .env out of version control:
+Set the Gemini key only when running LLM methods. Keep .env out of version control:
 
 ~~~bash
 # server/.env
-GROQ_API_KEY=your_groq_api_key
+GEMINI_API_KEY=your_gemini_api_key
 ~~~
 
 ## Tests and static checks
@@ -115,7 +115,7 @@ uv run python -m scripts.run_benchmark --dataset t301-synthetic
 uv run python -m scripts.run_benchmark --dataset dwsim-synthetic
 ~~~
 
-Enable prompt-only and hybrid LLM calls (requires GROQ_API_KEY):
+Enable prompt-only and hybrid LLM calls (requires GEMINI_API_KEY):
 
 ~~~bash
 uv run python -m scripts.run_benchmark \
@@ -300,11 +300,11 @@ The typed extraction workflow is exposed separately from CSV import:
 
 - `POST /api/v1/reports/extract`
 - Multipart fields: `file` (PDF or UTF-8 `.txt`, `.md`, or `.log`), `dataset_id` (letters, numbers, dot, underscore and hyphen), and optional `name`.
-- PDF ingestion uses pypdf to extract selectable text page by page and inserts explicit `[Page N]` markers before passing the text to the existing Groq/Llama extraction adapter. Empty pages are reported in the response. The original upload SHA-256 is retained in dataset metadata.
+- PDF ingestion uses pypdf to extract selectable text page by page and inserts explicit `[Page N]` markers before passing the text to the Gemini extraction adapter. Empty pages are reported in the response. The original upload SHA-256 is retained in dataset metadata.
 - The endpoint extracts typed scenario propositions, checks exact source quotes and scenario-field consistency, then imports the extracted dataset.
 - Every extracted relationship is stored as `llm_extracted` and remains `unreviewed`. The response includes validation warnings; it is not expert approval.
 - File size is limited to 20 MiB. PDF extraction is text-layer only: scanned/image-only PDFs are rejected with an OCR-required message. OCR, DOCX, and spreadsheet ingestion are not implemented yet.
 - The page markers are included in the extraction input so the model can attach page references to extracted relationships. This is not a guarantee that every extracted relationship will have a correct page citation; verify the stored quote and location against the source document.
 - After changing dependencies, run `uv lock` from `server/` and commit the regenerated `uv.lock` before CI; CI installs with `uv sync --locked`.
 
-Set `GROQ_API_KEY` in the repository-root `.env` (or `server/.env`) before using extraction or the LLM/hybrid recovery strategies. Keep real keys out of version control. The graph-only recovery strategy does not require Groq.
+Set `GEMINI_API_KEY` in the repository-root `.env` (or `server/.env`) before using extraction or the LLM/hybrid recovery strategies. The application uses the fixed `gemini-3.5-flash-lite` model. Keep real keys out of version control. The graph-only recovery strategy does not require Gemini.

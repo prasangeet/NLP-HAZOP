@@ -27,7 +27,7 @@ def _run(seed: int, f1: float, *, hops: int = 2) -> dict[str, object]:
                 "status": "evaluated",
             },
             "prompt_only_llm": {
-                "status": "skipped_missing_groq_api_key",
+                "status": "skipped_missing_gemini_api_key",
                 "n_evaluated": 0,
             },
         },

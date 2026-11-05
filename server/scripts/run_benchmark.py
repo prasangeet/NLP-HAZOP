@@ -578,7 +578,7 @@ def run(
     logger.info("[BENCHMARK] Starting run | dataset=%s seed=%s test_fraction=%s "
                 "with_llm=%s max_llm_cases=%s model=%s",
                 args.dataset, args.seed, args.test_fraction, args.with_llm,
-                args.max_llm_cases, args.model)
+                args.max_llm_cases, "gemini-3.5-flash-lite")
     records = records_override or load_dataset(args.dataset, selected_path)
     logger.info("[BENCHMARK] Dataset loaded | rows=%d path=%s",
                 len(records), selected_path or DATASET_PATHS[args.dataset])
@@ -618,23 +618,20 @@ def run(
 
     graph_reasoner = GraphReasoner(max_hops=args.max_hops)
 
-    llm_available = bool(os.getenv("GROQ_API_KEY"))
+    llm_available = bool(os.getenv("GEMINI_API_KEY"))
     llm_enabled = args.with_llm and llm_available
     logger.info("[BENCHMARK] LLM configuration | requested=%s key_available=%s "
                 "enabled=%s max_cases=%d",
                 args.with_llm, llm_available, llm_enabled, args.max_llm_cases)
     if args.with_llm and not llm_available:
-        logger.error("[BENCHMARK] --with-llm was set but GROQ_API_KEY is unavailable")
-    llm_reasoner = LLMReasoner(model_name=args.model) if llm_enabled else None
-    prompt_reasoner = PromptOnlyReasoner(model_name=args.model) if llm_enabled else None
+        logger.error("[BENCHMARK] --with-llm was set but GEMINI_API_KEY is unavailable")
+    llm_reasoner = LLMReasoner() if llm_enabled else None
+    prompt_reasoner = PromptOnlyReasoner() if llm_enabled else None
     hybrid_reasoner = (
         HybridReasoner(
             graph_reasoner,
             llm_reasoner,
-            fallback_reasoner=PromptOnlyReasoner(
-                model_name=args.model,
-                include_graph_context=True,
-            ),
+            fallback_reasoner=PromptOnlyReasoner(include_graph_context=True),
         )
         if llm_enabled and llm_reasoner is not None
         else None
@@ -778,7 +775,7 @@ def run(
                 "llm_call_cap"
                 if llm_enabled
                 else (
-                    "missing_groq_api_key"
+                    "missing_gemini_api_key"
                     if args.with_llm and not llm_available
                     else "disabled"
                 )
@@ -805,7 +802,7 @@ def run(
         elif method in {"prompt_only_llm", "hybrid_graph_vector_llm"}:
             method_summary[method] = {
                 "status": (
-                    "skipped_missing_groq_api_key"
+                    "skipped_missing_gemini_api_key"
                     if args.with_llm and not llm_available
                     else "disabled_or_call_cap_zero"
                 ),
@@ -871,7 +868,7 @@ def run(
         "validation_note_counts": dict(validation_notes),
         "llm_requested": args.with_llm,
         "llm_enabled": llm_enabled,
-        "llm_model": args.model if llm_enabled else None,
+        "llm_model": "gemini-3.5-flash-lite" if llm_enabled else None,
         "llm_max_cases": args.max_llm_cases,
         "llm_calls_per_evaluated_case_max": 2,
         "cost_measurement": "not captured; cost_usd remains null",
@@ -1217,7 +1214,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit-cases", type=int, default=None)
     parser.add_argument("--with-llm", action="store_true")
     parser.add_argument("--max-llm-cases", type=int, default=15)
-    parser.add_argument("--model", default="openai/gpt-oss-120b")
     args = parser.parse_args()
     if args.max_llm_cases < 0:
         parser.error("--max-llm-cases must be >= 0")

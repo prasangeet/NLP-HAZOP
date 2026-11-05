@@ -5,7 +5,7 @@ Includes:
 - Structured logging for the complete LLM lifecycle.
 - Conservative prompt-size estimation and trimming.
 - Configurable input and output token budgets.
-- Groq API error and rate-limit diagnostics.
+- Gemini API error and rate-limit diagnostics.
 - Response, abstention, and ontology-validation diagnostics.
 
 Token estimation uses a conservative character-based heuristic. It is not an
@@ -23,9 +23,9 @@ from pathlib import Path
 from typing import Literal, Protocol
 
 from dotenv import load_dotenv
-from groq import APIError
+from google.api_core.exceptions import GoogleAPIError
 from langchain_core.exceptions import OutputParserException
-from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field, SecretStr, ValidationError
 
 from app.domain.entities.hazop_record import (
@@ -58,14 +58,16 @@ load_dotenv(ENV_FILE)
 # Configuration
 # ---------------------------------------------------------------------------
 
-DEFAULT_CONTEXT_LIMIT = 8000
+DEFAULT_CONTEXT_LIMIT = 32768
 DEFAULT_OUTPUT_TOKENS = 512
-DEFAULT_INPUT_BUDGET = 6500
+DEFAULT_INPUT_BUDGET = 10000
 DEFAULT_SAFETY_MARGIN = 512
 
 # Conservative estimate: approximately one token per three characters.
 # This is deliberately more conservative than the common 4-character estimate.
+# The budget is sized conservatively for Gemini's context window.
 CHARS_PER_ESTIMATED_TOKEN = 3
+GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 
 def _read_positive_int(name: str, default: int) -> int:
@@ -164,14 +166,13 @@ class PromptOnlyReasoner:
 
     def __init__(
         self,
-        model_name: str = "openai/gpt-oss-120b",
         temperature: float = 0.0,
         *,
         chat_model: PromptOnlyChatModel | None = None,
         include_graph_context: bool = False,
     ) -> None:
         self._include_graph_context = include_graph_context
-        self._model_name = model_name
+        self._model_name = GEMINI_MODEL
         self._temperature = temperature
         self._llm: PromptOnlyChatModel | None = chat_model
 
@@ -234,37 +235,36 @@ class PromptOnlyReasoner:
     # -----------------------------------------------------------------------
 
     def _get_chat_model(self) -> PromptOnlyChatModel:
-        """Create the Groq provider lazily."""
+        """Create the Gemini provider lazily."""
 
         if self._llm is not None:
             return self._llm
 
-        api_key = os.getenv("GROQ_API_KEY")
+        api_key = os.getenv("GEMINI_API_KEY")
 
         if not api_key:
             logger.error(
-                "[LLM] GROQ_API_KEY is missing. Expected environment file: %s",
+                "[LLM] GEMINI_API_KEY is missing. Expected environment file: %s",
                 ENV_FILE,
             )
             raise RuntimeError(
-                f"GROQ_API_KEY was not found. Add it to {ENV_FILE}."
+                f"GEMINI_API_KEY was not found. Add it to {ENV_FILE}."
             )
 
         logger.info(
-            "[LLM] Initializing Groq model | model=%s max_output_tokens=%d",
+            "[LLM] Initializing Gemini model | model=%s max_output_tokens=%d",
             self._model_name,
             self._max_output_tokens,
         )
 
-        self._llm = ChatGroq(
+        self._llm = ChatGoogleGenerativeAI(
             model=self._model_name,
             temperature=self._temperature,
-            max_tokens=self._max_output_tokens,
-            api_key=SecretStr(api_key),
+            max_output_tokens=self._max_output_tokens,
+            google_api_key=SecretStr(api_key),
         ).with_structured_output(
             PromptOnlyDecision,
             method="json_schema",
-            strict=False,
         )
 
         return self._llm
@@ -655,7 +655,7 @@ decision="abstain" with missing_value=null.
             )
 
         # -------------------------------------------------------------------
-        # Invoke Groq
+        # Invoke Gemini
         # -------------------------------------------------------------------
 
         request_started = time.perf_counter()
@@ -664,7 +664,7 @@ decision="abstain" with missing_value=null.
             chat_model = self._get_chat_model()
 
             logger.info(
-                "[LLM] Sending Groq request | scenario=%s model=%s "
+                "[LLM] Sending Gemini request | scenario=%s model=%s "
                 "estimated_input_tokens=%d max_output_tokens=%d",
                 scenario_id,
                 self._model_name,
@@ -677,7 +677,7 @@ decision="abstain" with missing_value=null.
             request_latency = time.perf_counter() - request_started
 
             logger.info(
-                "[LLM] Groq request completed | scenario=%s latency=%.3fs",
+                "[LLM] Gemini request completed | scenario=%s latency=%.3fs",
                 scenario_id,
                 request_latency,
             )
@@ -693,13 +693,13 @@ decision="abstain" with missing_value=null.
                 else PromptOnlyDecision.model_validate(response)
             )
 
-        except APIError as exc:
+        except GoogleAPIError as exc:
             request_latency = time.perf_counter() - request_started
             status_code = getattr(exc, "status_code", None)
 
             if status_code == 429:
                 logger.error(
-                    "[LLM] Groq rate limit exceeded | scenario=%s "
+                    "[LLM] Gemini rate limit exceeded | scenario=%s "
                     "status=%s latency=%.3fs error=%s",
                     scenario_id,
                     status_code,
@@ -708,7 +708,7 @@ decision="abstain" with missing_value=null.
                 )
             else:
                 logger.exception(
-                    "[LLM] Groq API error | scenario=%s status=%s "
+                    "[LLM] Gemini API error | scenario=%s status=%s "
                     "latency=%.3fs",
                     scenario_id,
                     status_code,
@@ -718,7 +718,7 @@ decision="abstain" with missing_value=null.
             return self._abstain(
                 scenario_id,
                 AbstentionReason.INSUFFICIENT_SUPPORT,
-                (f"groq_api_error:{status_code or type(exc).__name__}",),
+                (f"gemini_api_error:{status_code or type(exc).__name__}",),
                 dataset_id=dataset_id,
             )
 

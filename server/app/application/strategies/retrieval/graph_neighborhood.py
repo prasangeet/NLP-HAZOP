@@ -42,13 +42,22 @@ class GraphNeighborhoodRetriever:
         repository: GraphRepository,
         *,
         max_records: int = 10_000,
+        max_cross_scenario_edges: int = 100,
+        max_cross_scenario_hops: int = 2,
     ) -> None:
-        if isinstance(max_records, bool) or max_records < 1:
-            raise ValueError("max_records must be positive")
+        for name, value in (
+            ("max_records", max_records),
+            ("max_cross_scenario_edges", max_cross_scenario_edges),
+            ("max_cross_scenario_hops", max_cross_scenario_hops),
+        ):
+            if isinstance(value, bool) or value < 1:
+                raise ValueError(f"{name} must be positive")
 
         self._base_retriever = base_retriever
         self._repository = repository
         self._max_records = max_records
+        self._max_cross_scenario_edges = max_cross_scenario_edges
+        self._max_cross_scenario_hops = max_cross_scenario_hops
 
     def retrieve(self, request: RetrievalRequest) -> RetrievalResult:
         result = self._base_retriever.retrieve(request)
@@ -96,6 +105,7 @@ class GraphNeighborhoodRetriever:
             for item in edges
         }
 
+        candidate_edges: list[RetrievedEvidence] = []
         for record in family_records:
             if record.dataset_id != request.dataset_id:
                 continue
@@ -117,9 +127,41 @@ class GraphNeighborhoodRetriever:
                 ):
                     continue
 
+                candidate_edges.append(
+                    RetrievedEvidence(
+                        scenario_id=record.scenario_id,
+                        dataset_id=record.dataset_id,
+                        relation=relation,
+                        scope=RetrievalScope.CROSS_SCENARIO,
+                    )
+                )
+
+        # Do not expose the full process-family graph. Retain only directed
+        # paths that start at the requested known endpoint; unrelated family
+        # relations (for example, a different deviation) are noise rather
+        # than evidence for this recovery request.
+        frontier = {request.known_endpoint.strip().casefold()}
+        for _ in range(self._max_cross_scenario_hops):
+            next_frontier: set[str] = set()
+
+            for item in candidate_edges:
+                relation = item.relation
+                subject = relation.subject.strip().casefold()
+                object_ = relation.object.strip().casefold()
+
+                if request.missing_endpoint == "object":
+                    connected = subject in frontier
+                    next_node = object_
+                else:
+                    connected = object_ in frontier
+                    next_node = subject
+
+                if not connected:
+                    continue
+
                 key = (
-                    record.scenario_id.casefold(),
-                    relation.subject.casefold(),
+                    item.scenario_id.casefold(),
+                    subject,
                     relation.predicate.casefold(),
                     relation.object.casefold(),
                 )
@@ -128,15 +170,16 @@ class GraphNeighborhoodRetriever:
                     continue
 
                 seen.add(key)
+                edges.append(item)
+                next_frontier.add(next_node)
 
-                edges.append(
-                    RetrievedEvidence(
-                        scenario_id=record.scenario_id,
-                        dataset_id=record.dataset_id,
-                        relation=relation,
-                        scope=RetrievalScope.CROSS_SCENARIO,
-                    )
-                )
+                if len(edges) >= self._max_cross_scenario_edges:
+                    break
+
+            if len(edges) >= self._max_cross_scenario_edges or not next_frontier:
+                break
+
+            frontier = next_frontier
 
         return RetrievalResult(
             scenario_id=result.scenario_id,
@@ -146,4 +189,5 @@ class GraphNeighborhoodRetriever:
             scenario_exists=True,
             graph_context=tuple(edges),
             scenario_context=result.scenario_context,
+            scenario_entities=result.scenario_entities,
         )

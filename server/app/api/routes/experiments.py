@@ -59,7 +59,7 @@ def run_benchmark(payload: BenchmarkRequest) -> dict[str, object]:
     if payload.with_llm and get_ai_provider_factory() is None:
         raise HTTPException(
             status_code=503,
-            detail="LLM evaluation was requested but GROQ_API_KEY is not configured. Add it to server/.env or the repository-root .env and restart the API.",
+            detail="LLM evaluation was requested but GEMINI_API_KEY is not configured. Add it to server/.env or the repository-root .env and restart the API.",
         )
     if payload.cross_validation_folds == 1:
         raise HTTPException(status_code=422, detail="cross_validation_folds must be 0 or between 2 and 10.")
@@ -247,7 +247,7 @@ def run_benchmark_suite(payload: BenchmarkSuiteRequest) -> dict[str, object]:
     if payload.with_llm and get_ai_provider_factory() is None:
         raise HTTPException(
             status_code=503,
-            detail="LLM evaluation was requested but GROQ_API_KEY is not configured. Add it to server/.env or the repository-root .env and restart the API.",
+            detail="LLM evaluation was requested but GEMINI_API_KEY is not configured. Add it to server/.env or the repository-root .env and restart the API.",
         )
     if not BENCHMARK_SCRIPT.is_file():
         raise HTTPException(status_code=503, detail="Benchmark script is not available.")

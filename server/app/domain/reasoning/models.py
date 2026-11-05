@@ -195,6 +195,7 @@ class ReasoningResult:
     status: ReasoningStatus
     scenario_id: str
     proposed_relation: CausalRelation | None = None
+    proposed_relations: tuple[CausalRelation, ...] = ()
     supporting_evidence: tuple[str, ...] = ()
     confidence: float | None = None
     abstention_reason: AbstentionReason | None = None
@@ -210,10 +211,19 @@ class ReasoningResult:
         ):
             raise ValueError("confidence must be between 0.0 and 1.0.")
 
-        if self.status == ReasoningStatus.PROPOSED:
-            if self.proposed_relation is None:
+        relations = tuple(self.proposed_relations)
+        if self.proposed_relation is not None:
+            if relations and self.proposed_relation not in relations:
                 raise ValueError(
-                    "A proposed result must include a relationship."
+                    "proposed_relation must be included in proposed_relations."
+                )
+            if not relations:
+                relations = (self.proposed_relation,)
+
+        if self.status == ReasoningStatus.PROPOSED:
+            if not relations:
+                raise ValueError(
+                    "A proposed result must include at least one relationship."
                 )
 
             if self.abstention_reason is not None:
@@ -222,9 +232,9 @@ class ReasoningResult:
                 )
 
         elif self.status == ReasoningStatus.ABSTAINED:
-            if self.proposed_relation is not None:
+            if self.proposed_relation is not None or relations:
                 raise ValueError(
-                    "An abstained result cannot include a proposed relation."
+                    "An abstained result cannot include proposed relations."
                 )
 
             if self.abstention_reason is None:
@@ -246,27 +256,24 @@ class ReasoningResult:
 
         dataset_id = self.dataset_id.strip()
 
-        if self.proposed_relation is not None:
-            relation = self.proposed_relation
-
+        normalized_relations: list[CausalRelation] = []
+        for relation in relations:
             if relation.dataset_id == "default" and dataset_id != "default":
-                relation = replace(
-                    relation,
-                    dataset_id=dataset_id,
-                )
-                object.__setattr__(
-                    self,
-                    "proposed_relation",
-                    relation,
-                )
-
+                relation = replace(relation, dataset_id=dataset_id)
             elif dataset_id == "default" and relation.dataset_id != "default":
                 dataset_id = relation.dataset_id
-
             elif relation.dataset_id != dataset_id:
                 raise ValueError(
-                    "proposed_relation.dataset_id must match result dataset_id."
+                    "proposed_relations.dataset_id must match result dataset_id."
                 )
+            normalized_relations.append(relation)
+
+        object.__setattr__(self, "proposed_relations", tuple(normalized_relations))
+        object.__setattr__(
+            self,
+            "proposed_relation",
+            normalized_relations[0] if normalized_relations else None,
+        )
 
         object.__setattr__(self, "dataset_id", dataset_id)
 
@@ -312,6 +319,20 @@ class ReasoningResult:
                 if relation is not None
                 else None
             ),
+            "proposed_relations": [
+                {
+                    "subject": proposed.subject,
+                    "predicate": proposed.predicate,
+                    "object": proposed.object,
+                    "origin": proposed.origin.value,
+                    "evidence": proposed.evidence,
+                    "confidence": proposed.confidence,
+                    "source_id": proposed.source_id,
+                    "dataset_id": proposed.dataset_id,
+                    "is_expert_verified": proposed.is_expert_verified,
+                }
+                for proposed in self.proposed_relations
+            ],
             "supporting_evidence": list(self.supporting_evidence),
             "confidence": self.confidence,
             "abstention_reason": (
