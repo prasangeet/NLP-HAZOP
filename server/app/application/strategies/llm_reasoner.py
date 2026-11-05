@@ -40,6 +40,26 @@ class StructuredChatModel(Protocol):
         """Return a structured model response."""
 
 
+class GeminiRequestError(RuntimeError):
+    """A failed Gemini HTTP attempt that must abort the current benchmark run.
+
+    This exception is deliberately distinct from a model abstention or a
+    malformed structured response. Provider/transport failures must never be
+    converted into ordinary evidence abstentions.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int | None = None,
+        attempts: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.attempts = attempts
+
+
 SERVER_ROOT = Path(__file__).resolve().parents[3]
 ENV_FILE = SERVER_ROOT / ".env"
 
@@ -258,6 +278,11 @@ class LLMReasoner:
                 if isinstance(response, LLMDecision)
                 else LLMDecision.model_validate(response)
             )
+        except GeminiRequestError:
+            # The benchmark owns provider-failure handling. Do not turn a
+            # quota, availability, or transport failure into an abstention,
+            # and do not issue a second diagnostic request.
+            raise
         except Exception as exc:
             return self._abstain_with_diagnostic(
                 context=context,
@@ -448,6 +473,8 @@ class LLMReasoner:
                 recommended_action=diagnostic.recommended_action,
             )
 
+        except GeminiRequestError:
+            raise
         except Exception as exc:
             return ReasoningDiagnostic(
                 generated_by="gemini",
@@ -568,6 +595,7 @@ Return a structured diagnostic with:
 - recommended_action: the next useful debugging action
 """.strip()
 
+
     def reason_all(
         self,
         context: EvidenceContextProtocol,
@@ -578,26 +606,47 @@ Return a structured diagnostic with:
             return ()
 
         dataset_id = getattr(context, "dataset_id", "default")
+        known_endpoint = context.known_endpoint.strip().casefold()
 
         eligible_items = [
             item
             for item in context.evidence_items
-            if getattr(item, "dataset_id", "default") == dataset_id
-            and self._is_association_eligible(item)
-            and (
-                item.origin != RelationshipOrigin.EXPERT
-                or getattr(item, "is_expert_verified", False)
+            if (
+                getattr(item, "dataset_id", "default") == dataset_id
+                and self._is_association_eligible(item)
+                and (
+                    item.origin != RelationshipOrigin.EXPERT
+                    or getattr(item, "is_expert_verified", False)
+                )
+                and self._matches_query(item, context)
             )
-            and self._matches_query(item, context)
         ]
 
         if not eligible_items:
             return ()
 
+        # Infer the known endpoint's type from matching evidence.
+        known_endpoint_type = "Concept"
+
+        for item in eligible_items:
+            if context.missing_endpoint == "object":
+                known_endpoint_type = self._get_entity_type(
+                    item,
+                    "subject_type",
+                ).value
+            else:
+                known_endpoint_type = self._get_entity_type(
+                    item,
+                    "object_type",
+                ).value
+
+            break
+
         prompt = self._build_association_prompt(
             eligible_items,
             predicate=context.predicate,
             known_endpoint=context.known_endpoint,
+            known_endpoint_type=known_endpoint_type,
             missing_endpoint=context.missing_endpoint,
             scenario_context=context.scenario_context,
         )
@@ -609,6 +658,8 @@ Return a structured diagnostic with:
                 if isinstance(response, LLMDecision)
                 else LLMDecision.model_validate(response)
             )
+        except GeminiRequestError:
+            raise
         except Exception:
             return ()
 
@@ -647,8 +698,14 @@ Return a structured diagnostic with:
             if not normalized_endpoint or normalized_endpoint in seen_endpoints:
                 continue
 
-            subject_type = self._get_entity_type(selected, "subject_type")
-            object_type = self._get_entity_type(selected, "object_type")
+            subject_type = self._get_entity_type(
+                selected,
+                "subject_type",
+            )
+            object_type = self._get_entity_type(
+                selected,
+                "object_type",
+            )
 
             try:
                 type_error = validate_relation_types(
@@ -657,7 +714,7 @@ Return a structured diagnostic with:
                     object_type,
                 )
             except (TypeError, ValueError):
-                type_error = "Invalid endpoint type."
+                continue
 
             if type_error is not None:
                 continue
@@ -679,7 +736,11 @@ Return a structured diagnostic with:
                     evidence=selected.evidence,
                     confidence=decision.confidence,
                     source_id=selected.source_id,
-                    dataset_id=getattr(selected, "dataset_id", dataset_id),
+                    dataset_id=getattr(
+                        selected,
+                        "dataset_id",
+                        dataset_id,
+                    ),
                     is_expert_verified=getattr(
                         selected,
                         "is_expert_verified",
@@ -696,6 +757,7 @@ Return a structured diagnostic with:
             )
 
         return tuple(relations)
+
 
     @classmethod
     def _is_eligible(cls, item: EvidenceItemProtocol) -> bool:
@@ -752,6 +814,7 @@ Return a structured diagnostic with:
         known_endpoint: str,
         missing_endpoint: str,
         scenario_context: str = "",
+        known_endpoint_type: str = "Concept"
     ) -> str:
         """Build a set-valued prompt for row-level association recovery."""
 
