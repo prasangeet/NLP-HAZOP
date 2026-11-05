@@ -2,12 +2,22 @@
 
 from __future__ import annotations
 
+import math
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+# Load configuration before importing application components.
+SERVER_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = SERVER_ROOT.parent
+
+load_dotenv(REPOSITORY_ROOT / ".env")
+load_dotenv(SERVER_ROOT / ".env")
 
 from app.api.routes.datasets import router as datasets_router
 from app.api.routes.experiments import router as experiments_router
@@ -19,17 +29,34 @@ from app.infrastructure.graph.neo4j_graph_repository import Neo4jGraphRepository
 
 def _configured_repository() -> Neo4jGraphRepository | None:
     """Create the durable repository when complete Neo4j settings are present."""
+
     uri = os.getenv("NEO4J_HTTP_URI")
     username = os.getenv("NEO4J_USERNAME")
     password = os.getenv("NEO4J_PASSWORD")
+
     configured = (uri, username, password)
+
     if not any(configured):
         return None
-    if not all(configured):
+
+    if uri is None or username is None or password is None:
         raise RuntimeError(
-            "Configure NEO4J_HTTP_URI, NEO4J_USERNAME, and NEO4J_PASSWORD together."
+            "Configure NEO4J_HTTP_URI, NEO4J_USERNAME, "
+            "and NEO4J_PASSWORD together."
         )
-    timeout = float(os.getenv("NEO4J_TIMEOUT_SECONDS", "15"))
+
+    try:
+        timeout = float(os.getenv("NEO4J_TIMEOUT_SECONDS", "15"))
+    except ValueError as exc:
+        raise RuntimeError(
+            "NEO4J_TIMEOUT_SECONDS must be a valid number."
+        ) from exc
+
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise RuntimeError(
+            "NEO4J_TIMEOUT_SECONDS must be a positive finite number."
+        )
+
     return Neo4jGraphRepository(
         http_uri=uri,
         username=username,
@@ -42,18 +69,25 @@ def _configured_repository() -> Neo4jGraphRepository | None:
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Release the configured Neo4j HTTP client during application shutdown."""
+
     yield
+
     repository = getattr(app.state, "graph_repository", None)
-    if repository is not None and hasattr(repository, "close"):
-        repository.close()
+
+    if repository is not None:
+        close = getattr(repository, "close", None)
+
+        if callable(close):
+            close()
 
 
 def create_app() -> FastAPI:
-    """Create the API application.
+    """Create the NLP-HAZOP API application.
 
     Preview-only CSV validation works without Neo4j. Confirmed imports,
     dataset/graph queries, and recovery require configured persistent storage.
     """
+
     app = FastAPI(
         title="NLP-HAZOP API",
         description=(
@@ -64,6 +98,7 @@ def create_app() -> FastAPI:
         version="0.2.0",
         lifespan=_lifespan,
     )
+
     app.state.graph_repository = _configured_repository()
 
     default_origins = {
@@ -74,6 +109,7 @@ def create_app() -> FastAPI:
         "http://tauri.localhost",
         "https://tauri.localhost",
     }
+
     configured_origins = {
         origin.strip()
         for origin in os.getenv("NLP_HAZOP_CORS_ORIGINS", "").split(",")
@@ -91,13 +127,18 @@ def create_app() -> FastAPI:
     @app.get("/health", tags=["health"])
     async def health() -> dict[str, str]:
         """Return a lightweight process health check."""
-        return {"status": "ok", "service": "nlp-hazop-api"}
+
+        return {
+            "status": "ok",
+            "service": "nlp-hazop-api",
+        }
 
     app.include_router(imports_router, prefix="/api/v1")
     app.include_router(experiments_router, prefix="/api/v1")
     app.include_router(datasets_router, prefix="/api/v1")
     app.include_router(recovery_router, prefix="/api/v1")
     app.include_router(report_extraction_router, prefix="/api/v1")
+
     return app
 
 

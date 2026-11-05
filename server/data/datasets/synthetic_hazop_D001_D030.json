@@ -1,0 +1,9 @@
+{
+  "dataset_id": "synthetic_hazop_D001_D030",
+  "name": "synthetic_hazop_D001_D030",
+  "filename": "synthetic_hazop_D001_D030.csv",
+  "source_sha256": "4538c0e4775ae9e21235286ea3d0c84b3521f8cfec707f812347f5624965ef80",
+  "record_count": 30,
+  "relationship_count": 159,
+  "created_at": "2026-11-04T23:48:41.406095+00:00"
+}

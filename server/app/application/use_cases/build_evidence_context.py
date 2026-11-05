@@ -84,6 +84,7 @@ class EvidenceItem:
             is_expert_verified=relation.is_expert_verified,
             subject_type=relation.subject_type,
             object_type=relation.object_type,
+            source_location=relation.source_location,
         )
 
     @staticmethod

@@ -1,3 +1,4 @@
+
 """Enrich query retrieval with a bounded scenario-family graph context."""
 
 from __future__ import annotations
@@ -9,18 +10,31 @@ from app.application.strategies.retrieval.models import (
     RetrievalStrategy,
     RetrievedEvidence,
 )
-from app.domain.entities.hazop_record import RelationshipOrigin
+from app.domain.entities.hazop_record import (
+    RecordType,
+    RelationshipOrigin,
+)
 from app.domain.repositories.graph_repository import GraphRepository
 
 
 class GraphNeighborhoodRetriever:
-    """Attach nearby graph edges from the same plant/process family.
+    """Attach provenance-qualified edges from the same plant/process family.
 
-    The target scenario is excluded from the cross-scenario neighborhood to
-    prevent held-out target edges from leaking into the reasoning context.
-    When plant_unit is available, the family is restricted to that unit;
-    otherwise it falls back to the exact equipment label.
+    The target scenario is excluded from cross-scenario context to prevent
+    held-out target edges from leaking into the reasoning context.
+
+    Cross-scenario evidence is restricted to source, reconstructed, and
+    expert-origin relationships. Synthetic, unspecified, and inferred
+    relationships are excluded.
     """
+
+    _ALLOWED_CROSS_SCENARIO_ORIGINS = frozenset(
+        {
+            RelationshipOrigin.SOURCE,
+            RelationshipOrigin.RECONSTRUCTED,
+            RelationshipOrigin.EXPERT,
+        }
+    )
 
     def __init__(
         self,
@@ -31,12 +45,14 @@ class GraphNeighborhoodRetriever:
     ) -> None:
         if isinstance(max_records, bool) or max_records < 1:
             raise ValueError("max_records must be positive")
+
         self._base_retriever = base_retriever
         self._repository = repository
         self._max_records = max_records
 
     def retrieve(self, request: RetrievalRequest) -> RetrievalResult:
         result = self._base_retriever.retrieve(request)
+
         if not result.scenario_exists:
             return result
 
@@ -44,6 +60,7 @@ class GraphNeighborhoodRetriever:
             request.scenario_id,
             dataset_id=request.dataset_id,
         )
+
         if target is None:
             return result
 
@@ -51,20 +68,24 @@ class GraphNeighborhoodRetriever:
             dataset_id=request.dataset_id,
             limit=self._max_records,
         )
+
         if target.plant_unit.strip():
             family_records = [
                 record
                 for record in records
-                if record.plant_unit.casefold() == target.plant_unit.casefold()
+                if record.plant_unit.strip().casefold()
+                == target.plant_unit.casefold()
             ]
         else:
             family_records = [
                 record
                 for record in records
-                if record.equipment.casefold() == target.equipment.casefold()
+                if record.equipment.strip().casefold()
+                == target.equipment.casefold()
             ]
 
         edges: list[RetrievedEvidence] = list(result.graph_context)
+
         seen = {
             (
                 item.scenario_id.casefold(),
@@ -74,28 +95,40 @@ class GraphNeighborhoodRetriever:
             )
             for item in edges
         }
+
         for record in family_records:
+            if record.dataset_id != request.dataset_id:
+                continue
+
             if (
-                record.dataset_id != request.dataset_id
-                or record.scenario_id.casefold() == request.scenario_id.casefold()
+                record.scenario_id.casefold()
+                == request.scenario_id.casefold()
             ):
                 continue
+
+            # Synthetic records must not enter cross-scenario evidence.
+            if record.record_type == RecordType.SYNTHETIC:
+                continue
+
             for relation in record.causal_relations:
-                if relation.origin in {
-                    RelationshipOrigin.MODEL_INFERRED,
-                    RelationshipOrigin.RETRIEVAL_INFERRED,
-                    RelationshipOrigin.GRAPH_INFERRED,
-                }:
+                if (
+                    relation.origin
+                    not in self._ALLOWED_CROSS_SCENARIO_ORIGINS
+                ):
                     continue
+
                 key = (
                     record.scenario_id.casefold(),
                     relation.subject.casefold(),
                     relation.predicate.casefold(),
                     relation.object.casefold(),
                 )
+
                 if key in seen:
                     continue
+
                 seen.add(key)
+
                 edges.append(
                     RetrievedEvidence(
                         scenario_id=record.scenario_id,
