@@ -170,6 +170,6 @@ def test_cross_scenario_recovery_skips_target_row_constraint_but_warns():
     assert result.valid
     assert not result.errors
     assert any(
-        issue.code == "cross_scenario_transfer_requires_review"
+        issue.code == "inferred_proposal_requires_record_review"
         for issue in result.warnings
     )
