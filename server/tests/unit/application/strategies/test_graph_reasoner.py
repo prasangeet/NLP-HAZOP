@@ -198,7 +198,7 @@ def _cause_consequence_context(*edges: EvidenceItem) -> EvidenceContext:
         status=RecoveryStatus.NO_CANDIDATES,
         evidence_items=(),
         graph_context=edges,
-        scenario_context="T-301 | Low level",
+        scenario_context="Equipment: T-301 | Deviation: Low level | Known causes: Blocked inflow line",
         dataset_id="t301-reconstructed",
     )
 
