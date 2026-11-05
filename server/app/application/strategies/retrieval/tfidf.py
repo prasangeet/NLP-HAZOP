@@ -490,6 +490,7 @@ class TfidfRetriever:
                                 else RetrievalScope.CROSS_SCENARIO
                             ),
                             relevance_score=score,
+                            process_context=_scenario_context(record),
                         )
                     )
 
@@ -553,6 +554,7 @@ class TfidfRetriever:
                 dataset_id=record.dataset_id,
                 relation=relation,
                 scope=RetrievalScope.SCENARIO_LOCAL,
+                process_context=_scenario_context(record),
             )
             for relation in record.causal_relations
             if relation.origin not in {
