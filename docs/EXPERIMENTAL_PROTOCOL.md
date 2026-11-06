@@ -90,35 +90,40 @@ For set-valued consequence predictions, compute micro and macro precision, recal
 
 State exact-match normalization rules. Preserve raw strings alongside normalized comparison values.
 
-## 5. Experiment sequence
+## 5. Completed experiment sequence
 
-### E0 — Reproduce historical baseline
-Run the existing benchmark at seed 42 and verify outputs match the checked-in baseline within expected deterministic tolerances. Investigate discrepancies before adding methods.
+The following sequence describes the experiments actually completed for the
+T-301 reconstructed track. It supersedes the earlier proposed E2–E7 labels
+below; the experiment identifiers refer to the frozen artifacts in
+`server/results/`.
 
-**Acceptance:** per-case outputs, configuration, and summary artifacts are generated; tests pass; any mismatch is explained.
+| Experiment | Actual question | Status / artifact |
+|---|---|---|
+| E1 | Compare prompt-only LLM, TF–IDF, graph reasoning, graph+TF–IDF union, and hybrid reasoning on a fixed scenario holdout. | Completed; `server/results/t301-reconstructed/results.json` |
+| E2 | Measure the effect of minimum distinct-scenario support for a complete typed cause–deviation–consequence path. | Completed; `server/results/e2/global_path_consensus.json` |
+| E3 | Measure cause-edge and consequence-edge support thresholds independently. | Completed; `server/results/e3/edge_support_consensus.json` |
+| E4 | Test direct versus intermediate multi-hop path reasoning under the available graph evidence. | Completed; `server/results/e4/multi_hop_reasoning.json` |
+| E5 | Test metadata-presence thresholds and same-scenario / same-source-row provenance-coherence filters. | Completed; `server/results/e5/abstention_selective_risk_v2.json` |
+| E6 | Measure sensitivity to ten repeated scenario-level 80/20 holdouts (seeds 42–51). | Completed; `server/results/e6/scenario_split_robustness_20261106T143828Z.json` |
+| E7 | Measure sensitivity to random masking of 10–40% of typed training relationships over ten masking seeds. | Completed; `server/results/e7/e7_summary_20261106T151612Z.json` and the paired JSONL runs file |
 
-### E1 — Controlled strategy comparison
-Compare TF-IDF retrieval, graph reasoning, the deterministic graph/TF-IDF candidate union, prompt-only LLM, and graph/retrieval + LLM reasoning on the same split and same case IDs. Run LLM methods only when credentials and model configuration are available. Log failures and cost.
+### Interpretation constraints
 
-**Acceptance:** a result row per method and dataset, with denominators, coverage, abstentions, latency, metrics, model/version, and output artifact locations. When LLM calls are capped, also report every method on the same deterministic capped case-ID subset; full-test metrics and matched-subset metrics must remain visibly separate.
-
-### E2 — Graph coverage diagnosis
-Partition test cases into exact-node match, normalized-node match, supported path, ambiguous path, and no-supported-path groups. This is diagnostic, not a performance improvement by itself.
-
-### E3 — Normalization ablation
-Compare exact matching with a canonicalization/normalization variant. Create mappings from training data or a separately reviewed ontology only; do not derive mappings from hidden test targets. Report false merges and per-group metrics.
-
-### E4 — Multi-hop ablation
-Compare direct retrieval with graph reasoning under declared path limits (for example, 1, 2, and 4 hops). Report results by evidence-path length and ambiguity class. Only score cases whose reference target and task definition support the comparison.
-
-### E5 — Abstention / selective prediction
-Vary confidence or support thresholds on validation data, then evaluate the frozen thresholds on test data. Report coverage–risk curves and abstention reasons. Never tune thresholds on the test set.
-
-### E6 — Cross-domain transfer
-Train/index on one domain and evaluate on another without using target-domain test answers for tuning. Report each direction separately; do not treat synthetic-to-synthetic transfer as real-world validation.
-
-### E7 — Expert-adjudicated validation
-Have qualified process-safety reviewers independently assess a held-out subset using a written rubric for causal plausibility, contextual support, and safeguard validity. Track disagreements and inter-rater agreement. This is required before making strong claims about causal correctness or safety utility.
+- E6 is repeated random holdout, **not** grouped k-fold cross-validation.
+  The ten runs share overlapping training data, and four of the 40 scenarios
+  were never held out.
+- E7 is controlled random evidence masking on loader-generated relationships.
+  It is not a study of naturally occurring missingness.
+- E1–E7 use reconstructed row-level silver associations for this track.
+  None of these experiments establishes expert-adjudicated causal truth.
+- E4's intermediate multi-hop condition produced no eligible intermediate
+  paths; it therefore does not establish that longer causal chains are
+  ineffective.
+- E5's provenance filters test documentary coherence, not physical causality.
+- E1 LLM methods were evaluated on a capped subset. Full-test and matched-case
+  metrics must remain separate.
+- Do not overwrite the frozen artifacts when preparing derived tables or
+  figures. Derived summaries should cite the exact source artifact.
 
 ## 6. Experimental records and artifacts
 
