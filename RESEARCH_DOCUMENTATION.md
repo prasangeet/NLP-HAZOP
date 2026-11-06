@@ -366,6 +366,16 @@ Implemented in [`server/scripts/run_benchmark.py`](file:///mnt/volume/Projects/B
 | *Ambiguous-evidence abstentions* | 17 | 0 | 0 |
 | *Insufficient-support abstentions* | 2 | 11 | 15 |
 
+### 8.4 Completed E1–E7 investigation
+
+The fixed-split comparison and follow-on robustness/ablation experiments are
+now consolidated in [the experimental synthesis](reports/experimental-synthesis-e1-e7.md).
+The synthesis reports actual method denominators, matched-case comparisons,
+support-threshold effects, provenance-coherence results, repeated-holdout
+variability, and controlled relationship masking. The original 30 October
+baseline below remains a historical reference rather than the final
+experimental result.
+
 ### 8.3 Analysis of Results & Abstention Dynamics
 1. **The Lexical Baseline Paradox:** TF-IDF achieved 89–100% coverage because lexical matching will almost always retrieve *something* from the training set. However, on T-301 synthetic, its precision was 0.00% despite 100% coverage, demonstrating that high coverage in safety systems without semantic grounding is meaningless and hazardous.
 2. **Graph Abstention as a Safety Feature:** The Graph Reasoner abstained 100% of the time. In the T-301 reconstructed track, **17 out of 19 queries abstained due to ambiguous evidence**. Because multiple historical rows shared identical cause nodes leading to conflicting consequence branches, the reasoner refused to flip an arbitrary coin.
@@ -384,7 +394,7 @@ The formal experimental plan is maintained in [`docs/EXPERIMENTAL_PROTOCOL.md`](
 3. **RQ3 — Safety-aware abstention:** Can provenance-aware reasoning reduce errors among answered cases while retaining useful coverage under ambiguous or insufficient evidence?
 4. **RQ4 — Generalization:** Does performance transfer between reconstructed T-301 and DWSIM-derived synthetic tracks?
 
-These are open questions, not established findings. Current metrics use silver row associations and do not prove causal validity.
+These questions motivated the completed E1–E7 investigation. The experiments provide bounded findings on reconstructed row-association recovery, but current metrics remain silver-label measures and do not establish causal validity.
 
 ### 9.2 Completed experimental sequence
 
