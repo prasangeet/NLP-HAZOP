@@ -84,14 +84,27 @@ class GraphReasoner:
 
     _ASSOCIATION_PREDICATE = "co_listed_with_consequence"
 
-    def __init__(self, max_hops: int = 4) -> None:
+    _ASSOCIATION_PATH_MODES = frozenset({"direct", "intermediate", "both"})
+
+    def __init__(
+        self,
+        max_hops: int = 4,
+        association_path_mode: str = "both",
+    ) -> None:
         if isinstance(max_hops, bool) or not isinstance(max_hops, int):
             raise TypeError("max_hops must be an integer")
 
         if max_hops < 2:
             raise ValueError("max_hops must be at least 2")
 
+        if association_path_mode not in self._ASSOCIATION_PATH_MODES:
+            allowed = ", ".join(sorted(self._ASSOCIATION_PATH_MODES))
+            raise ValueError(
+                f"association_path_mode must be one of: {allowed}"
+            )
+
         self._max_hops = max_hops
+        self._association_path_mode = association_path_mode
 
     def reason(
         self,
@@ -546,6 +559,7 @@ class GraphReasoner:
                         valid_chain = self._is_association_chain(
                             predicates,
                             direction,
+                            self._association_path_mode,
                         )
 
                         if valid_chain and deviation:
@@ -580,33 +594,51 @@ class GraphReasoner:
     def _is_association_chain(
         predicates: list[str],
         direction: str,
+        mode: str = "both",
     ) -> bool:
-        """Validate supported forward or reverse association path patterns."""
+        """Validate an allowed association path in forward or reverse order.
 
-        if direction == "object":
-            return predicates in (
-                [
-                    "causes_deviation",
-                    "leads_to_consequence",
-                ],
-                [
-                    "causes_deviation",
-                    "leads_to",
-                    "leads_to_consequence",
-                ],
+        ``direct`` requires the two-edge cause -> deviation -> consequence
+        path. ``intermediate`` requires the three-edge cause -> deviation ->
+        effect -> consequence path. ``both`` preserves the legacy behavior.
+
+        The default keeps the original two-argument static helper call
+        backward-compatible with existing callers and tests.
+        """
+
+        if mode not in GraphReasoner._ASSOCIATION_PATH_MODES:
+            raise ValueError(
+                "mode must be one of: direct, intermediate, both"
             )
 
-        return predicates in (
-            [
+        if direction == "object":
+            direct_chain = [
+                "causes_deviation",
+                "leads_to_consequence",
+            ]
+            intermediate_chain = [
+                "causes_deviation",
+                "leads_to",
+                "leads_to_consequence",
+            ]
+        elif direction == "subject":
+            direct_chain = [
                 "leads_to_consequence",
                 "causes_deviation",
-            ],
-            [
+            ]
+            intermediate_chain = [
                 "leads_to_consequence",
                 "leads_to",
                 "causes_deviation",
-            ],
-        )
+            ]
+        else:
+            return False
+
+        if mode == "direct":
+            return predicates == direct_chain
+        if mode == "intermediate":
+            return predicates == intermediate_chain
+        return predicates in (direct_chain, intermediate_chain)
 
     @staticmethod
     def _extract_context_deviation(
