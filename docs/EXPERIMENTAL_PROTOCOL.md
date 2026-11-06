@@ -93,8 +93,8 @@ State exact-match normalization rules. Preserve raw strings alongside normalized
 ## 5. Completed experiment sequence
 
 The following sequence describes the experiments actually completed for the
-T-301 reconstructed track. It supersedes the earlier proposed E2–E7 labels
-below; the experiment identifiers refer to the frozen artifacts in
+T-301 reconstructed track. It replaces the initial proposed experiment sequence with the experiments
+actually run; the identifiers refer to the frozen artifacts in
 `server/results/`.
 
 | Experiment | Actual question | Status / artifact |
