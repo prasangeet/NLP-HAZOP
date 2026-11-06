@@ -334,7 +334,7 @@ The dataset labels are **silver row associations**:
 
 ---
 
-## 8. Leakage-Aware Benchmark & Baseline Findings
+## 8. Leakage-Aware Benchmark & Experimental Findings
 
 ### 8.1 Benchmark Design
 Implemented in [`server/scripts/run_benchmark.py`](file:///mnt/volume/Projects/BTech-Project/NLP-HAZOP/server/scripts/run_benchmark.py):
@@ -386,24 +386,31 @@ The formal experimental plan is maintained in [`docs/EXPERIMENTAL_PROTOCOL.md`](
 
 These are open questions, not established findings. Current metrics use silver row associations and do not prove causal validity.
 
-### 9.2 Experimental sequence
+### 9.2 Completed experimental sequence
 
-- [ ] **E0 — Reproduce the historical baseline** at seed 42 and investigate any discrepancy against the recorded run.
-- [ ] **E1 — Controlled strategy comparison** across TF-IDF, graph, prompt-only LLM, and hybrid methods using identical held-out case IDs. LLM results remain “not run” until credentials/model settings are available.
-- [ ] **E2 — Diagnose graph coverage** by exact-node match, normalized-node match, supported path, ambiguous path, and no-supported-path groups.
-- [ ] **E3 — Entity-normalization ablation** with normalization rules built from training data or a separately reviewed ontology, not hidden test answers.
-- [ ] **E4 — Multi-hop ablation** with declared path limits and results stratified by evidence-path length.
-- [ ] **E5 — Abstention/selective prediction** using thresholds selected on validation data and frozen before test evaluation.
-- [ ] **E6 — Cross-domain transfer** with each train/test direction reported separately.
-- [ ] **E7 — Expert-adjudicated validation** of a held-out subset before making claims about true causal correctness or safety utility.
+The initial experimental roadmap has now been executed as E1–E7. The experiment identifiers and actual definitions are recorded in [the consolidated E1–E7 synthesis](reports/experimental-synthesis-e1-e7.md) and in [the experimental protocol](docs/EXPERIMENTAL_PROTOCOL.md).
 
-### 9.3 Evidence and reporting requirements
+- [x] **E1 — Controlled strategy comparison** across TF–IDF, graph reasoning, graph-plus-TF–IDF union, prompt-only LLM, and hybrid reasoning on a fixed scenario holdout. LLM comparisons use a capped 15-case subset and are reported separately from full-test deterministic results.
+- [x] **E2 — Complete-path support sensitivity** across distinct training-scenario support thresholds.
+- [x] **E3 — Independent typed-edge support sensitivity** for cause-to-deviation and deviation-to-consequence edges.
+- [x] **E4 — Direct versus intermediate multi-hop diagnostic.** No eligible intermediate paths were present; longer-path reasoning was therefore not meaningfully exercised.
+- [x] **E5 — Provenance metadata and source-coherence filters.** These test documentary coherence, not causal truth.
+- [x] **E6 — Ten repeated scenario-level holdouts** (seeds 42–51). This is not grouped cross-validation; four scenarios were never held out across the ten runs.
+- [x] **E7 — Controlled random masking** of 10–40% of typed training relationships over ten masking seeds. This simulates evidence loss and is not natural missingness.
 
-Every run must record repository commit, dataset provenance/version, split and seed, configuration, method/model/prompt versions, per-case predictions, reference labels, provenance, abstentions, latency, failures, and metric denominators. Results must be reproducible from saved raw outputs.
+The historical 30 October baseline remains useful as a dated reference, but it is not the current primary result. The E1–E7 synthesis supersedes it for discussion of the completed reconstructed T-301 investigation.
 
-The frontend Experiments workbench must call the real benchmark runner/API, show only metrics actually computed, distinguish silver-label evaluation from expert-adjudicated evaluation, and expose per-case evidence. It must not be a simulated dashboard or only a service-health check.
+### 9.3 Remaining evidence and reporting requirements
 
-**Stop/go rule:** do not claim one reasoning method is superior until the baseline is reproduced, methods are compared on identical held-out cases, variability is assessed across repeated splits or grouped cross-validation, and coverage/abstention are reported alongside accuracy. Do not claim causal correctness based on row co-occurrence alone.
+- [ ] **Expert adjudication:** Have qualified process-safety reviewers independently assess a held-out subset using a written rubric for causal plausibility, context sufficiency, and safeguard validity. Record disagreements and inter-rater agreement. Until then, no claim of causal correctness or safety utility is supported.
+- [ ] **Grouped cross-validation (recommended):** The repository has a grouped split primitive, but not a completed end-to-end grouped cross-validation experiment. Each fold must rebuild its retrieval/graph index from training data and evaluate identical held-out case IDs.
+- [ ] **End-to-end application validation:** Run backend tests, frontend type/build checks, and a manual Tauri workflow covering dataset preview/import, graph inspection, relationship recovery, report extraction, and saved experiment results.
+- [ ] **Reproducibility audit:** Preserve immutable experiment artifacts and record exact code commit, dataset hash, configuration, and environment for each result.
+- [ ] **Final report integration:** Align the formal report, this research reference, and the synthesis with the actual experiment definitions and limitations.
+
+The frontend workbench is implemented against the real benchmark API and persisted run artifacts. Implementation alone does not prove that the complete desktop workflow has been validated in the target environment.
+
+**Stop/go rule:** The completed experiments support comparative claims only about recovery of reconstructed row-derived silver associations on the evaluated dataset. Do not claim physical causal correctness or operational safety without independent expert adjudication.
 
 ---
 
