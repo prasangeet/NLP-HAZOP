@@ -1,6 +1,6 @@
 # Experimental Protocol: NLP for Structured HAZOP Reasoning
 
-**Status:** Protocol draft; not yet a completed evaluation.  
+**Status:** E1–E7 completed for the reconstructed T-301 track; expert adjudication and end-to-end application validation remain outstanding.  
 **Purpose:** Define the evidence required to evaluate missing-link recovery and structured causal reasoning without overstating what the current datasets establish.
 
 ## 1. Research claims and falsifiable questions
