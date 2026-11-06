@@ -1,0 +1,342 @@
+{
+  "metadata": {
+    "experiment": "E2",
+    "condition": "E2-A",
+    "condition_name": "metadata_only_control",
+    "dataset": "t301-reconstructed",
+    "dataset_sha256": "1c8713c2b6fbc9cdf2e22e64a307fdb64f073158a78679bdc23ad803a7d2725e",
+    "protocol_version": "E2-1.0",
+    "seed": 42,
+    "test_fraction": 0.2,
+    "train_scenarios": 32,
+    "test_scenarios": 8,
+    "test_queries": 19,
+    "top_k": 10,
+    "max_graph_hops": 4,
+    "retriever": "ScenarioLocalRetriever",
+    "reasoner": "GraphReasoner",
+    "llm_enabled": false,
+    "evidence_scope": "Target scenario metadata only. Target relationship labels and graph edges are removed.",
+    "interpretation": "No-transfer control; not a local relationship-graph reasoning baseline.",
+    "test_scenario_ids": [
+      "T301-004",
+      "T301-010",
+      "T301-011",
+      "T301-012",
+      "T301-025",
+      "T301-026",
+      "T301-031",
+      "T301-037"
+    ],
+    "case_ids": [
+      "T301-004::cause-01",
+      "T301-004::cause-02",
+      "T301-004::cause-03",
+      "T301-010::cause-01",
+      "T301-011::cause-01",
+      "T301-011::cause-02",
+      "T301-012::cause-01",
+      "T301-012::cause-02",
+      "T301-025::cause-01",
+      "T301-025::cause-02",
+      "T301-026::cause-01",
+      "T301-026::cause-02",
+      "T301-031::cause-01",
+      "T301-031::cause-02",
+      "T301-031::cause-03",
+      "T301-037::cause-01",
+      "T301-037::cause-02",
+      "T301-037::cause-03",
+      "T301-037::cause-04"
+    ]
+  },
+  "method_summary": {
+    "metadata_only_control": {
+      "n_evaluated": 19,
+      "micro_precision": 0.0,
+      "micro_recall": 0.0,
+      "micro_f1": 0.0,
+      "macro_precision": 0.0,
+      "macro_recall": 0.0,
+      "macro_f1": 0.0,
+      "hit_at_1": 0.0,
+      "mrr": 0.0,
+      "coverage": 0.0,
+      "abstention_rate": 1.0,
+      "mean_candidates": 0.0,
+      "evidence_text_rate": 0.0,
+      "non_model_origin_rate": 0.0,
+      "source_or_expert_origin_rate": 0.0,
+      "mean_latency_ms": 0.04983621061240372,
+      "origin_counts": {},
+      "cost_usd": null,
+      "cost_note": "Not captured by the current provider wrapper."
+    }
+  },
+  "cases": [
+    {
+      "case_id": "T301-004::cause-01",
+      "scenario_id": "T301-004",
+      "known_endpoint": "OperationalError",
+      "gold_values": [
+        "Overfilling",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "predictions": [],
+      "latency_ms": 0.11531799827935174,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-004::cause-02",
+      "scenario_id": "T301-004",
+      "known_endpoint": "ValveFailure",
+      "gold_values": [
+        "Overfilling",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "predictions": [],
+      "latency_ms": 0.05775300087407231,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-004::cause-03",
+      "scenario_id": "T301-004",
+      "known_endpoint": "ClosedOutletValve",
+      "gold_values": [
+        "Overfilling",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "predictions": [],
+      "latency_ms": 0.05409799632616341,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-010::cause-01",
+      "scenario_id": "T301-010",
+      "known_endpoint": "MalfunctionFlowController",
+      "gold_values": [
+        "EmptyingOfContainer",
+        "ProductionDowntime"
+      ],
+      "predictions": [],
+      "latency_ms": 0.04927899863105267,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-011::cause-01",
+      "scenario_id": "T301-011",
+      "known_endpoint": "OperationalError",
+      "gold_values": [
+        "PumpRunningDry",
+        "PumpBreakdown",
+        "ProductionDowntime"
+      ],
+      "predictions": [],
+      "latency_ms": 0.046184002712834626,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-011::cause-02",
+      "scenario_id": "T301-011",
+      "known_endpoint": "LossOfInflow",
+      "gold_values": [
+        "PumpRunningDry",
+        "PumpBreakdown",
+        "ProductionDowntime"
+      ],
+      "predictions": [],
+      "latency_ms": 0.04728099884232506,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-012::cause-01",
+      "scenario_id": "T301-012",
+      "known_endpoint": "OperationalError",
+      "gold_values": [
+        "EmptyingOfContainer",
+        "ProductionDowntime"
+      ],
+      "predictions": [],
+      "latency_ms": 0.04482899385038763,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-012::cause-02",
+      "scenario_id": "T301-012",
+      "known_endpoint": "LossOfInflow",
+      "gold_values": [
+        "EmptyingOfContainer",
+        "ProductionDowntime"
+      ],
+      "predictions": [],
+      "latency_ms": 0.07235899829538539,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-025::cause-01",
+      "scenario_id": "T301-025",
+      "known_endpoint": "DepositionOfImpurities",
+      "gold_values": [
+        "Rupture",
+        "LossOfPrimaryContainment",
+        "Fire"
+      ],
+      "predictions": [],
+      "latency_ms": 0.045998996938578784,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-025::cause-02",
+      "scenario_id": "T301-025",
+      "known_endpoint": "BlockedOutflowLine",
+      "gold_values": [
+        "Rupture",
+        "LossOfPrimaryContainment",
+        "Fire"
+      ],
+      "predictions": [],
+      "latency_ms": 0.0439790019299835,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-026::cause-01",
+      "scenario_id": "T301-026",
+      "known_endpoint": "DepositionOfImpurities",
+      "gold_values": [
+        "Rupture",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "predictions": [],
+      "latency_ms": 0.03976500011049211,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-026::cause-02",
+      "scenario_id": "T301-026",
+      "known_endpoint": "BlockedOutflowLine",
+      "gold_values": [
+        "Rupture",
+        "LossOfPrimaryContainment",
+        "FormationOfExAtmosphere",
+        "Explosion"
+      ],
+      "predictions": [],
+      "latency_ms": 0.04273800004739314,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-031::cause-01",
+      "scenario_id": "T301-031",
+      "known_endpoint": "FaultyInstallation",
+      "gold_values": [
+        "CollapseOfEnclosure",
+        "LossOfPrimaryContainment",
+        "Fire"
+      ],
+      "predictions": [],
+      "latency_ms": 0.0398560005123727,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-031::cause-02",
+      "scenario_id": "T301-031",
+      "known_endpoint": "HumanError",
+      "gold_values": [
+        "CollapseOfEnclosure",
+        "LossOfPrimaryContainment",
+        "Fire"
+      ],
+      "predictions": [],
+      "latency_ms": 0.03974100400228053,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-031::cause-03",
+      "scenario_id": "T301-031",
+      "known_endpoint": "ObstructedVentPath",
+      "gold_values": [
+        "CollapseOfEnclosure",
+        "LossOfPrimaryContainment",
+        "Fire"
+      ],
+      "predictions": [],
+      "latency_ms": 0.039816004573367536,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-037::cause-01",
+      "scenario_id": "T301-037",
+      "known_endpoint": "AbnormalHotIntake",
+      "gold_values": [
+        "AbnormalEvaporation",
+        "ExceedingAllowablePressure"
+      ],
+      "predictions": [],
+      "latency_ms": 0.044915002945344895,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-037::cause-02",
+      "scenario_id": "T301-037",
+      "known_endpoint": "ExternalFire",
+      "gold_values": [
+        "AbnormalEvaporation",
+        "ExceedingAllowablePressure"
+      ],
+      "predictions": [],
+      "latency_ms": 0.03936899884138256,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-037::cause-03",
+      "scenario_id": "T301-037",
+      "known_endpoint": "SolarRadiation",
+      "gold_values": [
+        "AbnormalEvaporation",
+        "ExceedingAllowablePressure"
+      ],
+      "predictions": [],
+      "latency_ms": 0.038644000596832484,
+      "status": "no_evidence",
+      "diagnostics": []
+    },
+    {
+      "case_id": "T301-037::cause-04",
+      "scenario_id": "T301-037",
+      "known_endpoint": "AbnormalHeatInput",
+      "gold_values": [
+        "AbnormalEvaporation",
+        "ExceedingAllowablePressure"
+      ],
+      "predictions": [],
+      "latency_ms": 0.044965003326069564,
+      "status": "no_evidence",
+      "diagnostics": []
+    }
+  ]
+}

@@ -1,0 +1,4062 @@
+{
+  "metadata": {
+    "experiment": "E2",
+    "title": "Complete-path evidence consensus",
+    "protocol_version": "E2-2.0",
+    "research_question": "How does the number of distinct source scenarios supporting a complete typed causal path affect missing-link recovery?",
+    "dataset": "t301-reconstructed",
+    "dataset_sha256": "1c8713c2b6fbc9cdf2e22e64a307fdb64f073158a78679bdc23ad803a7d2725e",
+    "dataset_records": 40,
+    "train_scenarios": 32,
+    "test_scenarios": 8,
+    "test_queries": 19,
+    "seed": 42,
+    "test_fraction": 0.2,
+    "top_k": 10,
+    "max_graph_hops": 4,
+    "support_thresholds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "test_scenario_ids": [
+      "T301-004",
+      "T301-010",
+      "T301-011",
+      "T301-012",
+      "T301-025",
+      "T301-026",
+      "T301-031",
+      "T301-037"
+    ],
+    "case_ids": [
+      "T301-004::cause-01",
+      "T301-004::cause-02",
+      "T301-004::cause-03",
+      "T301-010::cause-01",
+      "T301-011::cause-01",
+      "T301-011::cause-02",
+      "T301-012::cause-01",
+      "T301-012::cause-02",
+      "T301-025::cause-01",
+      "T301-025::cause-02",
+      "T301-026::cause-01",
+      "T301-026::cause-02",
+      "T301-031::cause-01",
+      "T301-031::cause-02",
+      "T301-031::cause-03",
+      "T301-037::cause-01",
+      "T301-037::cause-02",
+      "T301-037::cause-03",
+      "T301-037::cause-04"
+    ],
+    "path_definition": "Cause --causes_deviation--> Deviation --leads_to_consequence--> Consequence",
+    "support_definition": "Number of distinct source scenario IDs containing both typed edges of the same complete path.",
+    "threshold_1": "Unmodified graph-reasoning baseline; no filtering.",
+    "thresholds_above_1": "Only source edges participating in complete paths meeting the selected support threshold are retained.",
+    "llm_enabled": false,
+    "label_warning": "Gold labels are reconstructed row-level associations, not expert-validated causal ground truth.",
+    "independence_warning": "Distinct scenarios may share templates or underlying assumptions. Scenario support is not statistical independence or independent physical confirmation."
+  },
+  "conditions": {
+    "minimum_path_support_1": {
+      "threshold": 1,
+      "summary": {
+        "n_evaluated": 19,
+        "micro_precision": 0.6486486486486487,
+        "micro_recall": 0.8727272727272727,
+        "micro_f1": 0.744186046511628,
+        "macro_precision": 0.5499999999999998,
+        "macro_recall": 0.8421052631578947,
+        "macro_f1": 0.661779448621554,
+        "hit_at_1": 0.5789473684210527,
+        "mrr": 0.7017543859649122,
+        "coverage": 0.8421052631578947,
+        "abstention_rate": 0.1578947368421053,
+        "mean_candidates": 3.8947368421052633,
+        "evidence_text_rate": 1.0,
+        "non_model_origin_rate": 1.0,
+        "source_or_expert_origin_rate": 0.0,
+        "mean_latency_ms": 0.9173230010722029,
+        "origin_counts": {
+          "graph_inferred": 74
+        },
+        "cost_usd": null,
+        "cost_note": "Not captured by the current provider wrapper."
+      },
+      "cases": [
+        {
+          "case_id": "T301-004::cause-01",
+          "scenario_id": "T301-004",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Overfilling",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:1->t301-reconstructed:T301-001:row-2:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:1, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-001, source_id=t301-reconstructed:T301-001:row-2:consequence:1, location=row 2]-> Overfilling The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:1->t301-reconstructed:T301-001:row-2:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:1, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-001, source_id=t301-reconstructed:T301-001:row-2:consequence:2, location=row 2]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:1->t301-reconstructed:T301-001:row-2:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:1, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-001, source_id=t301-reconstructed:T301-001:row-2:consequence:3, location=row 2]-> Fire The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:1->t301-reconstructed:T301-002:row-3:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:1, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-002, source_id=t301-reconstructed:T301-002:row-3:consequence:3, location=row 3]-> FormationOfExAtmosphere The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:1->t301-reconstructed:T301-002:row-3:consequence:4",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:1, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-002, source_id=t301-reconstructed:T301-002:row-3:consequence:4, location=row 3]-> Explosion The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.4395850012078881,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 51,
+            "retained_edges": 51,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-004::cause-02",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ValveFailure",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Overfilling",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:2->t301-reconstructed:T301-001:row-2:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. ValveFailure -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:2, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-001, source_id=t301-reconstructed:T301-001:row-2:consequence:1, location=row 2]-> Overfilling The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:2->t301-reconstructed:T301-001:row-2:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. ValveFailure -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:2, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-001, source_id=t301-reconstructed:T301-001:row-2:consequence:2, location=row 2]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:2->t301-reconstructed:T301-001:row-2:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. ValveFailure -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:2, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-001, source_id=t301-reconstructed:T301-001:row-2:consequence:3, location=row 2]-> Fire The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:2->t301-reconstructed:T301-002:row-3:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. ValveFailure -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:2, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-002, source_id=t301-reconstructed:T301-002:row-3:consequence:3, location=row 3]-> FormationOfExAtmosphere The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:2->t301-reconstructed:T301-002:row-3:consequence:4",
+              "evidence": "Row-association candidate inferred by typed graph composition. ValveFailure -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:2, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-002, source_id=t301-reconstructed:T301-002:row-3:consequence:4, location=row 3]-> Explosion The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.9632139990571886,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 28,
+            "retained_edges": 28,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-004::cause-03",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ClosedOutletValve",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Overfilling",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:3->t301-reconstructed:T301-001:row-2:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. ClosedOutletValve -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:3, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-001, source_id=t301-reconstructed:T301-001:row-2:consequence:1, location=row 2]-> Overfilling The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:3->t301-reconstructed:T301-001:row-2:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. ClosedOutletValve -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:3, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-001, source_id=t301-reconstructed:T301-001:row-2:consequence:2, location=row 2]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:3->t301-reconstructed:T301-001:row-2:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. ClosedOutletValve -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:3, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-001, source_id=t301-reconstructed:T301-001:row-2:consequence:3, location=row 2]-> Fire The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:3->t301-reconstructed:T301-002:row-3:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. ClosedOutletValve -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:3, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-002, source_id=t301-reconstructed:T301-002:row-3:consequence:3, location=row 3]-> FormationOfExAtmosphere The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-003:row-4:cause:3->t301-reconstructed:T301-002:row-3:consequence:4",
+              "evidence": "Row-association candidate inferred by typed graph composition. ClosedOutletValve -[causes_deviation | reconstructed, scenario_id=T301-003, source_id=t301-reconstructed:T301-003:row-4:cause:3, location=row 4]-> High level -[leads_to_consequence | reconstructed, scenario_id=T301-002, source_id=t301-reconstructed:T301-002:row-3:consequence:4, location=row 3]-> Explosion The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-004",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.8294860017485917,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 18,
+            "retained_edges": 18,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-010::cause-01",
+          "scenario_id": "T301-010",
+          "known_endpoint": "MalfunctionFlowController",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.9857999975793064,
+          "status": "insufficient_support",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 19,
+            "retained_edges": 19,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-011::cause-01",
+          "scenario_id": "T301-011",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "PumpRunningDry",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-008:row-9:cause:2->t301-reconstructed:T301-007:row-8:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:cause:2, location=row 9]-> Low level -[leads_to_consequence | reconstructed, scenario_id=T301-007, source_id=t301-reconstructed:T301-007:row-8:consequence:1, location=row 8]-> PumpRunningDry The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-011",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PumpBreakdown",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-008:row-9:cause:2->t301-reconstructed:T301-007:row-8:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:cause:2, location=row 9]-> Low level -[leads_to_consequence | reconstructed, scenario_id=T301-007, source_id=t301-reconstructed:T301-007:row-8:consequence:2, location=row 8]-> PumpBreakdown The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-011",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ProductionDowntime",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-008:row-9:cause:2->t301-reconstructed:T301-007:row-8:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:cause:2, location=row 9]-> Low level -[leads_to_consequence | reconstructed, scenario_id=T301-007, source_id=t301-reconstructed:T301-007:row-8:consequence:3, location=row 8]-> ProductionDowntime The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-011",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "EmptyingOfContainer",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-008:row-9:cause:2->t301-reconstructed:T301-009:row-10:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:cause:2, location=row 9]-> Low level -[leads_to_consequence | reconstructed, scenario_id=T301-009, source_id=t301-reconstructed:T301-009:row-10:consequence:1, location=row 10]-> EmptyingOfContainer The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-011",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.2332870028330944,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 51,
+            "retained_edges": 51,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-011::cause-02",
+          "scenario_id": "T301-011",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6318920059129596,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-012::cause-01",
+          "scenario_id": "T301-012",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "PumpRunningDry",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-008:row-9:cause:2->t301-reconstructed:T301-007:row-8:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:cause:2, location=row 9]-> Low level -[leads_to_consequence | reconstructed, scenario_id=T301-007, source_id=t301-reconstructed:T301-007:row-8:consequence:1, location=row 8]-> PumpRunningDry The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "PumpBreakdown",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-008:row-9:cause:2->t301-reconstructed:T301-007:row-8:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:cause:2, location=row 9]-> Low level -[leads_to_consequence | reconstructed, scenario_id=T301-007, source_id=t301-reconstructed:T301-007:row-8:consequence:2, location=row 8]-> PumpBreakdown The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ProductionDowntime",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-008:row-9:cause:2->t301-reconstructed:T301-007:row-8:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:cause:2, location=row 9]-> Low level -[leads_to_consequence | reconstructed, scenario_id=T301-007, source_id=t301-reconstructed:T301-007:row-8:consequence:3, location=row 8]-> ProductionDowntime The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "EmptyingOfContainer",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-008:row-9:cause:2->t301-reconstructed:T301-009:row-10:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:cause:2, location=row 9]-> Low level -[leads_to_consequence | reconstructed, scenario_id=T301-009, source_id=t301-reconstructed:T301-009:row-10:consequence:1, location=row 10]-> EmptyingOfContainer The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.2413380027282983,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 51,
+            "retained_edges": 51,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-012::cause-02",
+          "scenario_id": "T301-012",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.5816789998789318,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-025::cause-01",
+          "scenario_id": "T301-025",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "Crack",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-023:row-24:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:1, location=row 24]-> Crack The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-023:row-24:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:2, location=row 24]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-023:row-24:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:3, location=row 24]-> Fire The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-024:row-25:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-024, source_id=t301-reconstructed:T301-024:row-25:consequence:3, location=row 25]-> FormationOfExAtmosphere The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-024:row-25:consequence:4",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-024, source_id=t301-reconstructed:T301-024:row-25:consequence:4, location=row 25]-> Explosion The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Rupture",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-027:row-28:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-027, source_id=t301-reconstructed:T301-027:row-28:consequence:1, location=row 28]-> Rupture The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.9203270019497722,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 25,
+            "retained_edges": 25,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-025::cause-02",
+          "scenario_id": "T301-025",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "Crack",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-023:row-24:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:1, location=row 24]-> Crack The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-023:row-24:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:2, location=row 24]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-023:row-24:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:3, location=row 24]-> Fire The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-024:row-25:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-024, source_id=t301-reconstructed:T301-024:row-25:consequence:3, location=row 25]-> FormationOfExAtmosphere The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-024:row-25:consequence:4",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-024, source_id=t301-reconstructed:T301-024:row-25:consequence:4, location=row 25]-> Explosion The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Rupture",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-027:row-28:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-027, source_id=t301-reconstructed:T301-027:row-28:consequence:1, location=row 28]-> Rupture The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.8236610010499135,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 16,
+            "retained_edges": 16,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-026::cause-01",
+          "scenario_id": "T301-026",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Crack",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-023:row-24:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:1, location=row 24]-> Crack The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-023:row-24:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:2, location=row 24]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-023:row-24:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:3, location=row 24]-> Fire The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-024:row-25:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-024, source_id=t301-reconstructed:T301-024:row-25:consequence:3, location=row 25]-> FormationOfExAtmosphere The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-024:row-25:consequence:4",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-024, source_id=t301-reconstructed:T301-024:row-25:consequence:4, location=row 25]-> Explosion The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Rupture",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-027:row-28:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-027, source_id=t301-reconstructed:T301-027:row-28:consequence:1, location=row 28]-> Rupture The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.9229580027749762,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 25,
+            "retained_edges": 25,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-026::cause-02",
+          "scenario_id": "T301-026",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Crack",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-023:row-24:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:1, location=row 24]-> Crack The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-023:row-24:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:2, location=row 24]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-023:row-24:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:3, location=row 24]-> Fire The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-024:row-25:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-024, source_id=t301-reconstructed:T301-024:row-25:consequence:3, location=row 25]-> FormationOfExAtmosphere The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-024:row-25:consequence:4",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-024, source_id=t301-reconstructed:T301-024:row-25:consequence:4, location=row 25]-> Explosion The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Rupture",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-027:row-28:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-027, source_id=t301-reconstructed:T301-027:row-28:consequence:1, location=row 28]-> Rupture The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.8374190001632087,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 16,
+            "retained_edges": 16,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-031::cause-01",
+          "scenario_id": "T301-031",
+          "known_endpoint": "FaultyInstallation",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "CollapseOfEnclosure",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:1->t301-reconstructed:T301-029:row-30:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. FaultyInstallation -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:1, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-029, source_id=t301-reconstructed:T301-029:row-30:consequence:1, location=row 30]-> CollapseOfEnclosure The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:1->t301-reconstructed:T301-029:row-30:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. FaultyInstallation -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:1, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-029, source_id=t301-reconstructed:T301-029:row-30:consequence:2, location=row 30]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:1->t301-reconstructed:T301-029:row-30:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. FaultyInstallation -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:1, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-029, source_id=t301-reconstructed:T301-029:row-30:consequence:3, location=row 30]-> Fire The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:1->t301-reconstructed:T301-030:row-31:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. FaultyInstallation -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:1, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-030, source_id=t301-reconstructed:T301-030:row-31:consequence:3, location=row 31]-> FormationOfExAtmosphere The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:1->t301-reconstructed:T301-030:row-31:consequence:4",
+              "evidence": "Row-association candidate inferred by typed graph composition. FaultyInstallation -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:1, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-030, source_id=t301-reconstructed:T301-030:row-31:consequence:4, location=row 31]-> Explosion The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.8064140056376345,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 19,
+            "retained_edges": 19,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-031::cause-02",
+          "scenario_id": "T301-031",
+          "known_endpoint": "HumanError",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "CollapseOfEnclosure",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:2->t301-reconstructed:T301-029:row-30:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. HumanError -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:2, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-029, source_id=t301-reconstructed:T301-029:row-30:consequence:1, location=row 30]-> CollapseOfEnclosure The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:2->t301-reconstructed:T301-029:row-30:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. HumanError -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:2, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-029, source_id=t301-reconstructed:T301-029:row-30:consequence:2, location=row 30]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:2->t301-reconstructed:T301-029:row-30:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. HumanError -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:2, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-029, source_id=t301-reconstructed:T301-029:row-30:consequence:3, location=row 30]-> Fire The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:2->t301-reconstructed:T301-030:row-31:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. HumanError -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:2, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-030, source_id=t301-reconstructed:T301-030:row-31:consequence:3, location=row 31]-> FormationOfExAtmosphere The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:2->t301-reconstructed:T301-030:row-31:consequence:4",
+              "evidence": "Row-association candidate inferred by typed graph composition. HumanError -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:2, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-030, source_id=t301-reconstructed:T301-030:row-31:consequence:4, location=row 31]-> Explosion The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 1.0313029997632839,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 39,
+            "retained_edges": 39,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-031::cause-03",
+          "scenario_id": "T301-031",
+          "known_endpoint": "ObstructedVentPath",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "CollapseOfEnclosure",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:3->t301-reconstructed:T301-029:row-30:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. ObstructedVentPath -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:3, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-029, source_id=t301-reconstructed:T301-029:row-30:consequence:1, location=row 30]-> CollapseOfEnclosure The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:3->t301-reconstructed:T301-029:row-30:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. ObstructedVentPath -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:3, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-029, source_id=t301-reconstructed:T301-029:row-30:consequence:2, location=row 30]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Fire",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:3->t301-reconstructed:T301-029:row-30:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. ObstructedVentPath -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:3, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-029, source_id=t301-reconstructed:T301-029:row-30:consequence:3, location=row 30]-> Fire The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "FormationOfExAtmosphere",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:3->t301-reconstructed:T301-030:row-31:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. ObstructedVentPath -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:3, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-030, source_id=t301-reconstructed:T301-030:row-31:consequence:3, location=row 31]-> FormationOfExAtmosphere The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "Explosion",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-032:row-33:cause:3->t301-reconstructed:T301-030:row-31:consequence:4",
+              "evidence": "Row-association candidate inferred by typed graph composition. ObstructedVentPath -[causes_deviation | reconstructed, scenario_id=T301-032, source_id=t301-reconstructed:T301-032:row-33:cause:3, location=row 33]-> Low pressure -[leads_to_consequence | reconstructed, scenario_id=T301-030, source_id=t301-reconstructed:T301-030:row-31:consequence:4, location=row 31]-> Explosion The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-031",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.8171750014298595,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 19,
+            "retained_edges": 19,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-037::cause-01",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHotIntake",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:1->t301-reconstructed:T301-035:row-36:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. AbnormalHotIntake -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:1, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-035, source_id=t301-reconstructed:T301-035:row-36:consequence:1, location=row 36]-> AbnormalEvaporation The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:1->t301-reconstructed:T301-035:row-36:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. AbnormalHotIntake -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:1, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-035, source_id=t301-reconstructed:T301-035:row-36:consequence:2, location=row 36]-> ExceedingAllowablePressure The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingFlashPoint",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:1->t301-reconstructed:T301-036:row-37:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. AbnormalHotIntake -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:1, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-036, source_id=t301-reconstructed:T301-036:row-37:consequence:1, location=row 37]-> ExceedingFlashPoint The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.9356520022265613,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 21,
+            "retained_edges": 21,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-037::cause-02",
+          "scenario_id": "T301-037",
+          "known_endpoint": "ExternalFire",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:2->t301-reconstructed:T301-035:row-36:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. ExternalFire -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:2, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-035, source_id=t301-reconstructed:T301-035:row-36:consequence:1, location=row 36]-> AbnormalEvaporation The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:2->t301-reconstructed:T301-035:row-36:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. ExternalFire -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:2, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-035, source_id=t301-reconstructed:T301-035:row-36:consequence:2, location=row 36]-> ExceedingAllowablePressure The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingFlashPoint",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:2->t301-reconstructed:T301-036:row-37:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. ExternalFire -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:2, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-036, source_id=t301-reconstructed:T301-036:row-37:consequence:1, location=row 37]-> ExceedingFlashPoint The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.8540619965060614,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 21,
+            "retained_edges": 21,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-037::cause-03",
+          "scenario_id": "T301-037",
+          "known_endpoint": "SolarRadiation",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:3->t301-reconstructed:T301-035:row-36:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. SolarRadiation -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:3, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-035, source_id=t301-reconstructed:T301-035:row-36:consequence:1, location=row 36]-> AbnormalEvaporation The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:3->t301-reconstructed:T301-035:row-36:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. SolarRadiation -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:3, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-035, source_id=t301-reconstructed:T301-035:row-36:consequence:2, location=row 36]-> ExceedingAllowablePressure The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingFlashPoint",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:3->t301-reconstructed:T301-036:row-37:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. SolarRadiation -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:3, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-036, source_id=t301-reconstructed:T301-036:row-37:consequence:1, location=row 37]-> ExceedingFlashPoint The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.8634350015199743,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 21,
+            "retained_edges": 21,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        },
+        {
+          "case_id": "T301-037::cause-04",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHeatInput",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [
+            {
+              "value": "AbnormalEvaporation",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:4->t301-reconstructed:T301-035:row-36:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. AbnormalHeatInput -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:4, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-035, source_id=t301-reconstructed:T301-035:row-36:consequence:1, location=row 36]-> AbnormalEvaporation The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingAllowablePressure",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:4->t301-reconstructed:T301-035:row-36:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. AbnormalHeatInput -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:4, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-035, source_id=t301-reconstructed:T301-035:row-36:consequence:2, location=row 36]-> ExceedingAllowablePressure The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "ExceedingFlashPoint",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-038:row-39:cause:4->t301-reconstructed:T301-036:row-37:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. AbnormalHeatInput -[causes_deviation | reconstructed, scenario_id=T301-038, source_id=t301-reconstructed:T301-038:row-39:cause:4, location=row 39]-> High temperature -[leads_to_consequence | reconstructed, scenario_id=T301-036, source_id=t301-reconstructed:T301-036:row-37:consequence:1, location=row 37]-> ExceedingFlashPoint The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-037",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.7104499964043498,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 1,
+            "raw_edges": 5,
+            "retained_edges": 5,
+            "complete_paths": null,
+            "qualifying_paths": null,
+            "max_path_support": null,
+            "support_histogram": {},
+            "filter_applied": false
+          }
+        }
+      ]
+    },
+    "minimum_path_support_2": {
+      "threshold": 2,
+      "summary": {
+        "n_evaluated": 19,
+        "micro_precision": 0.6,
+        "micro_recall": 0.10909090909090909,
+        "micro_f1": 0.1846153846153846,
+        "macro_precision": 0.21052631578947367,
+        "macro_recall": 0.10526315789473684,
+        "macro_f1": 0.13859649122807016,
+        "hit_at_1": 0.10526315789473684,
+        "mrr": 0.21052631578947367,
+        "coverage": 0.3157894736842105,
+        "abstention_rate": 0.6842105263157895,
+        "mean_candidates": 0.5263157894736842,
+        "evidence_text_rate": 1.0,
+        "non_model_origin_rate": 1.0,
+        "source_or_expert_origin_rate": 0.0,
+        "mean_latency_ms": 0.7657862113678435,
+        "origin_counts": {
+          "graph_inferred": 10
+        },
+        "cost_usd": null,
+        "cost_note": "Not captured by the current provider wrapper."
+      },
+      "cases": [
+        {
+          "case_id": "T301-004::cause-01",
+          "scenario_id": "T301-004",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 1.1039719975087792,
+          "status": "insufficient_support",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 51,
+            "retained_edges": 12,
+            "complete_paths": 14,
+            "qualifying_paths": 3,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-004::cause-02",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ValveFailure",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7989060031832196,
+          "status": "insufficient_support",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 28,
+            "retained_edges": 4,
+            "complete_paths": 7,
+            "qualifying_paths": 1,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-004::cause-03",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ClosedOutletValve",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.701967001077719,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 18,
+            "retained_edges": 0,
+            "complete_paths": 3,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 3
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-010::cause-01",
+          "scenario_id": "T301-010",
+          "known_endpoint": "MalfunctionFlowController",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7681979986955412,
+          "status": "insufficient_support",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 19,
+            "retained_edges": 6,
+            "complete_paths": 5,
+            "qualifying_paths": 2,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-011::cause-01",
+          "scenario_id": "T301-011",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "ProductionDowntime",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-008:row-9:cause:2->t301-reconstructed:T301-008:row-9:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:cause:2, location=row 9]-> Low level -[leads_to_consequence | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:consequence:3, location=row 9]-> ProductionDowntime The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-011",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.9258059944841079,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 51,
+            "retained_edges": 12,
+            "complete_paths": 14,
+            "qualifying_paths": 3,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-011::cause-02",
+          "scenario_id": "T301-011",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.5785540051874705,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": 0,
+            "qualifying_paths": 0,
+            "max_path_support": 0,
+            "support_histogram": {},
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-012::cause-01",
+          "scenario_id": "T301-012",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [
+            {
+              "value": "ProductionDowntime",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-008:row-9:cause:2->t301-reconstructed:T301-008:row-9:consequence:3",
+              "evidence": "Row-association candidate inferred by typed graph composition. OperationalError -[causes_deviation | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:cause:2, location=row 9]-> Low level -[leads_to_consequence | reconstructed, scenario_id=T301-008, source_id=t301-reconstructed:T301-008:row-9:consequence:3, location=row 9]-> ProductionDowntime The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-012",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.9052169989445247,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 51,
+            "retained_edges": 12,
+            "complete_paths": 14,
+            "qualifying_paths": 3,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-012::cause-02",
+          "scenario_id": "T301-012",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.5675950014847331,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": 0,
+            "qualifying_paths": 0,
+            "max_path_support": 0,
+            "support_histogram": {},
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-025::cause-01",
+          "scenario_id": "T301-025",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "Crack",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-023:row-24:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:1, location=row 24]-> Crack The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-023:row-24:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:2, location=row 24]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.7555430056527257,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 25,
+            "retained_edges": 6,
+            "complete_paths": 8,
+            "qualifying_paths": 2,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-025::cause-02",
+          "scenario_id": "T301-025",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [
+            {
+              "value": "Crack",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-023:row-24:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:1, location=row 24]-> Crack The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-023:row-24:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:2, location=row 24]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-025",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.7850730034988374,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 16,
+            "retained_edges": 6,
+            "complete_paths": 5,
+            "qualifying_paths": 2,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-026::cause-01",
+          "scenario_id": "T301-026",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Crack",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-023:row-24:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:1, location=row 24]-> Crack The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:1->t301-reconstructed:T301-023:row-24:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. DepositionOfImpurities -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:1, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:2, location=row 24]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.7816490033292212,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 25,
+            "retained_edges": 6,
+            "complete_paths": 8,
+            "qualifying_paths": 2,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-026::cause-02",
+          "scenario_id": "T301-026",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [
+            {
+              "value": "Crack",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-023:row-24:consequence:1",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:1, location=row 24]-> Crack The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            },
+            {
+              "value": "LossOfPrimaryContainment",
+              "origin": "graph_inferred",
+              "source_id": "graph-path:t301-reconstructed:t301-reconstructed:T301-023:row-24:cause:2->t301-reconstructed:T301-023:row-24:consequence:2",
+              "evidence": "Row-association candidate inferred by typed graph composition. BlockedOutflowLine -[causes_deviation | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:cause:2, location=row 24]-> High pressure -[leads_to_consequence | reconstructed, scenario_id=T301-023, source_id=t301-reconstructed:T301-023:row-24:consequence:2, location=row 24]-> LossOfPrimaryContainment The endpoints are co-listed through a reconstructed relationship path; this does not establish an independently validated causal assertion.",
+              "scope": "unknown",
+              "relevance_score": null,
+              "scenario_id": "T301-026",
+              "dataset_id": "t301-reconstructed"
+            }
+          ],
+          "latency_ms": 0.7312620000448078,
+          "status": "candidates_found",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 16,
+            "retained_edges": 6,
+            "complete_paths": 5,
+            "qualifying_paths": 2,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-01",
+          "scenario_id": "T301-031",
+          "known_endpoint": "FaultyInstallation",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6394790034391917,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 4,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 4
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-02",
+          "scenario_id": "T301-031",
+          "known_endpoint": "HumanError",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.8255729990196414,
+          "status": "insufficient_support",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 39,
+            "retained_edges": 4,
+            "complete_paths": 8,
+            "qualifying_paths": 1,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 7,
+              "2": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-03",
+          "scenario_id": "T301-031",
+          "known_endpoint": "ObstructedVentPath",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6622500004596077,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 4,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 4
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-01",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHotIntake",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.79489299969282,
+          "status": "insufficient_support",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 21,
+            "retained_edges": 6,
+            "complete_paths": 6,
+            "qualifying_paths": 2,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-02",
+          "scenario_id": "T301-037",
+          "known_endpoint": "ExternalFire",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7981790040503256,
+          "status": "insufficient_support",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 21,
+            "retained_edges": 6,
+            "complete_paths": 6,
+            "qualifying_paths": 2,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-03",
+          "scenario_id": "T301-037",
+          "known_endpoint": "SolarRadiation",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7972699968377128,
+          "status": "insufficient_support",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 21,
+            "retained_edges": 6,
+            "complete_paths": 6,
+            "qualifying_paths": 2,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-04",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHeatInput",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6285519993980415,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 2,
+            "raw_edges": 5,
+            "retained_edges": 0,
+            "complete_paths": 1,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 1
+            },
+            "filter_applied": true
+          }
+        }
+      ]
+    },
+    "minimum_path_support_3": {
+      "threshold": 3,
+      "summary": {
+        "n_evaluated": 19,
+        "micro_precision": 0.0,
+        "micro_recall": 0.0,
+        "micro_f1": 0.0,
+        "macro_precision": 0.0,
+        "macro_recall": 0.0,
+        "macro_f1": 0.0,
+        "hit_at_1": 0.0,
+        "mrr": 0.0,
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "mean_candidates": 0.0,
+        "evidence_text_rate": 0.0,
+        "non_model_origin_rate": 0.0,
+        "source_or_expert_origin_rate": 0.0,
+        "mean_latency_ms": 0.6911538420306322,
+        "origin_counts": {},
+        "cost_usd": null,
+        "cost_note": "Not captured by the current provider wrapper."
+      },
+      "cases": [
+        {
+          "case_id": "T301-004::cause-01",
+          "scenario_id": "T301-004",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.9002289953059517,
+          "status": "insufficient_support",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 51,
+            "retained_edges": 6,
+            "complete_paths": 14,
+            "qualifying_paths": 1,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-004::cause-02",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ValveFailure",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7281090001924895,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 28,
+            "retained_edges": 0,
+            "complete_paths": 7,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-004::cause-03",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ClosedOutletValve",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6523280026158318,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 18,
+            "retained_edges": 0,
+            "complete_paths": 3,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 3
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-010::cause-01",
+          "scenario_id": "T301-010",
+          "known_endpoint": "MalfunctionFlowController",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6511710016638972,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-011::cause-01",
+          "scenario_id": "T301-011",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.8607589988969266,
+          "status": "insufficient_support",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 51,
+            "retained_edges": 6,
+            "complete_paths": 14,
+            "qualifying_paths": 1,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-011::cause-02",
+          "scenario_id": "T301-011",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.5784199966001324,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": 0,
+            "qualifying_paths": 0,
+            "max_path_support": 0,
+            "support_histogram": {},
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-012::cause-01",
+          "scenario_id": "T301-012",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.8438410004600883,
+          "status": "insufficient_support",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 51,
+            "retained_edges": 6,
+            "complete_paths": 14,
+            "qualifying_paths": 1,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-012::cause-02",
+          "scenario_id": "T301-012",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.563556000997778,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": 0,
+            "qualifying_paths": 0,
+            "max_path_support": 0,
+            "support_histogram": {},
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-025::cause-01",
+          "scenario_id": "T301-025",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6689150031888857,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 25,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-025::cause-02",
+          "scenario_id": "T301-025",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6708579967380501,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 16,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-026::cause-01",
+          "scenario_id": "T301-026",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6619970008614473,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 25,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-026::cause-02",
+          "scenario_id": "T301-026",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6386500026565045,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 16,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-01",
+          "scenario_id": "T301-031",
+          "known_endpoint": "FaultyInstallation",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6410000059986487,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 4,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 4
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-02",
+          "scenario_id": "T301-031",
+          "known_endpoint": "HumanError",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6893889949424192,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 39,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 7,
+              "2": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-03",
+          "scenario_id": "T301-031",
+          "known_endpoint": "ObstructedVentPath",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7403569979942404,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 4,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 4
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-01",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHotIntake",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6793770007789135,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-02",
+          "scenario_id": "T301-037",
+          "known_endpoint": "ExternalFire",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6641939980909228,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-03",
+          "scenario_id": "T301-037",
+          "known_endpoint": "SolarRadiation",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6611100034206174,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-04",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHeatInput",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6376629971782677,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 3,
+            "raw_edges": 5,
+            "retained_edges": 0,
+            "complete_paths": 1,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 1
+            },
+            "filter_applied": true
+          }
+        }
+      ]
+    },
+    "minimum_path_support_4": {
+      "threshold": 4,
+      "summary": {
+        "n_evaluated": 19,
+        "micro_precision": 0.0,
+        "micro_recall": 0.0,
+        "micro_f1": 0.0,
+        "macro_precision": 0.0,
+        "macro_recall": 0.0,
+        "macro_f1": 0.0,
+        "hit_at_1": 0.0,
+        "mrr": 0.0,
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "mean_candidates": 0.0,
+        "evidence_text_rate": 0.0,
+        "non_model_origin_rate": 0.0,
+        "source_or_expert_origin_rate": 0.0,
+        "mean_latency_ms": 0.6673007358729496,
+        "origin_counts": {},
+        "cost_usd": null,
+        "cost_note": "Not captured by the current provider wrapper."
+      },
+      "cases": [
+        {
+          "case_id": "T301-004::cause-01",
+          "scenario_id": "T301-004",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7582109974464402,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 51,
+            "retained_edges": 0,
+            "complete_paths": 14,
+            "qualifying_paths": 0,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-004::cause-02",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ValveFailure",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.690158994984813,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 28,
+            "retained_edges": 0,
+            "complete_paths": 7,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-004::cause-03",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ClosedOutletValve",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6920820014784113,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 18,
+            "retained_edges": 0,
+            "complete_paths": 3,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 3
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-010::cause-01",
+          "scenario_id": "T301-010",
+          "known_endpoint": "MalfunctionFlowController",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6526720026158728,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-011::cause-01",
+          "scenario_id": "T301-011",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7299409990082495,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 51,
+            "retained_edges": 0,
+            "complete_paths": 14,
+            "qualifying_paths": 0,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-011::cause-02",
+          "scenario_id": "T301-011",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.578052997298073,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": 0,
+            "qualifying_paths": 0,
+            "max_path_support": 0,
+            "support_histogram": {},
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-012::cause-01",
+          "scenario_id": "T301-012",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7182600020314567,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 51,
+            "retained_edges": 0,
+            "complete_paths": 14,
+            "qualifying_paths": 0,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-012::cause-02",
+          "scenario_id": "T301-012",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6121249971329235,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": 0,
+            "qualifying_paths": 0,
+            "max_path_support": 0,
+            "support_histogram": {},
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-025::cause-01",
+          "scenario_id": "T301-025",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6633910015807487,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 25,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-025::cause-02",
+          "scenario_id": "T301-025",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6375609955284745,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 16,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-026::cause-01",
+          "scenario_id": "T301-026",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6865190007374622,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 25,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-026::cause-02",
+          "scenario_id": "T301-026",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6605079979635775,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 16,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-01",
+          "scenario_id": "T301-031",
+          "known_endpoint": "FaultyInstallation",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6399190024239942,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 4,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 4
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-02",
+          "scenario_id": "T301-031",
+          "known_endpoint": "HumanError",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6908359937369823,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 39,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 7,
+              "2": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-03",
+          "scenario_id": "T301-031",
+          "known_endpoint": "ObstructedVentPath",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6293299957178533,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 4,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 4
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-01",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHotIntake",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6789249964640476,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-02",
+          "scenario_id": "T301-037",
+          "known_endpoint": "ExternalFire",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6634199962718412,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-03",
+          "scenario_id": "T301-037",
+          "known_endpoint": "SolarRadiation",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6835360036347993,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-04",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHeatInput",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6132660055300221,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 4,
+            "raw_edges": 5,
+            "retained_edges": 0,
+            "complete_paths": 1,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 1
+            },
+            "filter_applied": true
+          }
+        }
+      ]
+    },
+    "minimum_path_support_5": {
+      "threshold": 5,
+      "summary": {
+        "n_evaluated": 19,
+        "micro_precision": 0.0,
+        "micro_recall": 0.0,
+        "micro_f1": 0.0,
+        "macro_precision": 0.0,
+        "macro_recall": 0.0,
+        "macro_f1": 0.0,
+        "hit_at_1": 0.0,
+        "mrr": 0.0,
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "mean_candidates": 0.0,
+        "evidence_text_rate": 0.0,
+        "non_model_origin_rate": 0.0,
+        "source_or_expert_origin_rate": 0.0,
+        "mean_latency_ms": 0.6607581576405975,
+        "origin_counts": {},
+        "cost_usd": null,
+        "cost_note": "Not captured by the current provider wrapper."
+      },
+      "cases": [
+        {
+          "case_id": "T301-004::cause-01",
+          "scenario_id": "T301-004",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.752409003325738,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 51,
+            "retained_edges": 0,
+            "complete_paths": 14,
+            "qualifying_paths": 0,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-004::cause-02",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ValveFailure",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6693500035908073,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 28,
+            "retained_edges": 0,
+            "complete_paths": 7,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-004::cause-03",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ClosedOutletValve",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6882279994897544,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 18,
+            "retained_edges": 0,
+            "complete_paths": 3,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 3
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-010::cause-01",
+          "scenario_id": "T301-010",
+          "known_endpoint": "MalfunctionFlowController",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6416249962057918,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-011::cause-01",
+          "scenario_id": "T301-011",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7052569999359548,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 51,
+            "retained_edges": 0,
+            "complete_paths": 14,
+            "qualifying_paths": 0,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-011::cause-02",
+          "scenario_id": "T301-011",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.5656170033034869,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": 0,
+            "qualifying_paths": 0,
+            "max_path_support": 0,
+            "support_histogram": {},
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-012::cause-01",
+          "scenario_id": "T301-012",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7223979991977103,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 51,
+            "retained_edges": 0,
+            "complete_paths": 14,
+            "qualifying_paths": 0,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-012::cause-02",
+          "scenario_id": "T301-012",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.5705259973183274,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": 0,
+            "qualifying_paths": 0,
+            "max_path_support": 0,
+            "support_histogram": {},
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-025::cause-01",
+          "scenario_id": "T301-025",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7215279983938672,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 25,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-025::cause-02",
+          "scenario_id": "T301-025",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6384519947459921,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 16,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-026::cause-01",
+          "scenario_id": "T301-026",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6537820008816198,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 25,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-026::cause-02",
+          "scenario_id": "T301-026",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6308359952527098,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 16,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-01",
+          "scenario_id": "T301-031",
+          "known_endpoint": "FaultyInstallation",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6448680069297552,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 4,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 4
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-02",
+          "scenario_id": "T301-031",
+          "known_endpoint": "HumanError",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7039889969746582,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 39,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 7,
+              "2": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-03",
+          "scenario_id": "T301-031",
+          "known_endpoint": "ObstructedVentPath",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6357759993989021,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 4,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 4
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-01",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHotIntake",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6512839972856455,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-02",
+          "scenario_id": "T301-037",
+          "known_endpoint": "ExternalFire",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6635430036112666,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-03",
+          "scenario_id": "T301-037",
+          "known_endpoint": "SolarRadiation",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6630479983869009,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-04",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHeatInput",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6318890009424649,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 5,
+            "raw_edges": 5,
+            "retained_edges": 0,
+            "complete_paths": 1,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 1
+            },
+            "filter_applied": true
+          }
+        }
+      ]
+    },
+    "minimum_path_support_6": {
+      "threshold": 6,
+      "summary": {
+        "n_evaluated": 19,
+        "micro_precision": 0.0,
+        "micro_recall": 0.0,
+        "micro_f1": 0.0,
+        "macro_precision": 0.0,
+        "macro_recall": 0.0,
+        "macro_f1": 0.0,
+        "hit_at_1": 0.0,
+        "mrr": 0.0,
+        "coverage": 0.0,
+        "abstention_rate": 1.0,
+        "mean_candidates": 0.0,
+        "evidence_text_rate": 0.0,
+        "non_model_origin_rate": 0.0,
+        "source_or_expert_origin_rate": 0.0,
+        "mean_latency_ms": 0.6652247887503012,
+        "origin_counts": {},
+        "cost_usd": null,
+        "cost_note": "Not captured by the current provider wrapper."
+      },
+      "cases": [
+        {
+          "case_id": "T301-004::cause-01",
+          "scenario_id": "T301-004",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7570430025225505,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 51,
+            "retained_edges": 0,
+            "complete_paths": 14,
+            "qualifying_paths": 0,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-004::cause-02",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ValveFailure",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7091200022841804,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 28,
+            "retained_edges": 0,
+            "complete_paths": 7,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-004::cause-03",
+          "scenario_id": "T301-004",
+          "known_endpoint": "ClosedOutletValve",
+          "gold_values": [
+            "Overfilling",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6478479990619235,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 18,
+            "retained_edges": 0,
+            "complete_paths": 3,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 3
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-010::cause-01",
+          "scenario_id": "T301-010",
+          "known_endpoint": "MalfunctionFlowController",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6483059987658635,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-011::cause-01",
+          "scenario_id": "T301-011",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.741891999496147,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 51,
+            "retained_edges": 0,
+            "complete_paths": 14,
+            "qualifying_paths": 0,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-011::cause-02",
+          "scenario_id": "T301-011",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "PumpRunningDry",
+            "PumpBreakdown",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.5613389948848635,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": 0,
+            "qualifying_paths": 0,
+            "max_path_support": 0,
+            "support_histogram": {},
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-012::cause-01",
+          "scenario_id": "T301-012",
+          "known_endpoint": "OperationalError",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7061819997034036,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 51,
+            "retained_edges": 0,
+            "complete_paths": 14,
+            "qualifying_paths": 0,
+            "max_path_support": 3,
+            "support_histogram": {
+              "1": 11,
+              "2": 2,
+              "3": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-012::cause-02",
+          "scenario_id": "T301-012",
+          "known_endpoint": "LossOfInflow",
+          "gold_values": [
+            "EmptyingOfContainer",
+            "ProductionDowntime"
+          ],
+          "predictions": [],
+          "latency_ms": 0.5983810042380355,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 0,
+            "retained_edges": 0,
+            "complete_paths": 0,
+            "qualifying_paths": 0,
+            "max_path_support": 0,
+            "support_histogram": {},
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-025::cause-01",
+          "scenario_id": "T301-025",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6650840005022474,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 25,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-025::cause-02",
+          "scenario_id": "T301-025",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6563650022144429,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 16,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-026::cause-01",
+          "scenario_id": "T301-026",
+          "known_endpoint": "DepositionOfImpurities",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6657619960606098,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 25,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 6,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-026::cause-02",
+          "scenario_id": "T301-026",
+          "known_endpoint": "BlockedOutflowLine",
+          "gold_values": [
+            "Rupture",
+            "LossOfPrimaryContainment",
+            "FormationOfExAtmosphere",
+            "Explosion"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6342689957818948,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 16,
+            "retained_edges": 0,
+            "complete_paths": 5,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 3,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-01",
+          "scenario_id": "T301-031",
+          "known_endpoint": "FaultyInstallation",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.642572995275259,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 4,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 4
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-02",
+          "scenario_id": "T301-031",
+          "known_endpoint": "HumanError",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6802789939683862,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 39,
+            "retained_edges": 0,
+            "complete_paths": 8,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 7,
+              "2": 1
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-031::cause-03",
+          "scenario_id": "T301-031",
+          "known_endpoint": "ObstructedVentPath",
+          "gold_values": [
+            "CollapseOfEnclosure",
+            "LossOfPrimaryContainment",
+            "Fire"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6481099990196526,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 19,
+            "retained_edges": 0,
+            "complete_paths": 4,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 4
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-01",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHotIntake",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.7243639993248507,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-02",
+          "scenario_id": "T301-037",
+          "known_endpoint": "ExternalFire",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.675889001286123,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-03",
+          "scenario_id": "T301-037",
+          "known_endpoint": "SolarRadiation",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6590870034415275,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 21,
+            "retained_edges": 0,
+            "complete_paths": 6,
+            "qualifying_paths": 0,
+            "max_path_support": 2,
+            "support_histogram": {
+              "1": 4,
+              "2": 2
+            },
+            "filter_applied": true
+          }
+        },
+        {
+          "case_id": "T301-037::cause-04",
+          "scenario_id": "T301-037",
+          "known_endpoint": "AbnormalHeatInput",
+          "gold_values": [
+            "AbnormalEvaporation",
+            "ExceedingAllowablePressure"
+          ],
+          "predictions": [],
+          "latency_ms": 0.6173779984237626,
+          "status": "no_evidence",
+          "diagnostics": [],
+          "path_evidence_audit": {
+            "minimum_path_support": 6,
+            "raw_edges": 5,
+            "retained_edges": 0,
+            "complete_paths": 1,
+            "qualifying_paths": 0,
+            "max_path_support": 1,
+            "support_histogram": {
+              "1": 1
+            },
+            "filter_applied": true
+          }
+        }
+      ]
+    }
+  }
+}
