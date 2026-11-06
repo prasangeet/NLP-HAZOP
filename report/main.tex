@@ -174,14 +174,17 @@ Hazard and Operability Study (HAZOP) reports encode process-safety knowledge
 in a structured but predominantly tabular form. This report examines whether
 natural-language processing and large language models can support reasoning
 over that knowledge rather than only extracting labels from report text. A
-survey of HAZOP automation literature is combined with a detailed analysis of
-an ontology-based HAZOP reasoner. The review shows that causal, multi-step,
-branching inference is already possible when process and safety knowledge are
-manually encoded. The remaining research question is therefore narrower:
-whether causal knowledge can be reconstructed from unstructured historical
-HAZOP reports and then constrained or validated using structured reasoning.
-This distinction provides a more defensible foundation for future system
-design and evaluation.
+survey of HAZOP automation literature is combined with a structured causal
+representation, a software prototype, and an experimental evaluation on a
+reconstructed T-301 case. Seven experiments compare retrieval and graph
+reasoning, examine evidence-support and provenance constraints, measure
+scenario-split variability, and test controlled relationship-evidence
+masking. Graph reasoning achieves the strongest deterministic F1 on the
+fixed split, but its performance is sensitive to available training evidence.
+All evaluation targets are reconstructed row-level silver associations,
+not expert-adjudicated causal ground truth. The report therefore distinguishes
+promising structured recovery performance from the still-unverified question
+of physical causal correctness and process-safety utility.
 \end{abstract}
 
 \noindent\textbf{Keywords:} HAZOP; process safety; natural-language processing;
@@ -198,8 +201,7 @@ knowledge graphs; ontology reasoning; causal inference; large language models
 \input{weeks/week01}
 \input{weeks/week02}
 \input{weeks/week03}
-
-% \input{weeks/week03}
+\input{weeks/week04}
 
 % ------------------------------------------------------------
 % Bibliography

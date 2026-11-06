@@ -1,0 +1,219 @@
+% ============================================================
+% Week 04 section --- NLP for Structured HAZOP Reasoning
+%
+% Experimental investigation E1-E7 on the reconstructed T-301
+% track. Metrics are against reconstructed row-level silver
+% associations, not expert-adjudicated causal ground truth.
+% ============================================================
+
+\chapter[Experimental Evaluation and Findings]
+{Experimental Evaluation and Findings}
+
+\section{Objective}
+
+This stage moves from the research design established in Week 03 to a
+controlled evaluation of the implemented HAZOP relationship-recovery
+prototype. The experiments compare retrieval and graph-based reasoning,
+investigate evidence-support and provenance constraints, examine scenario
+split variability, and measure sensitivity to controlled relationship
+evidence removal.
+
+The evaluation is deliberately restricted to what the available data can
+support. The T-301 evaluation track contains 40 reconstructed records. The
+held-out targets are consequence values co-listed with causes in the same
+worksheet row. These are treated as silver associations, not independently
+verified causal relationships.
+
+\begin{glance}[Experimental stage at a glance]
+Seven experiments (E1--E7) were completed. Graph reasoning achieved the
+strongest deterministic F1 on the fixed seed-42 split. Subsequent experiments
+showed that stricter support and provenance filters can sharply reduce
+coverage, that results vary across scenario splits, and that graph recovery
+degrades as training relationships are randomly removed. No experiment
+establishes expert-adjudicated causal correctness.
+\end{glance}
+
+\section{Dataset and Evaluation Protocol}
+
+The reconstructed T-301 track contains 40 scenario records. A deterministic
+scenario-level 80/20 split with seed 42 assigns 32 scenarios to training and
+8 to testing. The fixed test set produces 19 cause-to-consequence queries.
+All records belonging to one scenario remain in the same partition. Held-out
+target labels and graph edges are removed from the retrieval repository.
+
+For each held-out cause, the silver target set consists of the consequences
+co-listed in its source worksheet row. This construction measures recovery
+of worksheet associations. It does not prove that every cause is physically
+responsible for every consequence in the row.
+
+\section{E1: Controlled Strategy Comparison}
+
+The fixed-split comparison evaluates sparse TF--IDF retrieval, graph
+reasoning, a deterministic graph-plus-TF--IDF candidate union, prompt-only
+LLM reasoning, and hybrid graph/vector/LLM reasoning. The LLM methods were
+evaluated on a deterministic cap of 15 queries; their denominators are
+therefore distinct from the 19-query deterministic methods.
+
+\begin{table}[htbp]
+\centering
+\caption[E1 fixed-split strategy comparison]{E1 results on the reconstructed
+T-301 track. Metrics are against silver row associations. LLM methods were
+evaluated on 15 of 19 queries.}
+\label{tab:w4-e1}
+\small
+\begin{tabularx}{\textwidth}{@{}Xrrrrr@{}}
+\toprule
+\textbf{Method} & \textbf{N} & \textbf{Precision} & \textbf{Recall} &
+\textbf{F1} & \textbf{Coverage} \\
+\midrule
+Prompt-only LLM & 15 & 0.0000 & 0.0000 & 0.0000 & 0.0667 \\
+TF--IDF retrieval & 19 & 0.2784 & 0.4909 & 0.3553 & 0.8947 \\
+Graph reasoning & 19 & 0.6486 & 0.8727 & 0.7442 & 0.8421 \\
+Graph + TF--IDF union & 19 & 0.4068 & 0.8727 & 0.5549 & 0.8947 \\
+Hybrid graph/vector/LLM & 15 & 0.3704 & 0.6383 & 0.4688 & 0.8667 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Graph reasoning achieved the highest deterministic micro-F1 on this split.
+The graph-plus-TF--IDF union increased coverage but introduced additional
+false positives and reduced F1. The hybrid method did not improve on graph
+reasoning in the matched 15-query comparison and had substantially higher
+latency in this run. The prompt-only method almost always abstained.
+
+\section{E2--E5: Evidence and Provenance Constraints}
+
+E2 varied the minimum number of distinct training scenarios supporting a
+complete typed cause--deviation--consequence path. Requiring support from
+two scenarios reduced F1 from 0.7442 to 0.1846 and coverage from 0.8421 to
+0.3158. Thresholds of three or more yielded no eligible proposals.
+
+E3 counted support for the cause-to-deviation and deviation-to-consequence
+edges independently. Raising the cause-edge threshold from one to two
+reduced recall from 0.8727 to 0.3455 and coverage from 0.8421 to 0.3158.
+Raising only the consequence-edge threshold had a smaller effect. These
+results identify sparse cause-edge support as a bottleneck in this dataset;
+they do not establish that repeated co-occurrence is physical confirmation.
+
+E4 compared direct and intermediate multi-hop paths. No eligible
+intermediate paths were available under the evaluated data and constraints.
+The combined condition therefore behaved like the direct-path condition.
+This is an evidence-availability limitation, not proof that longer causal
+chains are intrinsically ineffective.
+
+E5 tested provenance metadata and source-coherence constraints. Metadata
+presence thresholds did not change the baseline result. The stricter
+same-scenario and same-source-row filters both reduced coverage to 0.2105
+and F1 to 0.1791, with precision falling to 0.5000. Documentary coherence
+alone did not identify causal truth and over-filtered potentially useful
+cross-record evidence.
+
+\section{E6: Scenario-Split Robustness}
+
+E6 repeated the scenario-level 80/20 holdout for ten seeds (42--51). Across
+the runs, mean micro-F1 was 0.6881 (standard deviation 0.0479), with a
+minimum of 0.5825 and maximum of 0.7442. Mean coverage was 0.8746
+(standard deviation 0.1283). The ten runs are repeated random holdouts,
+not ten-fold cross-validation: their training partitions overlap, and four
+scenarios never appeared in a test partition.
+
+The result demonstrates meaningful sensitivity to the scenario partition.
+The repeated-holdout mean is descriptive and should not be interpreted as
+an independent-sample confidence interval.
+
+\section{E7: Controlled Relationship-Evidence Masking}
+
+E7 held the seed-42 scenario split fixed and randomly masked 10--40\% of
+the 181 typed training relationships, using ten masking seeds. For each
+seed, masks were nested across rates. The test labels were left unchanged.
+The experiment completed 40 conditions across three deterministic methods.
+
+\begin{table}[htbp]
+\centering
+\caption[E7 graph reasoning under evidence masking]{Mean graph-reasoning
+metrics across ten random masks at each rate. The 0\% row is the E1
+fixed-split baseline, not an additional E7 masking condition.}
+\label{tab:w4-e7}
+\small
+\begin{tabularx}{\textwidth}{@{}rrrrr@{}}
+\toprule
+\textbf{Masked} & \textbf{Precision} & \textbf{Recall} &
+\textbf{F1} & \textbf{Coverage} \\
+\midrule
+0\% & 0.6486 & 0.8727 & 0.7442 & 0.8421 \\
+10\% & 0.6454 & 0.8109 & 0.7182 & 0.8000 \\
+20\% & 0.6439 & 0.7382 & 0.6872 & 0.7316 \\
+30\% & 0.6396 & 0.6582 & 0.6469 & 0.6842 \\
+40\% & 0.6476 & 0.5727 & 0.6030 & 0.6158 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+As masking increased, graph-reasoning recall, F1, and coverage declined,
+while precision remained comparatively stable. This suggests that evidence
+loss primarily reduces the number of recoverable silver associations and
+increases abstention. The graph-plus-TF--IDF union retained higher coverage
+but had lower F1 than graph reasoning at every masking rate. TF--IDF was
+the weakest method in this experiment.
+
+The masking procedure is a controlled simulation of evidence deletion from
+loader-generated typed relationships. It is not a model of naturally
+occurring missingness in industrial HAZOP reports.
+
+\section{Cross-Experiment Discussion}
+
+The completed experiments support several bounded observations:
+
+\begin{enumerate}
+    \item On the fixed reconstructed T-301 split, graph reasoning was the
+    strongest tested deterministic method by micro-F1.
+    \item Candidate union increased coverage but traded away precision and
+    F1; it is not a learned fusion or reranking method.
+    \item Repeated support constraints reduced recovery because complete
+    paths and cause edges were sparsely represented in the training data.
+    \item Provenance-field completeness did not imply evidence strength,
+    and strict same-source coherence removed useful proposals without
+    improving precision.
+    \item Intermediate multi-hop reasoning was not meaningfully exercised
+    because no eligible intermediate paths were present.
+    \item Repeated holdouts showed scenario-split sensitivity.
+    \item Random relationship masking reduced graph-reasoner recall,
+    F1, and coverage as evidence was removed.
+\end{enumerate}
+
+These findings concern agreement with reconstructed row-level associations.
+They do not establish physical causality, expert approval, or safety utility.
+
+\section{Limitations and Remaining Work}
+
+The principal limitation is the absence of an independently
+expert-adjudicated held-out relationship set. The reconstructed dataset
+contains only 40 scenarios, and the test partition contains 8 scenarios
+and 19 queries. The E6 repeated holdouts are not independent folds.
+The E4 intermediate-path condition had no eligible examples. The E7 masking
+experiment removes relationships uniformly at random and does not reproduce
+real documentation missingness. LLM evaluation was capped at 15 queries,
+and reliable provider cost data was not captured.
+
+The next research requirement is independent process-safety adjudication
+using a written rubric for causal plausibility, context sufficiency, and
+safeguard validity, with reviewer disagreement and inter-rater agreement
+reported. End-to-end validation of the desktop application and a complete
+reproducibility audit are also required before final submission.
+
+\begin{constraint}[Research and safety boundary]
+The prototype is a research aid for structured retrieval and reasoning.
+Its recovered links must not be treated as verified process-safety facts,
+operational recommendations, or a substitute for qualified HAZOP review.
+\end{constraint}
+
+\section{Conclusion}
+
+The E1--E7 investigation indicates that typed graph reasoning is a useful
+representation and retrieval strategy for recovering row-derived HAZOP
+associations in the reconstructed T-301 case. Its performance is sensitive
+to the availability and distribution of training relationships. Stronger
+support and source-coherence filters can sharply reduce coverage, while
+random evidence masking reduces recall and increases abstention. These
+results motivate expert-adjudicated validation and broader, better-grounded
+datasets before stronger causal claims can be made.
