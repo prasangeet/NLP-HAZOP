@@ -1,211 +1,921 @@
-% Integrated research report: NLP for Structured HAZOP Reasoning
-\documentclass[11pt,a4paper]{report}
-\usepackage[a4paper,margin=0.85in]{geometry}
+% ============================================================
+% NLP for Structured HAZOP Reasoning -- two-column paper layout
+% Compile: pdflatex main && pdflatex main
+% ============================================================
+\documentclass[10pt,twocolumn,a4paper]{extarticle}
+
+\usepackage[a4paper,top=2cm,bottom=1.9cm,left=1.7cm,right=1.7cm,columnsep=0.8cm,headheight=12pt,headsep=0.5cm,footskip=0.7cm]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern,microtype}
+\usepackage{lmodern}
 \usepackage{amsmath,amssymb}
-\usepackage{booktabs,tabularx,longtable,array}
+\usepackage{microtype}
 \usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
 \usepackage{xcolor}
+\usepackage[obeyspaces]{url}
 \usepackage[most]{tcolorbox}
-\usepackage{hyperref}
-\definecolor{hzblue}{HTML}{1F4E79}
-\definecolor{hzred}{HTML}{8C1D1D}
-\definecolor{hzredbg}{HTML}{FBE4E4}
-\hypersetup{colorlinks=true,linkcolor=hzblue,citecolor=hzblue,urlcolor=hzblue,pdftitle={Integrated Research Report: NLP for Structured HAZOP Reasoning},pdfauthor={Prasangeet Dongre}}
-\newtcolorbox{boundary}[1][]{enhanced,breakable,colback=hzredbg,colframe=hzred,title={#1},fonttitle=\bfseries}
-\setlist{topsep=4pt,itemsep=3pt}
-\renewcommand{\arraystretch}{1.15}
-\title{\textbf{NLP for Structured HAZOP Reasoning}\\[0.5em]\large Integrated Research and Experimental Report}
-\author{Prasangeet Dongre\\Roll No.: B23CH1033\\Department of Chemical Engineering\\Indian Institute of Technology Jodhpur\\[0.3em]\small Advisor: Dr. Santhosh Kumar Varanasi}
-\date{November 2026}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,shapes.misc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[font=scriptsize,labelfont={bf,color=navy},skip=6pt,list=false]{caption}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!60!black]{hyperref}
+
+\hypersetup{pdftitle={NLP for Structured HAZOP Reasoning --- Project Research Report},
+            pdfauthor={Prasangeet Dongre}}
+
+% ---------- palette ----------
+\definecolor{navy}{HTML}{1F3A5F}
+\definecolor{teal}{HTML}{2A7F8E}
+\definecolor{amber}{HTML}{C98A1B}
+\definecolor{crimson}{HTML}{A8323E}
+\definecolor{slate}{HTML}{5B6573}
+\definecolor{paper}{HTML}{F5F7FA}
+\definecolor{okgreen}{HTML}{2F7D4F}
+
+% ---------- helpers ----------
+\DeclareUrlCommand\code{\urlstyle{tt}\def\UrlBreaks{\do\_\do\/\do\.\do\-\do\:\do\a\do\b\do\c\do\d\do\e\do\f\do\g\do\h\do\i\do\j\do\k\do\l\do\m\do\n\do\o\do\p\do\q\do\r\do\s\do\t\do\u\do\v\do\w\do\x\do\y\do\z\do\A\do\B\do\C\do\D\do\E\do\F\do\G\do\H\do\I\do\J\do\K\do\L\do\M\do\N\do\O\do\P\do\Q\do\R\do\S\do\T\do\U\do\V\do\W\do\X\do\Y\do\Z}\def\UrlBigBreakPenalty{9999}\def\UrlBreakPenalty{9999}}
+\newcommand{\silver}{\emph{silver}}
+\newcommand{\derived}{\textsuperscript{\textdagger}}
+\newcommand{\TP}{\mathrm{TP}}\newcommand{\FP}{\mathrm{FP}}\newcommand{\FN}{\mathrm{FN}}
+
+% ---------- headings ----------
+\titleformat{\section}{\normalfont\bfseries\large\color{navy}}{\thesection}{0.5em}{}[\vspace{3pt}{\color{navy!35}\titlerule[0.4pt]}]
+\titleformat{\subsection}{\normalfont\bfseries\normalsize\color{teal}}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\normalfont\bfseries\small\color{teal}}{\thesubsubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{16pt plus 4pt}{7pt}
+\titlespacing*{\subsection}{0pt}{11pt plus 3pt}{4pt}
+\titlespacing*{\subsubsection}{0pt}{8pt plus 2pt}{3pt}
+\titleformat{\paragraph}[runin]{\normalfont\bfseries\small\color{navy}}{}{0pt}{}
+\titlespacing*{\paragraph}{0pt}{6pt}{0.6em}
+
+% ---------- header / footer ----------
+\renewcommand{\sectionmark}[1]{\markboth{\thesection.\ #1}{}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\scriptsize\color{slate}NLP for Structured HAZOP Reasoning}
+\fancyhead[R]{\scriptsize\color{slate}\nouppercase{\leftmark}}
+\fancyfoot[C]{\scriptsize\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{navy!35}\leaders\hrule height \headrulewidth\hfill}}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\scriptsize\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+% ---------- boxes ----------
+\newtcolorbox{finding}[1][]{enhanced,colback=paper,colframe=teal,boxrule=0.5pt,arc=1.5pt,
+  left=4pt,right=4pt,top=2pt,bottom=2pt,before skip=4pt,after skip=4pt,
+  title={#1},fonttitle=\bfseries\scriptsize,coltitle=white,colbacktitle=teal,
+  fontupper=\small}
+\newtcolorbox{caution}[1][]{enhanced,colback=amber!8,colframe=amber,boxrule=0.5pt,arc=1.5pt,
+  left=4pt,right=4pt,top=2pt,bottom=2pt,before skip=4pt,after skip=4pt,
+  title={#1},fonttitle=\bfseries\scriptsize,coltitle=white,colbacktitle=amber,
+  fontupper=\small}
+
+\tikzset{
+  box/.style={draw=navy,rounded corners=2pt,fill=white,align=center,font=\scriptsize,minimum height=6.5mm,inner sep=3pt},
+  layer/.style={draw=navy!70,rounded corners=3pt,fill=paper,align=center,font=\scriptsize,inner sep=4pt,text width=15.6cm},
+  arr/.style={-{Stealth[length=2mm]},draw=slate,thick},
+}
+\pgfplotsset{every axis/.append style={font=\scriptsize,tick label style={font=\tiny},label style={font=\scriptsize},legend style={font=\tiny},grid=major,grid style={gray!20}}}
+
+% ---------- spacing / lists / tables ----------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt plus 1pt}
+\setlength{\emergencystretch}{2em}
+\setlength{\textfloatsep}{16pt plus 4pt minus 4pt}
+\setlength{\floatsep}{12pt plus 3pt minus 3pt}
+\setlength{\intextsep}{12pt plus 3pt minus 3pt}
+\setlist{nosep,leftmargin=*,itemsep=2.5pt,parsep=0pt,topsep=4pt}
+\renewcommand{\arraystretch}{1.22}
+\setlength{\tabcolsep}{3.5pt}
+\captionsetup{aboveskip=6pt,belowskip=2pt}
+\let\oldtabular\tabular
+\newcommand{\tblsize}{\footnotesize}
+\AtBeginEnvironment{tabular}{\tblsize}
+\AtBeginEnvironment{tabularx}{\footnotesize}
+\sloppy
+
 \begin{document}
-\maketitle
-\begin{abstract}
-This report consolidates the research framing, literature review, repository architecture, dataset tracks, synthetic-data provenance, and seven experiments (E1--E7) for the NLP for Structured HAZOP Reasoning project. The system represents HAZOP information using typed relationships and evaluates recovery of held-out cause-to-consequence worksheet associations. On the fixed reconstructed T-301 split, graph reasoning achieves micro-F1 of 0.7442, compared with 0.3553 for TF--IDF and 0.5549 for the deterministic graph--TF--IDF union. Follow-on experiments show sensitivity to evidence support, scenario splits, provenance filters, and controlled evidence deletion. The target labels are reconstructed row-level silver associations, not expert-adjudicated physical causal relationships. Synthetic T-301 continuation and DWSIM scenarios are kept separate from the reconstructed benchmark.
-\end{abstract}
-\noindent\textbf{Keywords:} HAZOP; process safety; NLP; knowledge graphs; causal reasoning; provenance; LLMs.
-\tableofcontents
-\chapter{Research Problem and Scope}
-\section{Background}
-HAZOP worksheets record process nodes, design intent, guidewords, parameters, deviations, causes, consequences, safeguards, and recommendations. A flat worksheet row may omit intermediate events, branching pathways, and the attachment points of safeguards. The project investigates whether structured NLP and graph-based methods can assist recovery of missing relationships in HAZOP documentation.
-\section{Implemented scope}
-The implemented and evaluated scope covers typed HAZOP records and relationships, provenance tracking, CSV loading, graph persistence and querying, lexical and graph-neighbourhood retrieval, bounded graph reasoning, hybrid candidate generation, and benchmark evaluation on reconstructed T-301 data. The repository does not establish a fully validated pipeline from arbitrary scanned reports to expert-approved causal graphs.
-\section{Research questions}
-The experiments ask: (1) how retrieval and graph methods compare; (2) how minimum evidence support affects recovery; (3) whether independent edge thresholds differ from complete-path thresholds; (4) whether the dataset exercises intermediate multi-hop paths; (5) whether provenance completeness and source coherence improve proposals; (6) how results vary across scenario splits; and (7) how controlled relationship deletion affects recovery.
-\begin{boundary}[Interpretation boundary]
-E1--E7 predict whether a consequence is co-listed with a cause in a reconstructed worksheet row. These silver labels are not proof that the cause physically produces every listed consequence. Metrics do not establish causal correctness, expert approval, or process-safety utility.
-\end{boundary}
 
-\chapter{Literature Review}
-\section{Classical model-based and expert-system approaches}
-Digraph-based and expert-system approaches reason over process models or encoded expert knowledge. Representative references in the project's bibliography include Vaidhyanathan and Venkatasubramanian, ExpHAZOP+, D-higraphs, and later automated HAZOP work \cite{vaidhyanathan1995digraph,vaidhyanathan1996experience,rahman2009exphazop,rodriguez2012dhigraphs,taylor2017automated}.
-\section{Ontology-based reasoning}
-Ontology-based systems explicitly represent HAZOP concepts and relations. Single et al. describe an ontology-based computer aid for HAZOP studies \cite{single2020ontologyhazop}. This work motivates typed representation and symbolic reasoning, while differing from extraction of structure from arbitrary historical documents.
-\section{NLP and statistical text mining}
-The reviewed literature includes NLP applied to HAZOP reports, active-learning text mining, deviation prediction, and recommendation prediction \cite{feng2021nlphazop,wang2021activelearning,ekramipooya2023deviation,ekramipooya2024recommendation}. Entity or label extraction is not equivalent to recovering a directed and contextually valid causal chain.
-\section{Knowledge graphs and LLM generation}
-Process-safety knowledge graph construction and graph-based HAZOP completeness work motivate explicit graph representation \cite{mao2020processsafetykg,feng2021hazopcausal,wang2022iskghainex,lizhao2024constructing,lizhao2025hazopct}. Direct LLM worksheet generation is a different task from evidence-grounded relationship recovery \cite{lee2026llmhazop}.
-\section{Research position}
-This project investigates typed relationship representation, provenance preservation, and bounded recovery of missing worksheet associations. It does not yet provide expert-adjudicated evaluation of physical causal chains.
+% ============================================================
+% TITLE BLOCK + ABSTRACT (spans both columns)
+% ============================================================
+\twocolumn[{%
+\thispagestyle{plain}
+\begin{tcolorbox}[enhanced,colback=navy,colframe=navy,arc=3pt,boxrule=0pt,left=10pt,right=10pt,top=8pt,bottom=8pt,
+  borderline south={2.5pt}{0pt}{teal}]
+{\color{white!70!navy}\scriptsize\bfseries\MakeUppercase{Project Research Report}\hfill\MakeUppercase{November 2026}}\\[5pt]
+{\color{white}\fontsize{21}{24}\selectfont\bfseries NLP for Structured HAZOP Reasoning}\\[3pt]
+{\color{white!80!teal}\large A Provenance-Aware Pipeline for Missing-Relationship Recovery}\\[3pt]
+{\color{white!75!navy}\footnotesize Repository analysis, implementation review, and critical evaluation of experiments E1--E7}
+\end{tcolorbox}
+\vspace{-2pt}
+{\footnotesize
+\begin{tabularx}{\textwidth}{@{}>{\bfseries\color{navy}}l X >{\bfseries\color{navy}}l X@{}}
+Author & Prasangeet Dongre (B23CH1033) & Repository & \url{github.com/prasangeet/NLP-HAZOP} (\code{main}, commit \code{d39afd4})\\
+Department & Chemical Engineering, IIT Jodhpur & Evaluation & T-301 hexane storage, 40 reconstructed scenarios\\
+Advisor & Dr.\ Santhosh Kumar Varanasi & Dataset SHA-256 & \texttt{1c8713c2b6fbc9cd\ldots 7d2725e}\\
+\end{tabularx}}
+\vspace{4pt}
 
-\chapter{Representation and Software Architecture}
-\section{Typed domain model}
-The domain representation includes HAZOP records and typed relationships. Relationship metadata includes subject, predicate, object, provenance origin, evidence, confidence, source identifier, endpoint types, and source location. Predicates include \texttt{causes\_deviation}, \texttt{leads\_to}, \texttt{leads\_to\_consequence}, \texttt{co\_occurs\_with\_consequence}, \texttt{co\_listed\_with\_consequence}, \texttt{mitigated\_by}, \texttt{recommends\_action}, \texttt{has\_parameter}, and \texttt{located\_in}.
-\section{Provenance}
-Record status distinguishes source-reconstructed and synthetic records from expert-validated records. Relationship origins distinguish source, reconstructed, synthetic, expert, model-inferred, graph-inferred, retrieval-inferred, and LLM-extracted propositions. Provenance supports traceability; it does not itself establish truth. In particular, \texttt{co\_listed\_with\_consequence} denotes a worksheet association, not a verified physical causal edge.
-\section{Implementation}
-The repository contains a FastAPI backend and Tauri--React client. Backend components include domain entities and ontology definitions, dataset loaders and repositories, API routes, retrieval strategies, and graph/LLM reasoning strategies. In-memory and Neo4j-oriented graph persistence are present. Benchmark results describe the specific scripts and methods evaluated; they do not prove that every planned application capability is complete.
+\begin{tcolorbox}[enhanced,colback=paper,colframe=teal!60,arc=2pt,boxrule=0.5pt,left=8pt,right=8pt,top=4pt,bottom=4pt,
+  title={Abstract},fonttitle=\bfseries\small,coltitle=white,colbacktitle=teal]
+\small\noindent
+HAZOP worksheets record deviations, causes, consequences, safeguards, and recommendations in flat rows, even though the underlying process knowledge is relational. This project asks whether a typed, provenance-carrying graph built from such rows can recover \emph{missing relationships}, and whether it can do so while abstaining honestly when evidence is insufficient. The repository implements typed HAZOP records, an ontology with endpoint-type constraints, CSV and report ingestion, in-memory and Neo4j graph storage, lexical and graph-neighbourhood retrieval, bounded graph reasoning, an optional LLM-assisted hybrid, a deterministic structural validator, a FastAPI service, and a Tauri desktop client.
 
-\chapter{Datasets and Synthetic Scenarios}
-\section{T-301 reconstructed and continuation tracks}
-The canonical file \texttt{data/raw/t301/T301\_HAZOP\_CCPS2001\_style.csv} contains 94 records: 40 \texttt{PAPER\_REPORTED\_RECONSTRUCTION} records and 54 \texttt{SYNTHETIC\_CONTINUATION} records. The 40 records are structured reconstructions of scenario chains reported for the T-301 hexane-storage case in Single et al. (2020); they are not verbatim source worksheet rows. The 54 continuation records are project-generated and must not be attributed to the paper. E1--E7 use only the 40 reconstructed records.
-\section{DWSIM synthetic track}
-The canonical file \texttt{data/raw/dwsim/synthetic\_hazop\_D001\_D030.csv} contains 30 synthetic scenarios, D001--D030, associated with an ethanol/fermentation plant representation. The file records node, equipment, parameter, guideword, deviation, possible cause, simulated or inferred effect, possible consequence, candidate safeguard, evidence and limitation, source type, and validation status. The README reports 16 \emph{Review required}, 6 \emph{Scope caveat}, 6 \texttt{NEEDS\_MODEL\_REVISION}, 1 \emph{Review reaction model}, and 1 \texttt{NEEDS\_REVIEW}. The DWSIM response is captured for the simulation-related effect field; consequence and safeguard fields remain synthetic hypotheses. None of the records is thereby expert-validated.
-The file \texttt{HAZOP\_DWSIM30\_worksheet\_format.csv} is an alternate worksheet-style export of the same D001--D030 scenarios, not an independent additional sample.
-\section{Synthetic-generation audit}
-The tracked repository documents the resulting synthetic datasets and their provenance/status fields. The repository tree inspected for this report contains the CSV outputs and benchmark/import code, but no dedicated versioned scenario-generation script or complete generation manifest specifying prompts, model versions, random seeds, sampling parameters, simulation conditions, and review procedure. Therefore the exact generation algorithm cannot be reconstructed responsibly from the tracked files. The T-301 continuation is supported as project-generated by its record type and provenance; this does not establish a reproducible generation method. The DWSIM data is explicitly synthetic and simulation/inference-derived, with its limitations recorded per row.
-\begin{table}[htbp]\centering\small
-\caption{Dataset tracks and their role in E1--E7}
-\begin{tabularx}{\textwidth}{@{}l r X X@{}}
+Seven frozen experiments (E1--E7) on a reconstructed T-301 hexane-storage dataset evaluate cause-to-consequence \emph{association} recovery. On the fixed seed-42 split, graph reasoning reaches micro-F1 0.7442 against 0.3553 for TF--IDF and 0.5549 for a graph--TF--IDF union; repeated holdouts give a mean of 0.688; random evidence masking lowers recall and coverage while leaving precision nearly constant.
+
+This report adds a critical layer. Three observations qualify the headline. First, the 19 test queries are really \textbf{8 scenarios} with repeated labels, so uncertainty is wider than the query count suggests. Second, in all 16 answered queries the graph prediction equals the union of consequences of every training row sharing the target's deviation, and a plain deviation-keyed lookup\derived{} reaches F1 0.7801, above the reasoner's 0.7442. Third, every support or provenance filter tested removed predictions that were \emph{more} precise than the ones it kept, so none is a usable confidence signal here. The defensible claim is narrow: structured, traceable recovery of row-level worksheet associations works on this dataset, and the benchmark cannot yet tell graph reasoning apart from deviation lookup. It says nothing about physical causality or plant safety.
+
+\smallskip
+{\footnotesize\textbf{Reading guide.} Numbers in Sections~\ref{ch:data} and~\ref{ch:results} come from the repository's frozen E1--E7 artifacts and its consolidated synthesis. Items marked with a dagger ({\derived}) are \emph{derived for this report} from those artifacts (bootstrap intervals, trivial baselines, error anatomy); the scripts are in the shipped \code{analysis/} folder.}
+\end{tcolorbox}
+\vspace{4pt}
+}]
+
+% ============================================================
+\section{Introduction}\label{ch:intro}
+% ============================================================
+
+A Hazard and Operability study (HAZOP, IEC~61882) is a structured team review of process deviations: for each node, a guideword is paired with a parameter, and the team records possible causes, consequences, safeguards, and recommended actions. The result is a worksheet. A worksheet row is a \emph{documentation unit}, not a model of the process: it erases intermediate states, collapses branching consequences into a list, and attaches safeguards to the row rather than to the point in the causal chain where they act.
+
+\subsection{Problem formulation}
+The conceptual chain is
+\begingroup\small
+\[
+\text{Cause}\to\text{Deviation}\to\text{Effect}\to\text{Consequence}\to\text{Safeguard}.
+\]\endgroup
+The project treats HAZOP assistance as \emph{structured relationship recovery}: given a partially observed scenario and evidence from other records, propose a missing typed relationship, keep its provenance, and abstain when support is insufficient. Three properties are required of any proposal: it must be typed (endpoint types match a canonical ontology), traceable (source, scenario, and origin travel with it), and labelled as a hypothesis unless an expert has verified it.
+
+The quantitative benchmark (E1--E7) is deliberately narrower than this chain. Each query is built from a cause in a held-out worksheet row, and the target is the set of consequences co-listed in that row. Effects, safeguards, and recommendations exist in the system but are not scored.
+
+\subsection{Research questions}
+\begin{enumerate}[leftmargin=*,itemsep=1pt]
+  \item[RQ1] Does graph reasoning recover held-out associations better than lexical retrieval and the tested LLM strategies?
+  \item[RQ2] How do repeated edge or path support requirements change precision, recall, and coverage?
+  \item[RQ3] Do provenance-coherence constraints improve selective acceptance?
+  \item[RQ4] How stable are results across scenario splits, and how do they degrade under controlled evidence removal?
+\end{enumerate}
+A fourth protocol question, transfer to the synthetic DWSIM track, is explicitly exploratory and not pooled into E1--E7.
+
+\subsection{Contributions}
+\begin{itemize}
+  \item A code-level review of the repository: architecture, ontology, provenance, retrieval, reasoning, validation, API, client, tests, CI (Section~\ref{ch:system}).
+  \item A precise statement of the evaluation protocol and its leakage controls (Section~\ref{ch:data}).
+  \item The complete E1--E7 results with figures (Section~\ref{ch:results}).
+  \item An independent critical analysis\derived{} with uncertainty estimates, trivial baselines, error anatomy, and a claim-by-claim support table (Section~\ref{ch:analysis}).
+  \item Prioritized next steps and a note on documentation drift (Section~\ref{ch:next}, Appendix~\ref{app:drift}).
+\end{itemize}
+
+% ============================================================
+\section{Background and literature position}\label{ch:lit}
+% ============================================================
+
+Prior HAZOP automation falls into five families. They differ in input and in which of five capabilities they provide: \emph{extraction}, explicit \emph{representation}, causal \emph{reasoning}, missing-relationship \emph{inference}, and \emph{validation} (Table~\ref{tab:lit}).
+
+\begin{table*}[t]
+\centering
+\caption{Literature families and capabilities, following the project's research documentation.}
+\label{tab:lit}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{4.4cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
 \toprule
-Track & Records & Status & E1--E7 use\\
+\textbf{Family} & \textbf{Approach and strength} & \textbf{Limitation relevant here}\\
 \midrule
-T-301 reconstructed & 40 & Reconstructed from reported scenario chains; not verbatim rows & Included\\
-T-301 continuation & 54 & Synthetic continuation, separate from paper reconstruction & Excluded\\
-DWSIM synthetic & 30 & Synthetic and simulation/inference-derived; review caveats retained & Excluded\\
-DWSIM worksheet export & 30 & Alternate export of D001--D030 & Not independent\\
+Model-based / expert systems \cite{vaid1995,vaid1996,rahman2009,rodriguez2012} & Signed digraphs, qualitative models, rule bases; deterministic propagation. & Process model and causal rules must be authored by experts; cannot learn from historical text.\\
+Ontology reasoning \cite{single2020} & OWL~2~DL with HermiT on the T-301 hexane case; multi-cause, branching, intermediate effects. & Ontology and process knowledge are supplied structured; no acquisition from raw reports.\\
+NLP / text mining \cite{feng2021,wang2021,wanggu2022,ekra2023,ekra2024} & NER, BERT, supervised deviation or recommendation prediction. & Extraction or classification, not multi-step causal reasoning over a graph.\\
+Knowledge graphs \cite{mao2020,li2024,li2025} & Graph construction from documents; link prediction (HAZOPCT) for completeness. & Largely fixed ontology and structured multi-source input.\\
+Direct LLM generation \cite{lee2026} & End-to-end worksheet generation. & Documentation reports a gap between textual similarity and expert-assessed scenario validity.\\
 \bottomrule
-\end{tabularx}\end{table}
-\section{Silver-label construction}
-For each held-out cause, the target set contains consequences co-listed in the same source row. There is no independently adjudicated relationship-level gold set in the documented E1--E7 evaluation. These labels measure recovery of worksheet associations, not physical causation.
+\end{tabularx}
+\end{table*}
 
-\chapter{Experimental Protocol}
-\section{Fixed split}
-The fixed benchmark uses a scenario-level 80/20 split with seed 42: 32 training scenarios and 8 held-out scenarios, producing 19 test queries. All records belonging to a scenario remain in one partition. The held-out target scenario's causal labels and graph edges are excluded from the retrieval repository. Protocol version is 1.3 and top-$k=10$. LLM methods are capped at 15 evaluated cases.
-The dataset SHA-256 is \texttt{1c8713c2b6fbc9cdf2e22e64a307fdb64f073158a78679bdc23ad803a7d2725e}.
-\section{Metrics}
-Precision, recall, and F1 are measured against row-derived silver targets. Coverage is the fraction of eligible queries receiving at least one proposal; abstention is its complement. Selective risk is the error rate among answered queries and should be read together with coverage. Latency is implementation- and environment-dependent.
+\paragraph{Research gap.} The project targets a traceable bridge between structured HAZOP records and relationship-recovery reasoning: explicit endpoint types and predicates, provenance carried from source through inference, leakage-aware evaluation, and an abstention-capable reasoner. It is an engineering and experimental investigation. It does not claim that graph representation is novel, and it does not claim to solve process-safety validation.
 
-\chapter{Experimental Results E1--E7}
-\section{E1: Strategy comparison}
-\begin{table}[htbp]\centering\scriptsize
-\caption{E1 full-test strategy comparison on reconstructed T-301}
-\begin{tabularx}{\textwidth}{@{}Xrrrrrrr@{}}
+% ============================================================
+\section{System analysis: the repository}\label{ch:system}
+% ============================================================
+
+\subsection{Repository at a glance}
+The repository is a monorepo with a research-grade Python backend, a Tauri desktop client, datasets with explicit provenance notes, and the written research artifacts (Table~\ref{tab:repo}). The largest modules are the Neo4j adapter (1,255 lines), the benchmark runner (1,680), the prompt-only and evidence-grounded LLM reasoners (about 1,000 each), the graph reasoner (804), the CSV loader (732), and the hybrid reasoner (679).
+
+\begin{table*}[t]
+\centering
+\caption{Repository components (measured on the cloned \code{main} snapshot).}
+\label{tab:repo}
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X r@{}}
 \toprule
-Method & N/19 & P & R & F1 & Coverage & Abstention & Latency (ms)\\
+\textbf{Path} & \textbf{Role and technology} & \textbf{Size}\\
+\midrule
+\code{server/app} & FastAPI service in Domain / Application / Infrastructure / API layers; Python $\ge$3.11, \code{uv} & 11.1k lines\\
+\code{server/scripts} & Benchmark runner and experiment scripts E2--E7, E3 analysis & 6.1k lines\\
+\code{server/tests} & Unit and integration tests (pytest) & 5.5k lines; 25 modules, 175 test functions\\
+\code{server/results} & Frozen JSON/JSONL/CSV/Markdown experiment artifacts (E1--E7) & ---\\
+\code{client} & Tauri + React + Vite + TypeScript, shadcn/ui; 8 pages & 2.7k lines (pages, lib)\\
+\code{data} & T-301 and DWSIM CSVs, provenance README, narrative PDFs & ---\\
+\code{docs}, \code{reports} & Experimental protocol; E1--E7 synthesis; 30 Oct baseline & ---\\
+\code{report} & Weekly research log (LaTeX), reference papers & ---\\
+\code{.github/workflows} & \code{ci.yml} (tests, lint, benchmark, Neo4j integration), \code{client-build.yml} & ---\\
+\code{compose.yaml} & Disposable Neo4j for persistence and integration tests & ---\\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\subsection{Layered architecture}
+The backend follows Clean Architecture (Figure~\ref{fig:arch}). The domain layer has no third-party dependencies; the application layer holds strategies and use cases behind interfaces; infrastructure supplies adapters; the API layer is the HTTP boundary. Documented and confirmed patterns: Repository, Strategy (interchangeable reasoners), Abstract Factory for the AI provider, a composition factory (\code{ApplicationFactory}), Ports and Adapters for report extraction, and request-time dependency injection.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[node distance=3.5mm]
+\node[layer,minimum width=15.8cm] (client) {\textbf{Client} --- Tauri / React workbench: Overview, Datasets, Knowledge Graph, Recovery, Report Extraction, Experiments, Results};
+\node[layer,below=of client] (api) {\textbf{API} --- FastAPI routes: datasets, imports, recovery, report\_extraction, experiments; dependency injection};
+\node[layer,below=of api] (app) {\textbf{Application} --- strategies (TF--IDF, graph, prompt-only, evidence-grounded LLM, hybrid), retrieval (scenario-local, TF--IDF, hybrid, graph-neighbourhood), use cases, factories, ports};
+\node[layer,below=of app] (dom) {\textbf{Domain} --- entities (record, relation, dataset, extracted report), ontology schema, repository interfaces, \code{HazopSafetyValidator}};
+\node[layer,below=of dom] (inf) {\textbf{Infrastructure} --- CSV loader, in-memory and Neo4j graph repositories, PDF/text extractor, Gemini extractor and provider factory};
+\foreach \a/\b in {client/api,api/app,app/dom,inf/dom}{\draw[arr] (\a) -- (\b);}
+\end{tikzpicture}
+\caption{Layered architecture. Arrows point in the direction of dependency; infrastructure depends on the domain interfaces, not the reverse.}
+\label{fig:arch}
+\end{figure*}
+
+\subsection{Domain model and ontology}
+\subsubsection{Records, relations, provenance}
+A \code{HazopRecord} carries scenario ID, plant unit, equipment, design intent, guideword, parameter, deviation, tuples of causes, effects, consequences, safeguards and recommendations, a \code{RecordType}, a separate validation status, an optional source reference, and its typed \code{CausalRelation} objects. Strings are de-duplicated case-insensitively on construction.
+
+A \code{CausalRelation} is a directed, typed edge with subject, predicate, object, origin, evidence text, optional confidence, source ID, dataset ID, endpoint types, an expert-verified flag, and source location. The expert flag is silently cleared unless the origin is \code{EXPERT}, so an inference cannot be marked verified by construction.
+
+\begin{table}[t]
+\centering
+\caption{Provenance vocabulary. Record types describe rows; origins describe individual relationships.}
+\label{tab:prov}
+\begin{tabularx}{\columnwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Record types} & \code{SOURCE_VERIFIED}, \code{SOURCE_RECONSTRUCTED}, \code{SYNTHETIC}, \code{EXPERT_VALIDATED}, \code{UNSPECIFIED}\\
+\textbf{Validation} & \code{unreviewed}, \code{validated}, \code{rejected}\\
+\textbf{Origins} & \code{source}, \code{reconstructed}, \code{synthetic}, \code{expert}, \code{unspecified}, \code{model_inferred}, \code{graph_inferred}, \code{retrieval_inferred}, \code{llm_extracted}\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Canonical ontology}
+Ten entity types (\code{ProcessUnit}, \code{Equipment}, \code{Parameter}, \code{Deviation}, \code{Cause}, \code{Effect}, \code{Consequence}, \code{Safeguard}, \code{Recommendation}, fallback \code{Concept}) and nine predicates with endpoint-type signatures (Table~\ref{tab:onto}).
+
+\begin{table*}[t]
+\centering
+\caption{Predicate signatures from \code{domain/ontology/schema.py}.}
+\label{tab:onto}
+\begin{tabularx}{\textwidth}{@{}l l l >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Predicate} & \textbf{Subject} & \textbf{Object} & \textbf{Meaning}\\
+\midrule
+\code{causes_deviation} & Cause & Deviation & cause associated with a deviation\\
+\code{leads_to} & Deviation & Effect & propagation to an intermediate effect\\
+\code{leads_to_consequence} & Effect, Deviation & Consequence & effect or deviation associated with a consequence\\
+\code{co_occurs_with_consequence} & Deviation & Consequence & non-causal row association when effect pairing is ambiguous\\
+\code{co_listed_with_consequence} & Cause & Consequence & \textbf{benchmark label}: co-listed in one row; deliberately not causal\\
+\code{mitigated_by} & Deviation, Effect, Consequence & Safeguard & mitigation association\\
+\code{recommends_action} & Deviation, Consequence & Recommendation & action association\\
+\code{has_parameter} & Equipment & Parameter & structural\\
+\code{located_in} & Equipment & ProcessUnit & structural\\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+Two design decisions deserve emphasis. When a row has several effects, the importer does \emph{not} pair effects to consequences by position or Cartesian product; it records deviation--consequence co-occurrence instead. And the benchmark target predicate \code{co_listed_with_consequence} exists so that evaluation never pretends a worksheet co-listing is a causal edge.
+
+\subsection{Ingestion}
+\paragraph{CSV path.} \code{hazop_csv_loader.py} accepts aliases for common worksheet columns, treats null markers explicitly, builds typed relations from row fields, and never promotes provenance: a row marked ``review required'' stays \code{unreviewed}.
+
+\paragraph{Report path.} PDF, UTF-8 TXT, Markdown, and LOG files up to 20\,MiB are accepted. PDF extraction is text-layer based via \code{pypdf}, with page markers, empty-page reporting, and a stored file SHA-256. Scanned pages are not OCR'd and are rejected when no selectable text exists. A Gemini structured extractor (\code{gemini-3.5-flash-lite}) requests scenario fields and typed relationships, each with a verbatim evidence quote and source location, and its prompt forbids inventing missing causes, consequences, safeguards or relations. Extracted relations carry origin \code{llm_extracted} and status \code{unreviewed}. This route is implemented but \emph{not evaluated} by E1--E7.
+
+\subsection{Graph storage}
+Two adapters implement the repository interface: an in-memory store used by the benchmark, and a Neo4j store (typed nodes and edges with source quote, origin and source ID) used by the API. Everything is stored within a dataset scope, so tracks cannot leak into one another.
+
+\subsection{Retrieval}
+Four retrievers compose into the recovery context (Figure~\ref{fig:flow}).
+\begin{itemize}
+  \item \textbf{Scenario-local}: evidence from the target scenario's own non-target fields.
+  \item \textbf{TF--IDF}: sparse lexical similarity over structured record fields; a transparent baseline, not a dense embedding model.
+  \item \textbf{Hybrid}: merges the two above.
+  \item \textbf{Graph-neighbourhood}: attaches edges from the same plant/process family (falling back to equipment). It excludes the target scenario and synthetic records, admits only \code{source}, \code{reconstructed} and \code{expert} origins across scenarios, and keeps edges reachable from the known endpoint within two hops (default), capped at 100 edges.
+\end{itemize}
+The result has two deliberately separate collections: \code{evidence_items} (candidate rows) and \code{graph_context} (actual edges). TF--IDF row matches must never be handed to graph traversal as if they were edges.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[box] (req) at (0,0) {Recovery\\request};
+\node[box] (sl) at (2.9,0.9) {Scenario-local\\retriever};
+\node[box] (tf) at (2.9,-0.9) {TF--IDF\\retriever};
+\node[box] (hy) at (5.7,0) {Hybrid\\retriever};
+\node[box] (gn) at (8.2,0) {Graph-\\neighbourhood};
+\node[box] (ev) at (11.2,0.9) {evidence\_items};
+\node[box] (gc) at (11.2,-0.9) {graph\_context};
+\node[box] (rs) at (11.2,-2.9) {Selected strategy:\\graph / LLM / hybrid};
+\node[box] (val) at (7.0,-2.9) {Validator\\(\code{HazopSafetyValidator})};
+\node[box,fill=paper] (out) at (2.9,-2.9) {Proposal\\or abstention};
+\draw[arr] (req)--(sl);\draw[arr] (req)--(tf);\draw[arr] (sl)--(hy);\draw[arr] (tf)--(hy);
+\draw[arr] (hy)--(gn);\draw[arr] (gn)--(ev);\draw[arr] (gn)--(gc);
+\draw[arr] (gc)--(rs);
+\draw[arr] (ev.east)--++(0.7,0)|-(rs.east);
+\draw[arr] (rs)--(val);\draw[arr] (val)--(out);
+\end{tikzpicture}
+\caption{Missing-link recovery flow. Candidate rows and real graph edges travel separately into the selected reasoning strategy; every output passes the validator.}
+\label{fig:flow}
+\end{figure*}
+
+\subsection{Reasoning strategies}
+\begin{description}[leftmargin=0pt,itemsep=2pt]
+  \item[\code{TfidfRetriever}.] Ranks candidate endpoints by lexical overlap. Output origin is \code{retrieval_inferred}.
+  \item[\code{GraphReasoner}.] Breadth-first search over typed causal predicates (\code{causes_deviation}, \code{leads_to}, \code{leads_to_consequence}), bounded by \code{max_hops} (default 4, minimum 2), non-cyclic. Nodes are keyed by (entity type, case-folded string): matching is \emph{exact string} matching with no synonym handling. Only direct origins may be expanded; previously inferred edges are excluded to prevent circular reinforcement. Path-derived outputs are \code{graph_inferred} and keep the complete path.
+  \item[\code{PromptOnlyReasoner}.] Scenario context only, no retrieval; a control for what an LLM can do from parametric knowledge under the repository's guardrails.
+  \item[Evidence-grounded LLM and \code{HybridReasoner}.] The LLM must select exactly one supplied evidence item or abstain; it may not rewrite an edge. If neither retrieval nor graph supplies a candidate, a generative fallback may propose a new endpoint, tagged \code{model_inferred}.
+\end{description}
+
+\subsubsection{Two graph entry points}
+This distinction matters for every result below.
+\begin{itemize}
+  \item \code{reason()} returns a \emph{single} endpoint: a unique direct candidate, or the shortest path to a unique endpoint. If several distinct terminal endpoints are reachable, it \textbf{abstains} with \code{AMBIGUOUS_EVIDENCE}.
+  \item \code{reason_all()} is for set-valued association recovery (\code{co_listed_with_consequence}). It requires the target deviation as context, finds all reachable endpoints, keeps the shortest path to each, and \textbf{returns all of them}.
+\end{itemize}
+The benchmark runner calls \code{reason_all}. That explains the jump from the 30 October baseline (graph coverage 0\%, mostly ambiguous-evidence abstentions on 17 of 19 queries) to E1 (coverage 0.842): the output semantics changed from ``abstain when more than one answer'' to ``enumerate every reachable answer''. The improvement is a protocol change as much as an algorithmic one.
+
+\subsection{Validation and abstention}
+\code{HazopSafetyValidator} is deterministic. For extracted reports it checks ontology endpoint types, agreement between relation endpoints and the scenario's own fields, and that each evidence quote is an exact substring of the input. For recovery proposals it also checks predicate, dataset scope, known-endpoint direction, and record-consistency, and attaches a \code{requires_expert_review} warning to every unverified origin. It is explicitly not a physics simulator or an expert reviewer.
+
+Abstention reasons are enumerated and include \code{NO_EVIDENCE}, \code{INSUFFICIENT_SUPPORT} and \code{AMBIGUOUS_EVIDENCE}. Reported confidence is \code{None} for graph paths: the system offers traceability, not calibrated probability.
+
+\subsection{API, client, testing, CI}
+The API exposes dataset listing and preview/import, recovery, report extraction, and experiment endpoints (single benchmark, multi-seed suite limited to 18 dataset$\times$seed$\times$hop runs, persisted-run listing, full-report download, per-artifact retrieval). The Tauri client is a thin workbench over those endpoints; the protocol requires that it never simulate metrics and that unavailable methods show as unavailable.
+
+CI runs ruff, the unit suite, the dataset benchmark suite, and a real Neo4j integration test on a disposable container; a second workflow builds the client. Experiment runs record commit, dataset SHA-256, split, seed, configuration, model, Python and platform. The E1 run was produced at commit \code{18a8d74} while this report reads \code{d39afd4}; the frozen artifacts, not the current source, are what the numbers come from.
+
+% ============================================================
+\section{Data and evaluation protocol}\label{ch:data}
+% ============================================================
+
+\subsection{Dataset tracks}
+Only the first track in Table~\ref{tab:tracks} is used in E1--E7.
+
+\begin{table}[t]
+\centering
+\caption{Dataset tracks.}
+\label{tab:tracks}
+\begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}p{1.9cm} r >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Track} & \textbf{Rec.} & \textbf{Provenance and use}\\
+\midrule
+T-301 reconstructed & 40 & Structured reconstructions of scenarios in Single et al.\ (2020); not verbatim worksheet rows; \silver{} labels; used in E1--E7.\\
+T-301 synthetic cont. & 54 & Project-generated; separate track; excluded.\\
+DWSIM synthetic & 30 & Simulation/inference-derived, with review caveats (16 ``Review required'', 6 ``Scope caveat'', 6 ``NEEDS\_MODEL\_REVISION'', others); excluded. The worksheet-format CSV is an alternate view of the same 30 scenarios.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The 40 reconstructed scenarios (T301-001 to T301-040) span eight deviations: high level (6), low level (6), elsewhere flow / loss of containment (6), high pressure (6), low pressure (6), other-than composition (4), high temperature (4), low temperature (2).\derived{} There are 70 cause entries (30 rows list two causes, 10 list one). Consequence labels are concentrated: \code{LossOfPrimaryContainment} appears in 26 of 40 rows, and \code{Fire}, \code{Explosion} and \code{FormationOfExAtmosphere} in 13 rows each, out of about 20 distinct labels.
+
+\subsection{Query construction and leakage control}
+The primary split is a scenario-level 80/20 holdout with seed 42: 32 training and 8 held-out scenarios, producing \textbf{19} cause-to-consequence queries. All rows of a scenario stay in one partition. For each held-out cause the target set is the consequence list of its source row. Held-out target labels and graph edges are removed \emph{before} the index and graph are built.
+
+\begin{caution}[Label semantics]
+The target is a \silver{} label: worksheet co-listing. A cause and a consequence appearing in one row is not an adjudicated causal pair, and no relationship-level expert gold set exists in this track.
+\end{caution}
+
+\subsection{Metrics}
+Micro and macro precision, recall and F1 against the silver sets; \emph{coverage} (queries with at least one proposal over all queries); \emph{abstention} (one minus coverage); \emph{selective risk} (error rate among answered queries); Hit@1 and MRR where ranking applies; latency. High abstention alone is not success; coverage and accuracy must be read together. LLM methods were capped at 15 of 19 queries (the first 15 in deterministic scenario/cause order), so full-test and matched-case results are reported separately. This cap leaves scenario T301-037 (four queries) out of every LLM comparison.\derived{}
+
+\subsection{Protocol history}
+An earlier exploratory baseline (30 October 2026, same split) gave TF--IDF micro-F1 0.3421 on T-301 reconstructed, 0.0000 on the synthetic continuation and 0.1429 on DWSIM, with graph coverage 0\% everywhere. It is a dated reference with a different protocol and implementation and must not be mixed with E1--E7.
+
+% ============================================================
+\section{Experimental results (E1--E7)}\label{ch:results}
+% ============================================================
+
+All results are from the frozen T-301 reconstructed evaluation and measure agreement with \silver{} associations only.
+
+\subsection{E1: controlled strategy comparison}
+Protocol~1.3; seed 42; 19 queries; top-$k$=10; maximum graph depth 4.
+
+\begin{table*}[t]
+\centering
+\caption{E1 full-test results (left; LLM methods used 15 cases, deterministic methods 19) and matched 15-query comparison (right).}
+\label{tab:e1full}
+\label{tab:e1match}
+\renewcommand{\tblsize}{\scriptsize}\setlength{\tabcolsep}{2.5pt}
+\begin{minipage}[t]{0.58\textwidth}\centering
+\begin{tabular}{@{}l r rrr rr r@{}}
+\toprule
+\textbf{Method} & $N$ & \textbf{P} & \textbf{R} & \textbf{F1} & \textbf{Cov.} & \textbf{Abst.} & \textbf{Lat.\ (ms)}\\
 \midrule
 Prompt-only LLM & 15 & 0.0000 & 0.0000 & 0.0000 & 0.0667 & 0.9333 & 16802.40\\
-TF--IDF retrieval & 19 & 0.2784 & 0.4909 & 0.3553 & 0.8947 & 0.1053 & 0.51\\
-Graph reasoning & 19 & 0.6486 & 0.8727 & 0.7442 & 0.8421 & 0.1579 & 1.34\\
+TF--IDF & 19 & 0.2784 & 0.4909 & 0.3553 & 0.8947 & 0.1053 & 0.51\\
+\textbf{Graph reasoning} & 19 & \textbf{0.6486} & 0.8727 & \textbf{0.7442} & 0.8421 & 0.1579 & 1.34\\
 Graph + TF--IDF union & 19 & 0.4068 & 0.8727 & 0.5549 & 0.8947 & 0.1053 & 1.85\\
-Hybrid graph/vector/LLM & 15 & 0.3704 & 0.6383 & 0.4688 & 0.8667 & 0.1333 & 38415.43\\
+Hybrid graph/vec./LLM & 15 & 0.3704 & 0.6383 & 0.4688 & 0.8667 & 0.1333 & 38415.43\\
 \bottomrule
-\end{tabularx}\end{table}
-Graph reasoning is the strongest deterministic method by micro-F1 on the fixed split. The union increases coverage but reduces precision and F1. LLM methods did not outperform graph reasoning on the matched 15-query subset and had substantially higher latency. Full-test LLM rows have different denominators and must not be treated as fully matched comparisons.
-On the matched subset, TF--IDF has P=0.3462, R=0.5745, F1=0.4320, coverage=0.8667; graph has P=0.6452, R=0.8511, F1=0.7339, coverage=0.8000; union has P=0.4396, R=0.8511, F1=0.5797, coverage=0.8667; prompt-only LLM has F1=0 and coverage=0.0667; hybrid has P=0.3704, R=0.6383, F1=0.4688, coverage=0.8667.
-\section{E2: Global complete-path consensus}
-Both edges of a typed cause--deviation--consequence path must be supported in the same eligible training record and process family, excluding the target scenario.
-\begin{table}[htbp]\centering\small
-\caption{E2 complete-path support thresholds}
-\begin{tabular}{@{}rrrrrr@{}}
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.40\textwidth}\centering
+\begin{tabular}{@{}l rrr r@{}}
 \toprule
-Minimum support & P & R & F1 & Coverage & Abstention\\
+\textbf{Method (15 q.)} & \textbf{P} & \textbf{R} & \textbf{F1} & \textbf{Cov.}\\
+\midrule
+Prompt-only LLM & 0.0000 & 0.0000 & 0.0000 & 0.0667\\
+TF--IDF & 0.3462 & 0.5745 & 0.4320 & 0.8667\\
+Graph reasoning & 0.6452 & 0.8511 & 0.7339 & 0.8000\\
+Graph + TF--IDF union & 0.4396 & 0.8511 & 0.5797 & 0.8667\\
+Hybrid & 0.3704 & 0.6383 & 0.4688 & 0.8667\\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\end{table*}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar,width=\columnwidth,height=4.9cm,bar width=5pt,ymin=0,ymax=1,
+  symbolic x coords={Prompt-only,TF--IDF,Graph,Union,Hybrid},xtick=data,
+  x tick label style={font=\tiny},
+  ylabel={score (matched 15)},legend pos=north west,legend columns=3,enlarge x limits=0.14,ymajorgrids=true]
+\addplot[fill=slate] coordinates {(Prompt-only,0)(TF--IDF,0.3462)(Graph,0.6452)(Union,0.4396)(Hybrid,0.3704)};
+\addplot[fill=teal] coordinates {(Prompt-only,0)(TF--IDF,0.5745)(Graph,0.8511)(Union,0.8511)(Hybrid,0.6383)};
+\addplot[fill=navy] coordinates {(Prompt-only,0)(TF--IDF,0.4320)(Graph,0.7339)(Union,0.5797)(Hybrid,0.4688)};
+\legend{Precision,Recall,F1}
+\end{axis}
+\end{tikzpicture}
+\caption{E1 matched-case precision, recall and F1. The union keeps the graph's recall but loses precision.}
+\label{fig:e1}
+\end{figure}
+
+\subsection{E2: complete-path support}
+E2 varies the minimum number of distinct training scenarios supporting the same complete path Cause$\to$Deviation$\to$Consequence.
+
+\begin{table}[t]
+\centering
+\caption{E2 global complete-path support.}
+\label{tab:e2}
+\begin{tabular}{@{}c rrr rr@{}}
+\toprule
+\textbf{Min.\ supp.} & \textbf{P} & \textbf{R} & \textbf{F1} & \textbf{Cov.} & \textbf{Abst.}\\
 \midrule
 1 & 0.6486 & 0.8727 & 0.7442 & 0.8421 & 0.1579\\
 2 & 0.6000 & 0.1091 & 0.1846 & 0.3158 & 0.6842\\
-3--6 & 0 & 0 & 0 & 0 & 1\\
+3--6 & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 1.0000\\
 \bottomrule
-\end{tabular}\end{table}
-Requiring two supporting scenarios sharply reduces recall and coverage; thresholds of three or more yield no eligible proposals. Complete-path recurrence is sparse in this dataset.
-\section{E3: Independent edge support}
-\begin{table}[htbp]\centering\small
-\caption{E3 independent edge-support thresholds}
-\begin{tabular}{@{}lrrrrr@{}}
+\end{tabular}
+\end{table}
+
+\subsection{E3: independent typed-edge support}
+The cause$\to$deviation and deviation$\to$consequence edges are counted independently and may be supported by different scenarios.
+
+\begin{table}[t]
+\centering
+\caption{E3 independent edge support.}
+\label{tab:e3}
+\begin{tabular}{@{}l rrr rr@{}}
 \toprule
-Condition & P & R & F1 & Coverage & Abstention\\
+\textbf{Condition} & \textbf{P} & \textbf{R} & \textbf{F1} & \textbf{Cov.} & \textbf{Abst.}\\
 \midrule
 Both thresholds 1 & 0.6486 & 0.8727 & 0.7442 & 0.8421 & 0.1579\\
-Cause edge $\geq 2$ & 0.5938 & 0.3455 & 0.4368 & 0.3158 & 0.6842\\
-Consequence edge $\geq 2$ & 0.6094 & 0.7091 & 0.6555 & 0.8421 & 0.1579\\
-Both edges $\geq 2$ & 0.6000 & 0.3273 & 0.4235 & 0.3158 & 0.6842\\
+Cause edge $\ge$2 & 0.5938 & 0.3455 & 0.4368 & 0.3158 & 0.6842\\
+Conseq.\ edge $\ge$2 & 0.6094 & 0.7091 & 0.6555 & 0.8421 & 0.1579\\
+Both edges $\ge$2 & 0.6000 & 0.3273 & 0.4235 & 0.3158 & 0.6842\\
 \bottomrule
-\end{tabular}\end{table}
-Cause-edge recurrence is the bottleneck. Raising only the consequence-edge threshold has a smaller effect. Repeated co-occurrence is not independent causal confirmation.
-\section{E4: Multi-hop reasoning}
-\begin{table}[htbp]\centering\small
-\caption{E4 path-mode comparison}
-\begin{tabular}{@{}lrrrrrr@{}}
+\end{tabular}
+\end{table}
+
+\subsection{E4: multi-hop reasoning}
+\begin{table}[t]
+\centering
+\caption{E4 path-mode comparison.}
+\label{tab:e4}
+\begin{tabular}{@{}l r rrr rr@{}}
 \toprule
-Path mode & Candidate paths & P & R & F1 & Coverage & Abstention\\
+\textbf{Mode} & \textbf{Paths} & \textbf{P} & \textbf{R} & \textbf{F1} & \textbf{Cov.} & \textbf{Abst.}\\
 \midrule
 Direct & 265 & 0.6486 & 0.8727 & 0.7442 & 0.8421 & 0.1579\\
-Intermediate & 0 & 0 & 0 & 0 & 0 & 1\\
+Intermediate & 0 & 0.0000 & 0.0000 & 0.0000 & 0.0000 & 1.0000\\
 Both & 265 & 0.6486 & 0.8727 & 0.7442 & 0.8421 & 0.1579\\
 \bottomrule
-\end{tabular}\end{table}
-No eligible intermediate paths were present. This is a limitation of evidence availability, not proof that multi-hop reasoning inherently fails.
-\section{E5: Provenance coherence and selective acceptance}
-E5-1 metadata-presence thresholds 0, 0.5, 0.75, and 1 produced identical results: P=0.6486, selective risk=0.3514, F1=0.7442, coverage=0.8421, abstention=0.1579, unsupported=0, traceable=1.0. There were 74 accepted proposals: 48 TP, 26 FP, and 7 FN. Metadata completeness did not discriminate correct from incorrect proposals.
-\begin{table}[htbp]\centering\small
-\caption{E5 source-coherence filters}
-\begin{tabular}{@{}lrrrrrr@{}}
+\end{tabular}
+\end{table}
+
+\subsection{E5: provenance coherence and selective acceptance}
+\textbf{E5-1.0} varied a metadata-presence threshold (0, 0.5, 0.75, 1) and produced identical results at every setting: precision 0.6486, selective risk 0.3514, F1 0.7442, coverage 0.8421, 0 unsupported proposals, traceability 1.0000; 74 accepted proposals (48 TP, 26 FP) and 7 FN.
+
+\begin{table}[t]
+\centering
+\caption{E5-2.0 source-coherence gating.}
+\label{tab:e5}
+\begin{tabular}{@{}l rrr@{}}
 \toprule
-Condition & P & R & F1 & Coverage & Accepted & TP/FP/FN\\
+\textbf{Metric} & \textbf{Ungated} & \textbf{Same scen.} & \textbf{Same row}\\
 \midrule
-Ungated & 0.6486 & 0.8727 & 0.7442 & 0.8421 & 74 & 48/26/7\\
-Same scenario & 0.5000 & 0.1091 & 0.1791 & 0.2105 & 12 & 6/6/49\\
-Same source row & 0.5000 & 0.1091 & 0.1791 & 0.2105 & 12 & 6/6/49\\
+Precision & 0.6486 & 0.5000 & 0.5000\\
+Recall & 0.8727 & 0.1091 & 0.1091\\
+F1 & 0.7442 & 0.1791 & 0.1791\\
+Coverage & 0.8421 & 0.2105 & 0.2105\\
+Selective risk & 0.3514 & 0.5000 & 0.5000\\
+Accepted / rejected & 74 / 0 & 12 / 62 & 12 / 62\\
+TP / FP / FN & 48/26/7 & 6/6/49 & 6/6/49\\
 \bottomrule
-\end{tabular}\end{table}
-Both filters reject 62 of 74 proposals and retain 6 TP and 6 FP. They reduce coverage without improving precision. Provenance coherence supports traceability, not causal truth.
-\section{E6: Scenario-split robustness}
-E6 repeats scenario-level 80/20 holdouts for seeds 42--51. Each run holds out 8 of 40 scenarios; query counts range from 17 to 27. Across runs, 36 unique scenarios were held out and 4 never appeared in a test partition. These overlapping runs are repeated random holdouts, not ten-fold cross-validation.
-\begin{table}[htbp]\centering\small
-\caption{E6 repeated-holdout summary}
-\begin{tabular}{@{}lrrrr@{}}
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar,width=\columnwidth,height=5.2cm,bar width=4pt,ymin=0,ymax=1,
+  symbolic x coords={Baseline,E2 min2,E3 cause2,E3 conseq2,E3 both2,E5 coher.},xtick=data,
+  x tick label style={rotate=25,anchor=east,font=\tiny},ylabel={score},legend pos=north east,legend columns=3,enlarge x limits=0.1]
+\addplot[fill=navy] coordinates {(Baseline,0.7442)(E2 min2,0.1846)(E3 cause2,0.4368)(E3 conseq2,0.6555)(E3 both2,0.4235)(E5 coher.,0.1791)};
+\addplot[fill=teal] coordinates {(Baseline,0.8727)(E2 min2,0.1091)(E3 cause2,0.3455)(E3 conseq2,0.7091)(E3 both2,0.3273)(E5 coher.,0.1091)};
+\addplot[fill=amber] coordinates {(Baseline,0.8421)(E2 min2,0.3158)(E3 cause2,0.3158)(E3 conseq2,0.8421)(E3 both2,0.3158)(E5 coher.,0.2105)};
+\legend{F1,Recall,Coverage}
+\end{axis}
+\end{tikzpicture}
+\caption{Effect of every support or coherence restriction. All cost recall and coverage; none raises precision above the 0.6486 baseline.}
+\label{fig:filters}
+\end{figure}
+
+\subsection{E6: scenario-split robustness}
+Ten scenario-level 80/20 holdouts, seeds 42--51; each holds out 8 of 40 scenarios; query counts range from 17 to 27. Thirty-six distinct scenarios appear in a test split; four (T301-005, -013, -027, -033) never do.
+
+\begin{table}[t]
+\centering
+\caption{E6 graph-reasoner metrics across ten repeated holdouts.}
+\label{tab:e6}
+\begin{tabular}{@{}l rrrr@{}}
 \toprule
-Metric & Mean & SD & Min & Max\\
+\textbf{Metric} & \textbf{Mean} & \textbf{SD} & \textbf{Min} & \textbf{Max}\\
 \midrule
 Micro precision & 0.5765 & 0.0412 & 0.5294 & 0.6486\\
 Micro recall & 0.8615 & 0.1034 & 0.6383 & 1.0000\\
 Micro F1 & 0.6881 & 0.0479 & 0.5825 & 0.7442\\
 Macro F1 & 0.6266 & 0.0973 & 0.3722 & 0.7057\\
 Coverage & 0.8746 & 0.1283 & 0.5500 & 1.0000\\
-Abstention & 0.1254 & 0.1283 & 0 & 0.4500\\
+Abstention & 0.1254 & 0.1283 & 0.0000 & 0.4500\\
 \bottomrule
-\end{tabular}\end{table}
-The results show split sensitivity. The summary is descriptive and is not an independent-sample confidence interval.
-\section{E7: Controlled relationship-evidence masking}
-E7 fixes the seed-42 split and randomly masks 10--40\% of 181 typed training relationships. Ten masking seeds (42--51) are used at each rate, with masks nested within each seed. Test labels are unchanged and LLM methods are disabled. The zero-mask row is the E1 baseline.
-\begin{table}[htbp]\centering\small
-\caption{E7 graph reasoning under random relationship masking}
-\begin{tabular}{@{}rrrrr@{}}
-\toprule
-Masked & Precision & Recall & F1 & Coverage\\
-\midrule
-0\% & 0.6486 & 0.8727 & 0.7442 & 0.8421\\
-10\% & 0.6454 & 0.8109 & 0.7182 & 0.8000\\
-20\% & 0.6439 & 0.7382 & 0.6872 & 0.7316\\
-30\% & 0.6396 & 0.6582 & 0.6469 & 0.6842\\
-40\% & 0.6476 & 0.5727 & 0.6030 & 0.6158\\
-\bottomrule
-\end{tabular}\end{table}
-As masking increases, graph recall, F1, and coverage decline while precision remains comparatively stable. The graph--TF--IDF union has P/R/F1/coverage of 0.4077/0.8145/0.5432/0.8737 at 10\%, 0.4124/0.7455/0.5305/0.8526 at 20\%, 0.4190/0.6673/0.5139/0.8263 at 30\%, and 0.4299/0.5855/0.4936/0.7737 at 40\%. TF--IDF has 0.2713/0.4182/0.3288/0.8684, 0.2770/0.3655/0.3143/0.8368, 0.2663/0.2945/0.2775/0.8053, and 0.2570/0.2291/0.2402/0.7526 at the same rates. The masking procedure is uniform random deletion of typed relationship objects, not a model of natural missingness in industrial reports.
+\end{tabular}
+\end{table}
 
-\chapter{Discussion, Limitations, and Future Work}
-\section{Supported findings}
-The fixed-split results identify graph reasoning as the strongest tested deterministic method by micro-F1. Candidate union increases coverage but trades away precision and F1. Complete-path and cause-edge recurrence are sparse. Provenance-field completeness does not discriminate correctness. Strict same-scenario and same-row filters over-filter proposals. The benchmark does not exercise intermediate paths. Repeated holdouts show scenario-split sensitivity, and random relationship masking degrades graph recall, F1, and coverage.
-\section{Limitations}
-The primary evaluated set has 40 reconstructed scenarios, eight held-out scenarios, and 19 fixed-split queries. Labels are reconstructed row associations, not expert-adjudicated causal ground truth. E6 runs overlap. E4 has no eligible intermediate paths. E7 uses uniform random deletion. LLM evaluation is capped at 15 cases. Synthetic generation is not fully reproducible from the tracked files because a complete generation script or manifest was not found in the repository tree inspected for this report.
-\section{Future work}
-The most important next step is an independently adjudicated relationship dataset with a written rubric for causal plausibility, context sufficiency, temporal ordering, operating envelope, and safeguard validity. Multiple qualified reviewers should annotate independently, with disagreement resolution and inter-rater agreement reported. Further work should preserve separate reconstructed, synthetic, and expert-validated tracks; document synthetic generation with prompts, model/version, parameters, seeds, simulation conditions, and review outcomes; evaluate additional process units; create examples that exercise intermediate paths; assess calibration and abstention against expert judgement; validate the full document-extraction pipeline; and test process-safety constraints with domain experts.
-\begin{boundary}[Process-safety disclaimer]
-The prototype is a research aid. Recovered links are candidate worksheet associations, not verified process-safety facts, operating instructions, or recommendations. They must not replace qualified HAZOP facilitation, engineering review, or site-specific safety assessment.
-\end{boundary}
-\chapter{Conclusion}
-On the fixed reconstructed T-301 split, typed graph reasoning is the strongest tested deterministic strategy for recovering row-derived silver associations. Its performance depends on the availability and distribution of training relationships. Stronger support and provenance-coherence filters can sharply reduce coverage; the available sample does not exercise intermediate paths; repeated holdouts show split sensitivity; and random evidence masking reduces recall and coverage. Synthetic tracks broaden the repository's data assets but remain separate from E1--E7 and retain their provenance and review limitations. The current evidence does not establish physical causal correctness or process-safety utility. Independent expert adjudication and reproducible dataset construction are required before stronger claims can be made.
-\small
-\bibliographystyle{plain}
-\bibliography{references}
+\begin{table}[t]
+\centering
+\caption{E6 per-seed graph-reasoner results\derived{} (from the frozen JSON).}
+\label{tab:e6seed}
+\begin{tabular}{@{}c r rrr r@{}}
+\toprule
+\textbf{Seed} & \textbf{Queries} & \textbf{P} & \textbf{R} & \textbf{F1} & \textbf{Cov.}\\
+\midrule
+42 & 19 & 0.6486 & 0.8727 & 0.7442 & 0.8421\\
+43 & 27 & 0.5521 & 0.9375 & 0.6950 & 1.0000\\
+44 & 18 & 0.5556 & 0.7812 & 0.6494 & 0.8889\\
+45 & 17 & 0.6441 & 0.8444 & 0.7308 & 0.8824\\
+46 & 24 & 0.5735 & 0.9286 & 0.7091 & 0.9167\\
+47 & 17 & 0.5932 & 0.7955 & 0.6796 & 0.8235\\
+48 & 20 & 0.5357 & 0.6383 & 0.5825 & 0.5500\\
+49 & 23 & 0.5739 & 1.0000 & 0.7293 & 1.0000\\
+50 & 19 & 0.5588 & 0.9344 & 0.6994 & 0.9474\\
+51 & 19 & 0.5294 & 0.8824 & 0.6618 & 0.8947\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[ybar,width=\columnwidth,height=5cm,bar width=6pt,ymin=0.4,ymax=1.05,
+  xtick={42,43,44,45,46,47,48,49,50,51},xlabel={split seed},ylabel={score},legend style={at={(0.5,1.04)},anchor=south,legend columns=3},enlarge x limits=0.07]
+\addplot[fill=navy] coordinates {(42,0.7442)(43,0.6950)(44,0.6494)(45,0.7308)(46,0.7091)(47,0.6796)(48,0.5825)(49,0.7293)(50,0.6994)(51,0.6618)};
+\addplot[sharp plot,mark=*,color=amber,thick,mark size=1.2pt] coordinates {(42,0.8421)(43,1.0)(44,0.8889)(45,0.8824)(46,0.9167)(47,0.8235)(48,0.55)(49,1.0)(50,0.9474)(51,0.8947)};
+\addplot[sharp plot,dashed,color=crimson,thick,no markers] coordinates {(42,0.6881)(51,0.6881)};
+\legend{Micro-F1,Coverage,Mean F1 (0.688)}
+\end{axis}
+\end{tikzpicture}
+\caption{E6 per-seed micro-F1 and coverage. The fixed seed-42 split is the best of the ten on F1.}
+\label{fig:e6}
+\end{figure}
+
+\subsection{E7: controlled relationship-evidence masking}
+E7 fixes the seed-42 split and randomly masks typed \code{CausalRelation} objects from the 181 training relationships at 10, 20, 30 and 40\%, across ten masking seeds (42--51), giving 40 conditions with nested masks per seed. Test labels are unchanged, LLMs are disabled, and TF--IDF endpoint fields are rebuilt from the retained relations.
+
+\begin{table}[t]
+\centering
+\caption{E7 graph reasoner, mean over ten masking seeds.}
+\label{tab:e7g}
+\begin{tabular}{@{}r rrr r r@{}}
+\toprule
+\textbf{Mask} & \textbf{P} & \textbf{R} & \textbf{Mi-F1} & \textbf{Ma-F1} & \textbf{Cov.\ / Abst.}\\
+\midrule
+0\% & 0.6486 & 0.8727 & 0.7442 & --- & 0.8421 / 0.1579\\
+10\% & 0.6454 & 0.8109 & 0.7182 & 0.6199 & 0.8000 / 0.2000\\
+20\% & 0.6439 & 0.7382 & 0.6872 & 0.5563 & 0.7316 / 0.2684\\
+30\% & 0.6396 & 0.6582 & 0.6469 & 0.5029 & 0.6842 / 0.3158\\
+40\% & 0.6476 & 0.5727 & 0.6030 & 0.4429 & 0.6158 / 0.3842\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{E7 comparison methods (mean micro-F1 and coverage) and graph F1 variability across masks.}
+\label{tab:e7c}
+\begin{tabular}{@{}r rr rr rr@{}}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Union}} & \multicolumn{2}{c}{\textbf{TF--IDF}} & \multicolumn{2}{c}{\textbf{Graph F1}}\\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+\textbf{Mask} & F1 & Cov. & F1 & Cov. & mean & SD\\
+\midrule
+10\% & 0.5432 & 0.8737 & 0.3288 & 0.8684 & 0.7182 & 0.0278\\
+20\% & 0.5305 & 0.8526 & 0.3143 & 0.8368 & 0.6872 & 0.0378\\
+30\% & 0.5139 & 0.8263 & 0.2775 & 0.8053 & 0.6469 & 0.0568\\
+40\% & 0.4936 & 0.7737 & 0.2402 & 0.7526 & 0.6030 & 0.0738\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=\columnwidth,height=5.4cm,xlabel={training relationships masked (\%)},ylabel={micro-F1},
+  xmin=-2,xmax=42,ymin=0.15,ymax=0.85,legend style={at={(0.5,-0.28)},anchor=north,legend columns=3},xtick={0,10,20,30,40}]
+\addplot[color=navy,mark=*,thick,mark size=1.3pt,error bars/.cd,y dir=both,y explicit] coordinates {(0,0.7442) +- (0,0) (10,0.7182) +- (0,0.0278) (20,0.6872) +- (0,0.0378) (30,0.6469) +- (0,0.0568) (40,0.6030) +- (0,0.0738)};
+\addplot[color=amber,mark=square*,thick,mark size=1.2pt] coordinates {(0,0.5549)(10,0.5432)(20,0.5305)(30,0.5139)(40,0.4936)};
+\addplot[color=crimson,mark=triangle*,thick,mark size=1.3pt] coordinates {(0,0.3553)(10,0.3288)(20,0.3143)(30,0.2775)(40,0.2402)};
+\legend{Graph ($\pm$1 SD),Union,TF--IDF}
+\end{axis}
+\end{tikzpicture}
+\caption{E7 micro-F1 under random relationship masking. The 0\% point is the E1 fixed-split value. The graph--union gap narrows from 0.175 to 0.109.}
+\label{fig:e7}
+\end{figure}
+
+% ============================================================
+\section{Critical analysis of the results}\label{ch:analysis}
+% ============================================================
+
+Every statement marked with a dagger (\textdagger) was computed for this report from the repository's frozen artifacts (\code{predictions.csv}, \code{results.json}, the E6 and E7 JSON files, the T-301 CSV). The scripts are in \code{analysis/}. They do not change any repository number; they re-read it.
+
+\subsection{Headline and its uncertainty}
+On the fixed split the graph reasoner beats TF--IDF by $\Delta$F1\,=\,0.389 (0.7442 vs 0.3553). Because the 19 queries come from only 8 scenarios, the right resampling unit is the scenario. A percentile bootstrap\derived{} (5{,}000 resamples, seed~0) gives Table~\ref{tab:boot}.
+
+\begin{table}[t]
+\centering
+\caption{Bootstrap 95\% intervals\derived{} for the seed-42 comparison, resampling queries or scenarios (descriptive; the 8-cluster interval is crude).}
+\label{tab:boot}
+\renewcommand{\tblsize}{\scriptsize}
+\begin{tabular}{@{}l c c@{}}
+\toprule
+\textbf{Quantity} & \textbf{By query (19)} & \textbf{By scenario (8)}\\
+\midrule
+Graph micro-F1 & [0.667, 0.798] & ---\\
+TF--IDF micro-F1 & [0.250, 0.450] & ---\\
+$\Delta$F1 (graph $-$ TF--IDF) & [0.290, 0.490] & [0.230, 0.562]\\
+\bottomrule
+\end{tabular}
+\end{table}
+No resample produced $\Delta$F1\,$\le$\,0, so the graph-over-TF--IDF ordering is not a small-sample accident. The intervals do not address label validity or generalization beyond T-301.
+
+\subsection{Unit of analysis: 19 queries, 8 scenarios}\label{sec:unit}
+Gold sets are row-level, so every cause in a scenario has the \emph{same} gold set. The graph reasoner returns the \emph{same} prediction set for every answered cause in a scenario.\derived{} Scenario sizes are 3, 1, 2, 2, 2, 2, 3 and 4 queries (T301-004, -010, -011, -012, -025, -026, -031, -037). Micro-averaging therefore weights scenarios by their number of listed causes, and 19 query-level rows understate the sampling variability. This is why E6, which changes the split, moves F1 by up to 0.16 between seeds.
+
+\subsection{What the graph reasoner is actually doing}\label{sec:lookup}
+Reading the per-case predictions against the training data shows a simple mechanism. In every answered query (16 of 19) the graph prediction is \emph{exactly} the union of consequences of all training rows that share the target's deviation.\derived{} The cause acts as an existence gate (does a training path from this cause reach the target deviation?), and the deviation node is a hub that aggregates consequences across rows. The three abstentions are gate failures:
+\begin{itemize}
+  \item T301-010 (low level): its cause \code{MalfunctionFlowController} appears in training only under \emph{high level}. No path reaches the target deviation, so the reasoner returns \code{insufficient_support}.
+  \item T301-011 and T301-012: the cause \code{LossOfInflow} never appears in training; the reasoner returns \code{no_evidence}.
+\end{itemize}
+Together these three queries hold all 7 false negatives (2+3+2 consequences). When the graph answers, recall is 48/48; all its error is either over-generation (26 FP) or abstention (7 FN).
+
+\paragraph{Trivial baselines\derived{}.} Table~\ref{tab:triv} scores simple alternatives on the same 19 queries and split, using only information the reasoner also has. The untuned deviation-union lookup scores F1 0.7801, above the graph reasoner's 0.7442, because it answers the three queries the reasoner abstains on. And TF--IDF (0.3553) is no better than a global-frequency prior (best 0.3817 at $k$=4, tuned on the test set), so the lexical baseline is weak.
+
+\begin{table*}[t]
+\centering
+\caption{Trivial baselines\derived{} on the seed-42 queries. ``Global top-$k$'' predicts the $k$ most frequent training consequences for every query. ``Deviation top-$k$'' predicts the $k$ most frequent consequences among training rows with the target's deviation. $k$ and the frequency cut were chosen after seeing the test result, so they are optimistic.}
+\label{tab:triv}
+\begin{tabular}{@{}l r r r rrr@{}}
+\toprule
+\textbf{Method} & \textbf{TP} & \textbf{FP} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F1}\\
+\midrule
+Global top-1 & 10 & 9 & 45 & 0.5263 & 0.1818 & 0.2703\\
+Global top-3 & 20 & 37 & 35 & 0.3509 & 0.3636 & 0.3571\\
+Global top-4 & 25 & 51 & 30 & 0.3289 & 0.4545 & 0.3817\\
+Deviation top-2 & 27 & 11 & 28 & 0.7105 & 0.4909 & 0.5806\\
+Deviation top-4 & 43 & 29 & 12 & 0.5972 & 0.7818 & 0.6772\\
+Deviation, freq.\ $\ge$2 & 44 & 29 & 11 & 0.6027 & 0.8000 & 0.6875\\
+\textbf{Deviation union (no tuning)} & \textbf{55} & 31 & 0 & 0.6395 & 1.0000 & \textbf{0.7801}\\
+\midrule
+TF--IDF (E1) & 27 & 70 & 28 & 0.2784 & 0.4909 & 0.3553\\
+Graph reasoning (E1) & 48 & 26 & 7 & 0.6486 & 0.8727 & 0.7442\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{finding}[Interpretation]
+On this benchmark the graph reasoner's accuracy is explained by deviation-conditioned lookup. The benchmark cannot separate cause-specific reasoning from lookup, because within a scenario every cause shares one label set. The graph's genuine advantages are the ones accuracy does not show: typed paths, source IDs, provenance, and refusal to answer when the cause is unseen. These deserve their own metrics (Section~\ref{ch:next}).
+\end{finding}
+
+\subsection{Anatomy of the 26 false positives}\label{sec:fp}
+All 26 FPs\derived{} are over-generation from the deviation hub: for example \code{Fire} on every T301-004 query (3), \code{Crack}, \code{Explosion}, \code{FormationOfExAtmosphere} on both T301-025 queries (6), the same two extras on all three T301-031 queries (6), and \code{ExceedingFlashPoint} on all four T301-037 queries (4). Because the same extra label repeats for each cause of a scenario, FPs are strongly clustered: eight distinct extra labels generate 26 FP instances. Per-instance Wilson intervals for precision (0.535--0.748) and recall (0.760--0.937) are therefore too narrow and are a lower bound on uncertainty.
+
+\subsection{Why the union lowers F1}
+The union adds \emph{no} true positives to the graph (TP stays 48) and adds 44 false positives (FP rises from 26 to 70).\derived{} Its coverage gain (0.8421 to 0.8947) comes from a single extra answered query, which contributes no TP. Candidate union is strictly worse than graph alone on this split. (Its FP count of 70 equals TF--IDF's; the TF--IDF extras dominate the union's output.)
+
+\subsection{Support and provenance filters are not confidence signals}\label{sec:filters}
+A useful confidence filter should remove predictions \emph{less} precise than average. Using the TP/FP counts implied by E2, E3 and E5 and the 0.6486 baseline precision, the removed predictions are shown in Table~\ref{tab:removed}.
+
+\begin{table}[t]
+\centering
+\caption{Precision of the predictions each filter discards\derived{}, against the 0.649 baseline. Higher than baseline means the filter threw away better-than-average predictions.}
+\label{tab:removed}
+\renewcommand{\tblsize}{\scriptsize}
+\begin{tabular}{@{}l r r r@{}}
+\toprule
+\textbf{Filter} & \textbf{Removed (TP/FP)} & \textbf{P removed} & \textbf{P kept}\\
+\midrule
+E2: path support $\ge$2 & 64 (42/22) & 0.656 & 0.600\\
+E3: cause edge $\ge$2 & 42 (29/13) & 0.690 & 0.594\\
+E3: conseq.\ edge $\ge$2 & 10 (9/1) & 0.900 & 0.609\\
+E3: both edges $\ge$2 & 44 (30/14) & 0.682 & 0.600\\
+E5: same scen.\ / row & 62 (42/20) & 0.677 & 0.500\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Every filter discards predictions at least as precise as the baseline, and the consequence-edge filter discards nine true positives for one false positive. On this dataset, rarity of supporting evidence is not a sign of unreliability, so recurrence and coherence cannot serve as selective-acceptance rules. The E5-1.0 result agrees: metadata presence (traceability 1.0) is constant across correct and incorrect proposals and carries no information about correctness. Provenance makes a proposal inspectable; it does not make it true.
+
+The cause-edge bottleneck follows from Section~\ref{sec:lookup}: the cause$\to$deviation edge is the gate, so requiring two supporting scenarios for it turns 10 of the 16 answered queries into abstentions (the E3 case analysis records exactly 10 such cases).
+
+\subsection{E4 is structurally empty}
+Zero intermediate paths is consistent with the data schema rather than surprising. The T-301 CSV has no effects column (its fields are cause, consequence, safeguard, recommendation, risk, remarks and provenance), so the loader cannot build \code{Effect} nodes and \code{leads_to} edges. The 265 ``direct'' paths are Cause$\to$Deviation$\to$Consequence, which the schema allows through \code{leads_to_consequence} from a deviation. The graph-neighbourhood retriever's default two-hop cross-scenario bound may further limit longer paths. E4 most likely tests a data-schema limit, not multi-hop reasoning.
+
+\subsection{E6: the headline split is the favourable one}
+Seed 42 is the maximum of ten seeds on micro-F1 (0.7442; mean 0.688, median 0.697) and on precision (0.6486; mean 0.577).\derived{} Reporting 0.7442 alone overstates typical performance by about 0.056 F1. The lowest seed (48) has F1 0.5825 and coverage 0.55, meaning 9 of its 20 queries were abstentions; whether those are the same gate failures seen at seed 42 (Section~\ref{sec:lookup}) was not checked and is worth confirming. Scenario T301-031 lands in six of the ten test sets, while four scenarios never do, so the average is not uniform across the dataset. Because the ten training sets overlap, the SD (0.048) is descriptive.
+
+\subsection{E7: graph degradation is sub-proportional}
+If each removed relationship cost recall proportionally, recall at mask rate $m$ would be $0.8727(1-m)$. The observed recall is consistently higher (Table~\ref{tab:prop}).
+
+\begin{table}[t]
+\centering
+\caption{E7 recall against proportional expectation\derived{}.}
+\label{tab:prop}
+\begin{tabular}{@{}r r r r@{}}
+\toprule
+\textbf{Mask} & \textbf{Proportional} & \textbf{Observed} & \textbf{Gap}\\
+\midrule
+10\% & 0.785 & 0.811 & +0.026\\
+20\% & 0.698 & 0.738 & +0.040\\
+30\% & 0.611 & 0.658 & +0.047\\
+40\% & 0.524 & 0.573 & +0.049\\
+\bottomrule
+\end{tabular}
+\end{table}
+The same holds for coverage (0.616 observed against 0.505 proportional at 40\%). The training graph is redundant: many rows share deviations and consequences, so a missing edge is often replaced by another route to the same label. Precision stays at 0.640--0.649 because TPs and FPs both come from the same deviation hub and shrink together. Variance across masks grows steadily (F1 SD 0.028 to 0.074), so average curves hide increasingly unequal outcomes. The gap between graph and union narrows from 0.175 to 0.109 F1, but extrapolating a crossover would go well beyond the tested range.
+
+\subsection{LLM conditions}\label{sec:llm}
+\begin{itemize}
+  \item \textbf{What was tested.} Prompt-only and hybrid LLM runs used \code{gemini-3.5-flash-lite} with evidence-grounding guardrails (the model must select a supplied item and satisfy predicate and direction constraints). The findings concern this configuration, not LLMs in general.
+  \item \textbf{Prompt-only.} Of 15 evaluated queries, 14 returned \code{insufficient_support} and one produced a (wrong) proposal.\derived{} The diagnostics say the scenario context does not state any consequence. Under a prompt containing only deviation, parameter and cause, and a guardrail forbidding unsupported claims, abstention is intended, so F1\,=\,0 reflects the design of the control, not a capability ceiling.
+  \item \textbf{Hybrid.} The hybrid output mixes \code{retrieval_inferred} and \code{graph_inferred} values and reaches F1 0.4688 on 15 cases, below graph (0.7339) on the same cases, at about 38\,s mean latency against 1.3\,ms.
+  \item \textbf{Reliability gaps.} The request gate recorded 71 HTTP attempts, 43 successful and 28 failed, with a 10\,s post-attempt cooldown (710\,s measured). The per-case statuses contain no provider-error category. The protocol requires that failures count in the denominator, so a mapping from failed attempts to per-case outcomes should be audited. Cost was not captured (\code{cost_usd} is null).
+\end{itemize}
+
+\subsection{Claim-by-claim support}\label{sec:claims}
+
+\begin{table*}[t]
+\centering
+\caption{What the evidence supports.}
+\label{tab:claims}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X c >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Claim} & \textbf{Verdict} & \textbf{Basis}\\
+\midrule
+Graph reasoning beats TF--IDF at recovering silver associations on T-301 & \textcolor{okgreen}{\textbf{Supported}} & E1; bootstrap intervals exclude zero; but TF--IDF $\approx$ a frequency prior.\\
+Graph reasoning beats the tested LLM configurations & \textcolor{okgreen}{\textbf{Supported, narrow}} & Matched 15 cases; constrained prompts; single model.\\
+The graph reasoner performs cause-specific causal reasoning & \textcolor{crimson}{\textbf{Not supported}} & Prediction equals deviation-union in 16/16 answered queries; benchmark cannot distinguish.\\
+Graph reasoning beats a deviation lookup & \textcolor{crimson}{\textbf{Not supported}} & Lookup F1 0.7801 vs 0.7442 on the same split.\\
+Support or provenance filters improve selective acceptance & \textcolor{crimson}{\textbf{Not supported}} & All discard better-than-average predictions (Table~\ref{tab:removed}).\\
+Multi-hop reasoning helps or does not help & \textcolor{amber}{\textbf{Untested}} & E4: schema yields no intermediate paths.\\
+Results are stable across splits & \textcolor{amber}{\textbf{Partly}} & E6: F1 0.58--0.74; coverage 0.55--1.0; seed 42 is the best.\\
+Performance degrades gracefully with missing evidence & \textcolor{okgreen}{\textbf{Supported, simulated}} & E7: sub-proportional loss; random masking only.\\
+Recovered links are causally correct or safe to use & \textcolor{crimson}{\textbf{Not supported}} & Silver labels; no expert adjudication.\\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+% ============================================================
+\section{Limitations and safety boundary}\label{ch:limits}
+% ============================================================
+
+\paragraph{Label validity.} Reconstructed rows are not verbatim worksheets; co-listing is a silver association; there is no relationship-level expert gold set.
+\paragraph{Sample size and dependence.} Eight held-out scenarios and 19 queries; E6 is repeated random holdout (overlapping training sets, four scenarios never tested), not cross-validation; E7 repeats masking on one split.
+\paragraph{Design constraints.} E4 is structurally empty; E5 coherence rules are coarse documentary checks; E7 masks loader-generated relations uniformly at random, which is not how real reports go missing.
+\paragraph{Extraction and scope.} Report extraction and the structural validator are implemented but were not evaluated in E1--E7. Text-layer PDF extraction is not OCR. Graph matching is exact-string, so synonymy is invisible to it. A structural validator is not a process simulator or a safety reviewer.
+
+\begin{caution}[Research and safety boundary]
+This is a research prototype for structured retrieval and relationship hypotheses. A graph path signals reachability or association, not that a physical cause produces a consequence. No recovered link should be used as an operational safety fact, a design decision, or a replacement for a qualified HAZOP team without independent process-specific review.
+\end{caution}
+
+% ============================================================
+\section{Recommended next steps}\label{ch:next}
+% ============================================================
+
+In order of value for what the project wants to claim:
+\begin{enumerate}[itemsep=2pt]
+  \item \textbf{Add the missing baselines to the benchmark.} Include a global-frequency prior and a deviation-conditioned lookup (Table~\ref{tab:triv}) so that any claim for graph reasoning is measured against them.
+  \item \textbf{Make the benchmark cause-sensitive.} Within one row, split gold labels by cause where the source allows it, or add scenarios where the same deviation has causes leading to different consequences. Until labels vary by cause, no method can show cause-specific reasoning.
+  \item \textbf{Score what the graph is for.} Report traceability (path completeness, source IDs), abstention quality (error among answered, coverage--risk curve), and the number of answered queries the lookup also answers, instead of micro-F1 alone.
+  \item \textbf{Fix the vocabulary gate.} Add entity normalization or dense semantic linking fitted on training data only, then re-run E1 and E3 to see whether the three gate-failure abstentions are recovered without raising false positives.
+  \item \textbf{Run grouped cross-validation} using the existing \code{grouped_kfold_split} primitive, rebuilding the index per fold, so every scenario is tested once; retire the seed-42 figure as the headline.
+  \item \textbf{Expert adjudication.} Have independent reviewers score a held-out subset with a written rubric (plausibility, context sufficiency, safeguard validity) and report agreement. Nothing about causal correctness can be claimed before this.
+  \item \textbf{Give E4 a graph that can fail.} Add an effects layer (real intermediate states) to the data, then test direct against intermediate paths.
+  \item \textbf{Audit LLM runs.} Map the 28 failed HTTP attempts to per-case outcomes, capture cost, and widen the LLM comparison beyond a 15-case cap and one model.
+  \item \textbf{Reproducibility and hygiene.} Keep frozen artifacts immutable, record commit and dataset hash for every run (E1 was at \code{18a8d74}), and align stale documentation (Appendix~\ref{app:drift}).
+\end{enumerate}
+
+% ============================================================
+\section{Conclusion}\label{ch:conc}
+% ============================================================
+
+The repository is a carefully engineered research prototype: typed ontology, provenance on every edge, leakage-aware evaluation, abstention, a structural validator, and an honest habit of writing limitations next to results. On the reconstructed T-301 benchmark, graph reasoning recovers held-out worksheet associations more accurately than TF--IDF and the tested LLM configurations, and degrades smoothly when evidence is removed.
+
+The analysis narrows what that means. The benchmark is effectively eight scenarios; the graph reasoner behaves as a deviation-conditioned lookup that a trivial baseline matches or beats; the recurrence and coherence filters discard good predictions along with bad ones; and the multi-hop experiment could not fail because the data has no intermediate layer. These are findings about the benchmark as much as about the method, and each has a concrete remedy in Section~\ref{ch:next}.
+
+\begin{finding}[Defensible conclusion]
+Typed, provenance-aware recovery of row-level worksheet associations is feasible and traceable on this dataset. The evaluation needs cause-sensitive labels, stronger baselines, and expert adjudication before it can support claims about causal reasoning or safety utility.
+\end{finding}
+
+% ============================================================
+\appendix
+\section{Reproducing the numbers}\label{app:repro}
+% ============================================================
+\paragraph{Backend and tests.}
+{\scriptsize
+\begin{verbatim}
+cp .env.example .env   # Neo4j password, GEMINI_API_KEY
+docker compose up -d   # Neo4j
+cd server && uv sync
+uv run ruff check app tests scripts
+uv run pytest -v
+uv run uvicorn app.main:app --reload \
+    --env-file ../.env --port 8000
+\end{verbatim}}
+\paragraph{Frozen artifacts} (under \code{server/results/}).
+\begin{center}\scriptsize
+\begin{tabular}{@{}lp{5.9cm}@{}}
+\toprule
+\textbf{Exp.} & \textbf{Artifact}\\
+\midrule
+E1 & \code{t301-reconstructed/} (\code{results.json}, \code{predictions.csv}, \code{summary.csv}, \code{report.md})\\
+E2 & \code{e2/global_path_consensus.json}\\
+E3 & \code{e3/edge_support_consensus.json}, \code{e3/analysis/}\\
+E4 & \code{e4/multi_hop_reasoning.json}\\
+E5 & \code{e5/abstention_selective_risk_v2.json}\\
+E6 & \code{e6/scenario_split_robustness_20261106T143828Z.json}\\
+E7 & \code{e7/e7_summary_20261106T151612Z.json}, \code{e7_runs_...jsonl}\\
+\bottomrule
+\end{tabular}
+\end{center}
+\paragraph{Derived statistics.} \code{analysis/derived_stats_e1_e6.py} (per-seed E6 table, per-case graph errors, bootstrap and Wilson intervals), \code{analysis/trivial_baselines.py} (Table~\ref{tab:triv}, equality check in Section~\ref{sec:lookup}), \code{analysis/vocabulary_check.py} (cause-vocabulary check). Run each as \code{python3 -I script.py /path/to/NLP-HAZOP}.
+
+\section{Method notes for derived statistics}\label{app:method}
+\begin{itemize}
+  \item \textbf{Bootstrap.} Query-level: resample the 19 cases with replacement, recompute micro-F1 from pooled TP/FP/FN; 5{,}000 resamples, seed~0, percentile interval. Scenario-level: resample the 8 scenarios with replacement and take all their queries. Percentile intervals with 8 clusters are approximate.
+  \item \textbf{Equality check.} For each answered query, compare the graph prediction set with the union of consequences from training rows whose \code{Deviation} equals the target row's. Training rows are those listed for seed 42 in the E6 artifact.
+  \item \textbf{Removed-prediction precision.} Computed from the published TP/FP/FN of each condition against the baseline (74 predictions; 48 TP, 26 FP): removed TP $=48-\TP_{\text{kept}}$, removed FP $=26-\FP_{\text{kept}}$.
+  \item \textbf{Trivial baselines.} Frequencies are counted over the 32 training scenarios; ties are resolved by the order of \code{Counter.most_common}. Selecting $k$ on the test set is optimistic.
+\end{itemize}
+
+\section{Documentation consistency notes}\label{app:drift}
+Items a reader could trip over while reading the repository. None changes a result.
+\begin{itemize}
+  \item \code{RESEARCH_DOCUMENTATION.md} describes the prompt-only reasoner as calling a Groq API, and \code{.env.example} still lists \code{GROQ_API_KEY}; the code uses Gemini (\code{gemini-3.5-flash-lite}).
+  \item The 30 October baseline section reports ``122 unit tests passing''; the current tree has 175 test functions in 25 modules.
+  \item \code{server/ARCHITECTURE.md} lists eight predicates; \code{schema.py} also defines the benchmark predicate \code{co_listed_with_consequence}.
+  \item The 30 October baseline (graph coverage 0\%) and E1 (0.842) use different graph entry points (\code{reason} vs.\ \code{reason_all}); the documentation labels the older run historical but does not state this cause.
+  \item Hybrid F1 appears as 0.4688 in the synthesis and 0.4687 in \code{report.md}; the stored value is 0.46875 (rounding only).
+\end{itemize}
+
+% ============================================================
+\begin{thebibliography}{99}\scriptsize
+\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}
+\bibitem{iec61882} International Electrotechnical Commission (2016). \emph{IEC 61882: Hazard and operability studies (HAZOP studies) --- Application guide.}
+\bibitem{vaid1995} Vaidhyanathan, R., Venkatasubramanian, V. (1995). Digraph-based models for automated HAZOP analysis. \emph{Reliab.\ Eng.\ Syst.\ Saf.}, 50(1), 33--49. \url{https://doi.org/10.1016/0951-8320(95)00052-4}
+\bibitem{vaid1996} Vaidhyanathan, R., Venkatasubramanian, V. (1996). Experience with an expert system for automated HAZOP analysis. \emph{Comput.\ Chem.\ Eng.}, 20(S2), S1589--S1594. \url{https://doi.org/10.1016/0098-1354(96)00270-0}
+\bibitem{rahman2009} Rahman, S., Khan, F., Veitch, B., Amyotte, P. (2009). ExpHAZOP+: Knowledge-based expert system to conduct automated HAZOP analysis. \emph{J.\ Loss Prev.\ Process Ind.}, 22(4), 373--380. \url{https://doi.org/10.1016/j.jlp.2009.01.008}
+\bibitem{rodriguez2012} Rodr{\'i}guez, M., de la Mata, J. L. (2012). Automating HAZOP studies using D-higraphs. \emph{Comput.\ Chem.\ Eng.}, 45, 102--113. \url{https://doi.org/10.1016/j.compchemeng.2012.06.007}
+\bibitem{single2020} Single, J. I., Schmidt, J., Denecke, J. (2020). Ontology-based computer aid for the automation of HAZOP studies. \emph{J.\ Loss Prev.\ Process Ind.}, 68, 104321. \url{https://doi.org/10.1016/j.jlp.2020.104321}
+\bibitem{mao2020} Mao, S., Zhao, Y., Chen, J., Wang, B., Tang, Y. (2020). Development of process safety knowledge graph: A case study on delayed coking process. \emph{Comput.\ Chem.\ Eng.}, 143, 107094. \url{https://doi.org/10.1016/j.compchemeng.2020.107094}
+\bibitem{feng2021} Feng, X., Dai, Y., Ji, X., Zhou, L., Dang, Y. (2021). Application of natural language processing in HAZOP reports. \emph{Process Saf.\ Environ.\ Prot.}, 155, 41--48. \url{https://doi.org/10.1016/j.psep.2021.09.001}
+\bibitem{wang2021} Wang, Z., Zhang, B., Gao, D. (2021). Text mining of hazard and operability analysis reports based on active learning. \emph{Processes}, 9(7), 1178. \url{https://doi.org/10.3390/pr9071178}
+\bibitem{wanggu2022} Wang, F., Gu, W. (2022). Intelligent HAZOP analysis method based on data mining. \emph{J.\ Loss Prev.\ Process Ind.}, 80, 104911. \url{https://doi.org/10.1016/j.jlp.2022.104911}
+\bibitem{ekra2023} Ekramipooya, A., Boroushaki, M., Rashtchian, D. (2023). Application of natural language processing and machine learning in prediction of deviations in the HAZOP study worksheet: A comparison of classifiers. \emph{Process Saf.\ Environ.\ Prot.}, 176, 65--73. \url{https://doi.org/10.1016/j.psep.2023.06.004}
+\bibitem{li2024} Li, Z., Zhao, J. (2024). Constructing a knowledge graph for automated HAZOP analysis. \emph{Comput.\ Aided Chem.\ Eng.}, 53, 1291--1296. \url{https://doi.org/10.1016/B978-0-443-28824-1.50216-7}
+\bibitem{ekra2024} Ekramipooya, A., Boroushaki, M., Rashtchian, D. (2024). Predicting possible recommendations related to causes and consequences in the HAZOP study worksheet using NLP and ML: BERT, clustering, and classification. \emph{J.\ Loss Prev.\ Process Ind.}, 89, 105310. \url{https://doi.org/10.1016/j.jlp.2024.105310}
+\bibitem{li2025} Li, Z., Zhao, J. (2025). HAZOPCT: A HAZOP analysis completeness tool based on knowledge graph reasoning. \emph{Process Saf.\ Environ.\ Prot.}, 197, 107025. \url{https://doi.org/10.1016/j.psep.2025.107025}
+\bibitem{lee2026} Lee, J., Park, S., Oh, S., Ma, B. (2026). Can large language models automate the HAZOP process without human intervention? \emph{Safety Science}, 194, 107039. \url{https://doi.org/10.1016/j.ssci.2025.107039}
+\end{thebibliography}
+
 \end{document}
